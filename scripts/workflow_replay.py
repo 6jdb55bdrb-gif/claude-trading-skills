@@ -641,10 +641,16 @@ def _run_cli(
     repo_root: Path,
     *,
     path_override: Path | None = None,
+    env_overrides: Mapping[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     environment = _scrubbed_environment()
     if path_override is not None:
         environment["PATH"] = str(path_override)
+    if env_overrides:
+        for key in env_overrides:
+            if any(marker in key.upper() for marker in SENSITIVE_ENV_MARKERS):
+                raise ReplayError(f"env_overrides must not set a sensitive variable: {key}")
+        environment.update(env_overrides)
     completed = subprocess.run(
         command,
         cwd=repo_root,
@@ -1308,6 +1314,159 @@ def _normalize_review_test_command(report: dict[str, Any]) -> None:
     if any(marker in pytest_arguments for marker in shell_markers):
         raise ReplayError("skill review test command contains shell control syntax")
     auto_review["test_command"] = f"pytest {pytest_arguments}"
+
+
+_PYTEST_WARNINGS_HEADER_RE = re.compile(r"^=+\s*warnings summary\s*=+$")
+_PYTEST_DOCS_RE = re.compile(r"^-- Docs: https://docs\.pytest\.org/")
+_PYTEST_WARNINGS_COUNT_RE = re.compile(r", \d+ warnings?(?= in \d+\.\d+s\b)")
+_PYTEST_WARNING_ENTRY_RE = re.compile(
+    r"^\s*(?:\S+\.py:\d+:\s*)?(?P<category>[A-Za-z_][\w.]*): (?P<message>.*)$"
+)
+_PYTEST_STATUS_LINE_RE = re.compile(
+    r"^(?:\d+ (?:passed|failed|error|errors|skipped|deselected|xfailed|xpassed"
+    r"|subtests? (?:passed|failed|skipped))|no tests ran)"
+)
+_PYTEST_LOCATION_LINE_RE = re.compile(r"^\S+\.py:\d+\s*$")
+# Unbannered (layout B) entry: pytest 9 emits GC-time rm_rf warnings after the
+# results line, without a ``warnings summary`` header or a ``-- Docs:`` footer.
+_RM_RF_ENTRY_RE = re.compile(r".*_pytest/pathlib\.py:\d+: PytestWarning: \(rm_rf\) error removing ")
+_RM_RF_OS_ERROR_RE = re.compile(r"<class 'OSError'>: \[Errno \d+\] Directory not empty: '")
+_RM_RF_WARN_CALL_RE = re.compile(r"^\s*warnings\.warn\($")
+
+
+def _remove_status_line_warnings_count(lines: list[str]) -> list[str]:
+    """Remove the ``, N warnings`` fragment from the terminal status line only."""
+    for index in range(len(lines) - 1, -1, -1):
+        if _PYTEST_STATUS_LINE_RE.match(lines[index].strip()):
+            result = list(lines)
+            result[index] = _PYTEST_WARNINGS_COUNT_RE.sub("", result[index])
+            return result
+    return lines
+
+
+def _is_warning_structural_line(line: str) -> bool:
+    """True for the non-entry scaffolding lines pytest emits around warnings."""
+    return (
+        line.strip() == ""
+        or _PYTEST_WARNINGS_HEADER_RE.match(line) is not None
+        or _PYTEST_DOCS_RE.match(line) is not None
+        or _PYTEST_LOCATION_LINE_RE.match(line) is not None
+        or _RM_RF_OS_ERROR_RE.search(line) is not None
+        or _RM_RF_WARN_CALL_RE.match(line) is not None
+    )
+
+
+def _is_rm_rf_warnings_noise(block: str) -> bool:
+    """True when every summary entry is the known pytest temp-GC noise.
+
+    The entry category is any identifier/dotted name, so a genuine custom
+    warning class (e.g. ``DataQualityAlert``) is detected even though it does not
+    end in ``Warning`` — otherwise the noise check would wrongly pass and the
+    whole block (genuine warning included) would be deleted. Any line that is
+    neither a parsed entry nor recognized scaffolding fails closed (block kept),
+    so an unrecognized evidence line can never be silently removed.
+    """
+    entries = []
+    for line in block.split("\n"):
+        match = _PYTEST_WARNING_ENTRY_RE.match(line)
+        if match is not None:
+            entries.append(match)
+            continue
+        if not _is_warning_structural_line(line):
+            return False
+    if not entries:
+        return False
+    for match in entries:
+        if match.group("category").rsplit(".", 1)[-1] != "PytestWarning":
+            return False
+        if "(rm_rf) error removing" not in match.group("message"):
+            return False
+    return True
+
+
+def _strip_banner_framed_rm_rf(text: str) -> str:
+    """Strip a ``warnings summary`` ... ``-- Docs:`` block that is all rm_rf noise."""
+    lines = text.split("\n")
+    header_index = next(
+        (index for index, line in enumerate(lines) if _PYTEST_WARNINGS_HEADER_RE.match(line)),
+        None,
+    )
+    if header_index is None:
+        return text
+    docs_index = next(
+        (
+            index
+            for index in range(header_index + 1, len(lines))
+            if _PYTEST_DOCS_RE.match(lines[index])
+        ),
+        None,
+    )
+    if docs_index is None:
+        return text
+    block = "\n".join(lines[header_index : docs_index + 1])
+    if not _is_rm_rf_warnings_noise(block):
+        return text
+    kept = lines[:header_index] + lines[docs_index + 1 :]
+    return "\n".join(_remove_status_line_warnings_count(kept))
+
+
+def _strip_unbannered_tail_rm_rf(text: str) -> str:
+    """Strip a trailing run of unbannered ``(rm_rf)`` warning entries.
+
+    pytest 9 emits GC-time ``(rm_rf)`` warnings *after* the results line, without
+    a ``warnings summary`` header or a ``-- Docs:`` footer, so the banner-framed
+    stripper cannot observe them. Each entry is a ``pathlib.py:N: PytestWarning:
+    (rm_rf) …`` line followed by an ``OSError`` detail line and a
+    ``warnings.warn(`` call. Only a trailing block that is entirely this known
+    noise is removed; a genuine unbannered warning (e.g. a source
+    ``DeprecationWarning``) is left intact so it still surfaces as drift.
+    """
+    lines = text.split("\n")
+    last_content_index = -1
+    for index, line in enumerate(lines):
+        if line == "":
+            continue
+        rm_rf_entry = bool(_RM_RF_ENTRY_RE.match(line)) or bool(_RM_RF_OS_ERROR_RE.match(line))
+        warn_call = (
+            bool(_RM_RF_WARN_CALL_RE.match(line))
+            and index > 0
+            and bool(_RM_RF_OS_ERROR_RE.match(lines[index - 1]))
+        )
+        if rm_rf_entry or warn_call:
+            continue
+        last_content_index = index
+    block = "\n".join(lines[last_content_index + 1 :])
+    if not _RM_RF_ENTRY_RE.search(block):
+        return text
+    kept = lines[: last_content_index + 1]
+    while kept and kept[-1] == "":
+        kept.pop()
+    return "\n".join(_remove_status_line_warnings_count(kept))
+
+
+def _strip_pytest_warning_summary(text: str) -> str:
+    """Drop pytest's environment-specific ``(rm_rf)`` warnings, if present.
+
+    The warning embeds the random pytest base-temp path and fails ``ENOTEMPTY``
+    cleanup on stale local state, so it is not reproducible and must not be part
+    of a replay golden. It is removed only when every warning entry is that known
+    noise; genuine warnings are left intact so they still surface as drift. Both
+    the banner-framed ``warnings summary`` / ``-- Docs:`` layout (other pytest
+    setups) and the unbannered trailing layout (pytest 9 GC-time) are handled.
+    """
+    text = _strip_banner_framed_rm_rf(text)
+    text = _strip_unbannered_tail_rm_rf(text)
+    return text
+
+
+def _normalize_review_test_output(report: dict[str, Any]) -> None:
+    """Normalize captured pytest output in a skill-review report for replay."""
+    auto_review = report.get("auto_review")
+    if not isinstance(auto_review, dict):
+        raise ReplayError("skill review auto_review must be a mapping")
+    output = auto_review.get("test_output")
+    if isinstance(output, str):
+        auto_review["test_output"] = _strip_pytest_warning_summary(output)
 
 
 def _exact_payload_sha256(payload: Any) -> str:
@@ -3210,9 +3369,11 @@ def _monthly_skill_review(
         ],
         repo_root,
         path_override=python_fallback_path,
+        env_overrides={"NO_COLOR": "1", "PY_COLORS": "0"},
     )
     report = _load_json(_latest_report(batch, f"skill_review_{skill_name}_*.json"), "skill review")
     _normalize_review_test_command(report)
+    _normalize_review_test_output(report)
     report = _canonicalize(
         report,
         spec["fixed_timestamp"],
