@@ -205,6 +205,7 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 **References:**
 
 - `skills/lowcap-call-tracker/references/role_review_protocol.md`
+- `skills/lowcap-call-tracker/references/scheduled_runs.md`
 - `skills/lowcap-call-tracker/references/screener_variants.md`
 - `skills/lowcap-call-tracker/references/telegram_bot.md`
 - `skills/lowcap-call-tracker/references/tracker_schema.md`

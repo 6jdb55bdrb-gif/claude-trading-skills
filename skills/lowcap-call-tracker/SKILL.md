@@ -226,6 +226,8 @@ Prices come from yfinance — free, no key.
 - `scripts/state_snapshot.py` — export/import the whole database as JSON, so a
   scheduled run on a fresh checkout keeps dedupe state and PnL history, and the
   move to another host carries every open call across
+- `references/scheduled_runs.md` — running on a schedule before a server exists:
+  snapshot-backed state, credential handling, and what such a setup cannot do
 - `references/telegram_bot.md` — push behaviour, command list, authorization,
   message limits and the polling model
 - `references/tracker_schema.md` — SQLite schema, PnL and outcome definitions,
