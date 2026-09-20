@@ -37,6 +37,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from dataclasses import dataclass, field
@@ -72,6 +73,47 @@ def escape_html(text: Any) -> str:
     return str(text).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+_INVITE_LINK_RE = re.compile(r"(?:https?://)?t\.me/(?:\+|joinchat/)", re.IGNORECASE)
+_PUBLIC_LINK_RE = re.compile(r"(?:https?://)?t\.me/([A-Za-z][A-Za-z0-9_]{3,31})/?$", re.IGNORECASE)
+_USERNAME_RE = re.compile(r"^@[A-Za-z][A-Za-z0-9_]{3,31}$")
+_NUMERIC_ID_RE = re.compile(r"^-?\d{1,20}$")  # any numeric id; Telegram validates the value
+
+
+def normalize_chat_id(raw: str) -> str:
+    """Validate ``TELEGRAM_CHAT_ID`` and normalize what is accepted.
+
+    Accepted: a numeric id (``4242``), a group/supergroup id (``-1001234567890``),
+    an ``@username`` for a public channel or group, or a ``t.me/username`` link,
+    which is reduced to ``@username``.
+
+    Rejected with guidance: a **private invite link** (``t.me/+hash`` or the older
+    ``t.me/joinchat/hash``). The hash is a server-side token, not an encoded chat
+    id — there is no offline conversion, and the Bot API has no method to resolve
+    one, so the id has to be discovered after the bot is in the chat.
+    """
+    value = (raw or "").strip()
+    if not value:
+        raise TelegramDisabled("TELEGRAM_CHAT_ID is not set")
+    if _INVITE_LINK_RE.match(value):
+        raise TelegramDisabled(
+            "TELEGRAM_CHAT_ID looks like a private invite link. A bot cannot join "
+            "from an invite link and the link does not encode a chat id. Add the "
+            "bot to the chat (Add members -> @yourbot), post /id@yourbot there, "
+            "run 'telegram_bot.py --list-chats', and use the numeric id it prints "
+            "(group ids are negative)."
+        )
+    public = _PUBLIC_LINK_RE.match(value)
+    if public:
+        return f"@{public.group(1)}"
+    if _USERNAME_RE.match(value) or _NUMERIC_ID_RE.match(value):
+        return value
+    raise TelegramDisabled(
+        f"TELEGRAM_CHAT_ID {value!r} is not a chat id. Expected a number such as "
+        "4242, a group id such as -1001234567890, or @username for a public chat. "
+        "Run 'telegram_bot.py --list-chats' to see the ids the bot can reach."
+    )
+
+
 def credentials(config: dict[str, Any]) -> tuple[str, str]:
     """Return ``(token, chat_id)`` from the environment.
 
@@ -84,9 +126,7 @@ def credentials(config: dict[str, Any]) -> tuple[str, str]:
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
     if not token:
         raise TelegramDisabled("TELEGRAM_BOT_TOKEN is not set")
-    if not chat_id:
-        raise TelegramDisabled("TELEGRAM_CHAT_ID is not set")
-    return token, chat_id
+    return token, normalize_chat_id(chat_id)
 
 
 def split_message(text: str, limit: int = 3900) -> list[str]:

@@ -39,6 +39,21 @@ join-by-invite method, so a human member adds the bot to the group
 (group title → *Add members* → search the bot's `@username`). An invite link is
 for people, not for bots.
 
+**An invite link is also not a chat id.** The `+hash` in `t.me/+xxxxxxxx` is a
+server-side token, not an encoded id: there is no offline conversion, and the Bot
+API cannot resolve one (only MTProto user clients can). Putting a link into
+`TELEGRAM_CHAT_ID` is therefore rejected up front by `normalize_chat_id`, with
+the three steps to get the real id — rather than failing later with Telegram's
+opaque "chat not found". Accepted forms:
+
+| Value | Meaning |
+|---|---|
+| `4242` | private chat |
+| `-1001234567890` | group / supergroup |
+| `@lowcapcalls` | public channel or group by username |
+| `https://t.me/lowcapcalls` | same, normalized to `@lowcapcalls` |
+| `https://t.me/+xPW86...` | **rejected** — private invite link |
+
 Once the bot is in the group, find the numeric id:
 
 ```bash

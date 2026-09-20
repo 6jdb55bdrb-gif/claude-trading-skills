@@ -796,3 +796,77 @@ def test_empty_chat_list_explains_what_to_do():
     assert "No pending updates" in rendered
     assert "/id@yourbot" in rendered
     assert "lowcap-telegram.service" in rendered
+
+
+# ------------------------------------------------------- chat id validation
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("4242", "4242"),
+        ("  4242  ", "4242"),
+        ("-1001234567890", "-1001234567890"),
+        ("@lowcapcalls", "@lowcapcalls"),
+        ("https://t.me/lowcapcalls", "@lowcapcalls"),
+        ("t.me/lowcapcalls", "@lowcapcalls"),
+    ],
+)
+def test_accepted_chat_id_forms(raw, expected):
+    assert tb.normalize_chat_id(raw) == expected
+
+
+@pytest.mark.parametrize(
+    "link",
+    [
+        "https://t.me/+xPW86d7J9yQ5YjBk",
+        "t.me/+AbCdEfGhIjK",
+        "https://t.me/joinchat/AbCdEfGhIjK",
+        "T.ME/+MixedCase",
+    ],
+)
+def test_private_invite_links_are_rejected_with_guidance(link):
+    """An invite hash is a server-side token; it is not a chat id."""
+    with pytest.raises(tb.TelegramDisabled) as excinfo:
+        tb.normalize_chat_id(link)
+    message = str(excinfo.value)
+    assert "invite link" in message
+    assert "--list-chats" in message  # the actual next step
+    assert "/id@yourbot" in message
+
+
+def test_nonsense_chat_id_is_rejected():
+    with pytest.raises(tb.TelegramDisabled, match="not a chat id"):
+        tb.normalize_chat_id("my trading group")
+
+
+def test_empty_chat_id_keeps_its_original_message():
+    with pytest.raises(tb.TelegramDisabled, match="is not set"):
+        tb.normalize_chat_id("   ")
+
+
+def test_an_invite_link_in_the_env_does_not_break_a_run(monkeypatch, config, tmp_path):
+    """Misconfiguration is reported, never fatal: the cycle still completes."""
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "https://t.me/+xPW86d7J9yQ5YjBk")
+    config["tracker"]["stats_file"] = str(tmp_path / "stats.md")
+    report = run_cycle(
+        config,
+        backend="heuristic",
+        offline=True,
+        fixture=str(FIXTURE_HITS),
+        prices={},
+        force_screen=True,
+        db_path=str(tmp_path / "cycle.db"),
+        now=datetime(2026, 9, 18, 15, 0, tzinfo=timezone.utc),
+    )
+    assert report["telegram"]["sent"] is False
+    assert "invite link" in report["telegram"]["reason"]
+    assert len(report["new_calls"]) == 3
+
+
+def test_public_link_form_is_usable_as_a_push_target(wired, monkeypatch):
+    config, sent, transport = wired
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "https://t.me/lowcapcalls")
+    tb.notify(config, "channel push", transport=transport)
+    assert sent[0]["chat_id"] == "@lowcapcalls"
