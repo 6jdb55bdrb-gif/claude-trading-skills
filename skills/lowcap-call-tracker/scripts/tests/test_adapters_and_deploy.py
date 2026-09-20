@@ -357,3 +357,54 @@ def test_telegram_reference_exists():
     text = reference.read_text(encoding="utf-8")
     assert "never from" in text and "environment" in text  # credential rule
     assert "/shadow" in text
+
+
+# -------------------------------------------------- scheduled runner script
+
+
+def test_scheduled_runner_exists_and_parses():
+    script = DEPLOY / "scheduled_run.sh"
+    assert script.is_file()
+    assert script.stat().st_mode & stat.S_IXUSR
+    assert subprocess.run(["bash", "-n", str(script)], capture_output=True).returncode == 0
+
+
+def test_scheduled_runner_is_self_contained():
+    """The schedule's prompt is one line; the script owns every step."""
+    text = (DEPLOY / "scheduled_run.sh").read_text(encoding="utf-8")
+    for needle in (
+        "git pull",                      # refresh
+        "--snapshot",                    # carry state across throwaway checkouts
+        "run_cycle.py",                  # the cycle itself
+        "git add tracker-output/",       # persist state
+        "git push",                      # ...back to the branch
+        "RESULT:",                       # machine-readable outcome line
+    ):
+        assert needle in text, needle
+
+
+def test_scheduled_runner_installs_only_what_the_skill_needs():
+    """--extra ci drags in scipy/statsmodels: minutes on a cold container."""
+    text = (DEPLOY / "scheduled_run.sh").read_text(encoding="utf-8")
+    assert "--with requests" in text and "--with yfinance" in text
+    assert "--extra ci" not in text
+    assert "python3" in text  # documented fallback when uv is absent
+
+
+def test_scheduled_runner_never_prints_the_token():
+    text = (DEPLOY / "scheduled_run.sh").read_text(encoding="utf-8")
+    assert "telegram credentials: present" in text
+    # The token is only ever tested for emptiness, never echoed.
+    assert "echo $TELEGRAM_BOT_TOKEN" not in text
+    assert "echo \"$TELEGRAM_BOT_TOKEN\"" not in text
+
+
+def test_scheduled_runner_survives_a_missing_token():
+    text = (DEPLOY / "scheduled_run.sh").read_text(encoding="utf-8")
+    assert "MISSING (cycle runs, notification skipped)" in text
+
+
+def test_scheduled_runner_reports_a_failed_cycle_to_telegram():
+    text = (DEPLOY / "scheduled_run.sh").read_text(encoding="utf-8")
+    assert "Scheduled run failed" in text
+    assert "exit $STATUS" in text
