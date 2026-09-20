@@ -36,9 +36,24 @@ cd "$REPO_ROOT"
 say() { echo "[scheduled_run] $*"; }
 
 # ---------------------------------------------------------------- 1. refresh
+# A scheduled session clones the repository's DEFAULT branch, which may not be
+# the branch this tracker lives on — fetch and check it out explicitly rather
+# than assuming the checkout is already correct.
 if [ -d .git ]; then
-    git checkout -q "$BRANCH" 2>/dev/null || say "WARNING: branch $BRANCH not checked out"
-    git pull -q --ff-only 2>/dev/null || say "WARNING: git pull failed; running on the local checkout"
+    if git fetch -q origin "$BRANCH" 2>/dev/null; then
+        git checkout -q -B "$BRANCH" "origin/$BRANCH" 2>/dev/null \
+            || say "WARNING: could not check out $BRANCH"
+    else
+        say "WARNING: could not fetch $BRANCH; running on the current checkout"
+        git pull -q --ff-only 2>/dev/null || true
+    fi
+fi
+
+if [ ! -f skills/lowcap-call-tracker/scripts/run_cycle.py ]; then
+    say "RESULT: cycle failed (the tracker is not present on this checkout)"
+    say "Branch '$BRANCH' does not contain skills/lowcap-call-tracker/."
+    say "Set TRACKER_BRANCH to the branch that does, or merge it into the default branch."
+    exit 3
 fi
 
 # ------------------------------------------------------------ 2. interpreter

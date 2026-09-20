@@ -408,3 +408,18 @@ def test_scheduled_runner_reports_a_failed_cycle_to_telegram():
     text = (DEPLOY / "scheduled_run.sh").read_text(encoding="utf-8")
     assert "Scheduled run failed" in text
     assert "exit $STATUS" in text
+
+
+def test_scheduled_runner_checks_out_its_own_branch():
+    """A scheduled session clones the DEFAULT branch, which may not have the
+    tracker at all — the runner must not assume the checkout is right."""
+    text = (DEPLOY / "scheduled_run.sh").read_text(encoding="utf-8")
+    assert "git fetch -q origin" in text
+    assert 'git checkout -q -B "$BRANCH" "origin/$BRANCH"' in text
+
+
+def test_scheduled_runner_fails_loudly_when_the_tracker_is_absent():
+    text = (DEPLOY / "scheduled_run.sh").read_text(encoding="utf-8")
+    assert "the tracker is not present on this checkout" in text
+    assert "exit 3" in text
+    assert "TRACKER_BRANCH" in text  # names the way out
