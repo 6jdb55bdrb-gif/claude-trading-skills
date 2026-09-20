@@ -67,6 +67,7 @@ COLUMN_MAP: dict[str, str] = {
     "market cap": "market_cap",
     "price": "price",
     "change": "change_pct",
+    "change %": "change_pct",
     "volume": "volume",
     "avg volume": "avg_volume",
     "average volume": "avg_volume",
@@ -93,15 +94,25 @@ COLUMN_MAP: dict[str, str] = {
     "atr (14)": "atr",
     "beta": "beta",
     "gap": "gap_pct",
+    "gap %": "gap_pct",
     "from open": "from_open_pct",
+    "change from open %": "from_open_pct",
+    "volatility w": "volatility_week_pct",
+    "volatility m": "volatility_month_pct",
     "perf week": "perf_week_pct",
     "perf month": "perf_month_pct",
     "perf quart": "perf_quarter_pct",
     "perf year": "perf_year_pct",
+    "perf half": "perf_half_pct",
+    "perf ytd": "perf_ytd_pct",
 }
 
 PERCENT_FIELDS = {
     "change_pct",
+    "volatility_week_pct",
+    "volatility_month_pct",
+    "perf_half_pct",
+    "perf_ytd_pct",
     "short_float_pct",
     "inst_own_pct",
     "insider_trans_pct",
@@ -186,8 +197,39 @@ def parse_export_csv(text: str) -> list[dict[str, Any]]:
     return [normalize_row(row) for row in rows if row]
 
 
+# The results table carries this class; everything else on the page (filter
+# dropdowns, view switcher, order-by menu) is chrome that also contains the word
+# "Ticker" and will be matched by a naive search.
+RESULTS_TABLE_CLASS = "screener_table"
+_CHROME_TAGS = ("select", "option", "input", "textarea", "form")
+
+
+def _looks_like_results_table(table: Any) -> bool:
+    """True for a table that is the screener's result grid, not filter chrome."""
+    classes = {str(name).lower() for name in (table.get("class") or [])}
+    if RESULTS_TABLE_CLASS in classes:
+        return True
+    if table.find(_CHROME_TAGS):  # a filter widget, never the result grid
+        return False
+    rows = table.find_all("tr")
+    if len(rows) < 2:
+        return False
+    headers = [cell.get_text(strip=True).lower() for cell in rows[0].find_all(["th", "td"])]
+    if "ticker" not in headers:
+        return False
+    # The grid's body rows line up with its header; chrome tables do not.
+    body_widths = {len(row.find_all("td")) for row in rows[1:] if row.find_all("td")}
+    return bool(body_widths) and max(body_widths) >= len(headers) - 1
+
+
 def parse_screener_html(html: str) -> list[dict[str, Any]]:
-    """Parse the public screener table; returns [] when no ticker table is found."""
+    """Parse the public screener's result grid; returns [] when it is absent.
+
+    FinViz renders the filter UI as tables too, and its order-by ``<select>``
+    contains the word "Ticker" — so the grid is identified by its
+    ``screener_table`` class, with a structural fallback (a header row carrying a
+    real ``Ticker`` column, no form controls, body rows as wide as the header).
+    """
     if not HAS_BS4:
         raise FetchError(
             "public screener parsing needs beautifulsoup4. "
@@ -195,26 +237,22 @@ def parse_screener_html(html: str) -> list[dict[str, Any]]:
             "for Elite export, or run with --fixture."
         )
     soup = BeautifulSoup(html, "html.parser")
-    for table in soup.find_all("table"):
-        header_cells = [cell.get_text(strip=True) for cell in table.find_all("th")]
+    tables = [table for table in soup.find_all("table") if _looks_like_results_table(table)]
+
+    for table in tables:
+        all_rows = table.find_all("tr")
+        header_cells = [cell.get_text(strip=True) for cell in all_rows[0].find_all(["th", "td"])]
         if not header_cells:
-            first_row = table.find("tr")
-            header_cells = (
-                [cell.get_text(strip=True) for cell in first_row.find_all("td")]
-                if first_row
-                else []
-            )
-        lowered = [cell.lower() for cell in header_cells]
-        if "ticker" not in lowered:
             continue
         rows: list[dict[str, Any]] = []
-        for tr in table.find_all("tr")[1:]:
+        for tr in all_rows[1:]:
             cells = [cell.get_text(strip=True) for cell in tr.find_all("td")]
             if len(cells) < 2:
                 continue
-            raw = dict(zip(header_cells, cells))
-            normalized = normalize_row(raw)
-            if normalized.get("ticker"):
+            normalized = normalize_row(dict(zip(header_cells, cells)))
+            ticker = normalized.get("ticker")
+            # FinViz numbers its rows; a value that is not a symbol is chrome.
+            if ticker and ticker.replace(".", "").replace("-", "").isalpha():
                 rows.append(normalized)
         if rows:
             return rows

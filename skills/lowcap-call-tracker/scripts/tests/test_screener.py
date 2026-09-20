@@ -1,6 +1,7 @@
 """Variant filter codes, URL building and screener-row normalization."""
 
 import json
+from pathlib import Path
 
 import pytest
 from fetch_screener import (
@@ -295,3 +296,82 @@ def test_elite_and_fixture_paths_do_not_need_beautifulsoup4(config, monkeypatch)
     monkeypatch.setattr(fetch_screener, "HAS_BS4", False)
     assert fetch_screener.parse_export_csv("Ticker,Price\nAAA,3.10\n")[0]["ticker"] == "AAA"
     assert screen_variant(config, "squeeze", fixture=str(FIXTURE_HITS))
+
+
+# ------------------------------------------------- real FinViz markup (#bug)
+
+REAL_MARKUP = Path(__file__).resolve().parents[1] / "fixtures" / "finviz_screener_overview.html"
+
+
+def test_real_screener_markup_parses_to_one_correct_row():
+    """Regression: the live page, not hand-written HTML.
+
+    FinViz renders its filter UI as tables whose <select> options contain the
+    word "Ticker", so a 'first table mentioning Ticker' parser returned the
+    order-by dropdown and mapped market cap into the price field.
+    """
+    rows = parse_screener_html(REAL_MARKUP.read_text(encoding="utf-8"))
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["ticker"] == "SSDEV"
+    assert row["company"] == "Stablecoin Development Corp"
+    assert row["price"] == 1.04  # not the 52.64M market cap
+    assert row["change_pct"] == 23.63  # header is "Change %", not "Change"
+    assert row["market_cap"] == 52_640_000.0
+    assert row["volume"] == 3_169_626.0
+
+
+def test_filter_chrome_is_never_mistaken_for_results():
+    from bs4 import BeautifulSoup
+    from fetch_screener import _looks_like_results_table
+
+    soup = BeautifulSoup(REAL_MARKUP.read_text(encoding="utf-8"), "html.parser")
+    tables = soup.find_all("table")
+    assert len(tables) >= 2
+    results = [table for table in tables if _looks_like_results_table(table)]
+    assert len(results) == 1
+    assert "screener_table" in (results[0].get("class") or [])
+
+
+def test_a_table_with_form_controls_is_rejected():
+    from bs4 import BeautifulSoup
+    from fetch_screener import _looks_like_results_table
+
+    html = """
+    <table>
+      <tr><th>Ticker</th><th>Order</th></tr>
+      <tr><td><select><option>Ticker</option></select></td><td>Asc</td></tr>
+    </table>
+    """
+    table = BeautifulSoup(html, "html.parser").find("table")
+    assert _looks_like_results_table(table) is False
+
+
+def test_row_numbers_are_not_treated_as_tickers():
+    """FinViz's leading 'No.' column must not produce a numeric 'ticker'."""
+    html = """
+    <table class="screener_table">
+      <tr><th>No.</th><th>Ticker</th><th>Price</th></tr>
+      <tr><td>1</td><td>AAA</td><td>3.10</td></tr>
+    </table>
+    """
+    rows = parse_screener_html(html)
+    assert [row["ticker"] for row in rows] == ["AAA"]
+
+
+@pytest.mark.parametrize(
+    ("header", "field", "raw", "expected"),
+    [
+        ("Change %", "change_pct", "23.63%", 23.63),
+        ("Change from Open %", "from_open_pct", "21.92%", 21.92),
+        ("Rel Volume", "rel_volume", "3.11", 3.11),
+        ("Short Float", "short_float_pct", "65.80%", 65.8),
+        ("Float", "float_shares", "1.79M", 1_790_000.0),
+        ("Avg Volume", "avg_volume", "1.02M", 1_020_000.0),
+        ("SMA20", "sma20_pct", "11.90%", 11.9),
+        ("52W High", "high52w_pct", "-84.97%", -84.97),
+        ("Volatility W", "volatility_week_pct", "13.70%", 13.7),
+    ],
+)
+def test_live_view_headers_map_to_canonical_fields(header, field, raw, expected):
+    assert normalize_row({"Ticker": "AAA", header: raw})[field] == expected

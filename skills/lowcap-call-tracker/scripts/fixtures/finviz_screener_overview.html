@@ -1,0 +1,62 @@
+<!-- Trimmed REAL FinViz public-screener markup (view 111).
+     The first table is the filter/order-by UI: its <select> options contain
+     the word 'Ticker', which a naive 'first table mentioning Ticker' parser
+     matches instead of the results table. The results table is the one
+     carrying class 'screener_table'. -->
+<html><body>
+<table border="0" cellpadding="0" cellspacing="0" class="screener-groups_table-filter filter-table-filters" id="filter-table-top" width="100%">
+<tr>
+<td><img alt="" border="0" class="w-1.5 h-1.5" src="gfx/nic2x2.gif"/></td>
+<td align="center" style="max-width:0" valign="center" width="17%">
+
+<div id="screener-presets-root" style="width:100%"><div class="relative w-full"><button class="fv-select block w-full cursor-pointer overflow-hidden bg-none! text-left" type="button"><span class="block truncate">My Presets</span></button></div></div></td>
+<td class="screener-groups_filter-label text-right" width="6%">
+<span class="body-combo-title" data-boxover-html="&lt;div style='max-width:300px'&gt;&lt;b&gt;Order by&lt;/b&gt;&lt;br&gt;Select the criteria by which the output information will be sorted. The order settings apply to all views. Use the &lt;b&gt;ascending&lt;/b&gt; and &lt;b&gt;descending&lt;/b&gt; option to invert the current order.&lt;br&gt;&lt;br&gt; TIP: In table views you can click on top of a column to sort the table by the underlying values.&lt;/div&gt;" style="cursor:pointer;">Order by</span></td>
+<td align="left" class="pl-1" width="20%">
+<select class="body-combo-text fv-select" id="orderSelect" onchange='window.location=document.getElementById("orderSelect").value' style="width:100%;">
+<option value="screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-ticker">Ticker</option><option value="screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-tickersfilter">Tickers Input Filter</option><option value="screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-company">Company</option></select>
+</td>
+<td align="left" class="pl-1" width="6%">
+<select class="body-combo-text fv-select" id="orderDirSelect" onchange='window.location=document.getElementById("orderDirSelect").value' style="width: 100%;">
+<option value="screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=relativevolume">Asc</option><option selected="selected" value="screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-relativevolume">Desc</option></select>
+</td>
+<td class="screener-groups_filter-label text-right" width="6%">
+<span class="body-combo-title" data-boxover-html="&lt;div style='max-width:300px'&gt;&lt;b&gt;Signal&lt;/b&gt;&lt;br&gt;You can screen the stocks by signal - an event, by which traders usually enter or exit positions.&lt;/div&gt;" style="cursor:pointer;">Signal</span></td>
+<td align="left" class="pl-1" width="15%">
+<select class="fv-select body-combo-text" id="signalSelect" onchange='window.location=document.getElementById("signalSelect").value' style="width: 100%;">
+<option selected="selected" value="screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-relativevolume">None (all stocks)</option><option value="screener?v=111&amp;s=ta_topgainers&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-relativevolume">Top Gainers</option><option value="screener?v=111&amp;s=ta_toplosers&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-relativevolume">Top Losers</option></select>
+</td>
+<td class="screener-groups_filter-label text-right" width="6%">
+<span class="body-combo-title" data-boxover-html="&lt;div style='max-width:300px'&gt;&lt;b&gt;Tickers&lt;/b&gt;&lt;br&gt;To screen through a selected set of stocks, you can enter one or more tickers directly, such as 'MSFT,GOOG,AAPL'. The screening process will run only on the specified stocks. No input ticker(s) equals all stocks. The &lt;b&gt;open in screener&lt;/b&gt; option in the &lt;b&gt;Search&lt;/b&gt;, will copy the listed tickers to the screener's ticker box automatically.&lt;/div&gt;" style="cursor:pointer;">Tickers</span></td>
+<td align="left" class="pl-1" width="24%">
+<table cellpadding="0" cellspacing="0" style="table-layout:fixed;" width="100%">
+<tr>
+<td align="left" width="100%">
+<input class="fv-input body-combo-text" id="tickersInput" onkeypress="if(event.keyCode==13){(window.FinvizScreenerNavigateWithCurrentMapDisplayOptions||function(q){var params=new URLSearchParams(q);var currentParams=new URLSearchParams(window.location.search);['show_etf','show_industry','preset_order','st','show_wiim','equal_size'].forEach(function(key){var value=currentParams.get(key);if(value===null){params.delete(key)}else{params.set(key,value)}});window.location='screener?'+params.toString()})('v=111\u0026f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa\u0026o=-relativevolume\u0026t=' + window.FLibs.getSanitizedTicker(document.getElementById('tickersInput').value, true))}" style="width:100%" type="text" value=""/>
+</td>
+</tr>
+</table>
+</td>
+<td class="pl-1">
+<button class="screener-combo-button fv-button screener_button is-arrow" data-boxover-text="Submit tickers" onclick="(window.FinvizScreenerNavigateWithCurrentMapDisplayOptions||function(q){var params=new URLSearchParams(q);var currentParams=new URLSearchParams(window.location.search);['show_etf','show_industry','preset_order','st','show_wiim','equal_size'].forEach(function(key){var value=currentParams.get(key);if(value===null){params.delete(key)}else{params.set(key,value)}});window.location='screener?'+params.toString()})('v=111\u0026f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa\u0026o=-relativevolume\u0026t=' + tickersInput.value)" style="cursor:pointer"></button>
+
+</td>
+<td align="left" class="pl-2" valign="center"><a class="screener-combo-button fv-button is-small is-border screener_button is-active is-open" data-boxover-html="&lt;div style='max-width:300px'&gt;&lt;b&gt;Filters&lt;/b&gt;&lt;br&gt;To optimize the screening by various stock-related criteria, you can use one or more &lt;b&gt;Filters&lt;/b&gt;.&lt;/div&gt;" href="screener?v=110&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-relativevolume">Filters </a></td>
+<td><img alt="" border="0" class="w-1.5 h-1.5" src="gfx/nic2x2.gif"/></td>
+</tr>
+</table>
+<table class="styled-table-new is-rounded is-tabular-nums w-full screener_table"><tr align="center" valign="middle">
+<th align="right" class="table-header is-static w-9 cursor-default">No.</th>
+<th align="left" class="table-header cursor-pointer" onclick="window.location='screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-ticker'">Ticker</th>
+<th align="left" class="table-header cursor-pointer" onclick="window.location='screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-company'">Company</th>
+<th align="left" class="table-header cursor-pointer" onclick="window.location='screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-sector'">Sector</th>
+<th align="left" class="table-header cursor-pointer" onclick="window.location='screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-industry'">Industry</th>
+<th align="left" class="table-header cursor-pointer" onclick="window.location='screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-country'">Country</th>
+<th align="right" class="table-header cursor-pointer" onclick="window.location='screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-marketcap'">Market Cap</th>
+<th align="right" class="table-header cursor-pointer" onclick="window.location='screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-pe'">P/E</th>
+<th align="right" class="table-header cursor-pointer" onclick="window.location='screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-price'">Price</th>
+<th align="right" class="table-header cursor-pointer" onclick="window.location='screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-change'">Change %</th>
+<th align="right" class="table-header cursor-pointer" onclick="window.location='screener?v=111&amp;f=cap_smallunder,geo_usa,ind_stocksonly,sh_avgvol_o500,sh_float_u20,sh_price_1to20,sh_relvol_o2,sh_short_o15,ta_perf_dup,ta_sma20_pa,ta_sma50_pa&amp;o=-volume'">Volume</th>
+</tr><tr class="styled-row is-bordered is-rounded group is-hoverable is-striped has-color-text" valign="top">
+<td align="right" height="10"><a "="" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1">1</a></td><td align="left" data-boxover-company="Stablecoin Development Corp" data-boxover-country="USA" data-boxover-industry="Asset Management" data-boxover-ticker="SDEV" data-boxover-value="52.64M" height="10"><span class="flex items-center gap-1 pl-0.5"><a class="company-ticker" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1" style="--hover-color: #070D1C; --logo-url: url('https://logo.finviz.com/SDEV.svg')"><img alt="SDEV logo" crossorigin="anonymous" onload="this.classList.add('is-loaded');this.parentElement.classList.add('is-logo-loaded')" src="https://logo.finviz.com/SDEV.svg"/><span>S</span></a><a class="tab-link" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1">SDEV</a></span></td><td align="left" height="10"><a "="" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1">Stablecoin Development Corp</a></td><td align="left" height="10"><a "="" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1">Financial</a></td><td align="left" height="10"><a "="" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1">Asset Management</a></td><td align="left" height="10"><a "="" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1">USA</a></td><td align="right" height="10"><a "="" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1">52.64M</a></td><td align="right" height="10"><a "="" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1">-</a></td><td align="right" data-boxover-company="Stablecoin Development Corp" data-boxover-country="USA" data-boxover-industry="Asset Management" data-boxover-ticker="SDEV" data-boxover-value="52.64M" height="10"><a "="" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1"><span class="color-text is-positive">1.04</span></a></td><td align="right" height="10"><a "="" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1"><span class="color-text is-positive">23.63%</span></a></td><td align="right" height="10"><a "="" href="stock?t=SDEV&amp;ty=c&amp;p=d&amp;b=1">3,169,626</a></td></tr></table>
+</body></html>
