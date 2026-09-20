@@ -14,11 +14,18 @@ Credentials are read from the environment only and never from configuration:
     TELEGRAM_BOT_TOKEN   from @BotFather
     TELEGRAM_CHAT_ID     the chat that may command the bot (the bot answers /id)
 
+``TELEGRAM_CHAT_ID`` may be a private chat (a positive id) or a group/supergroup
+(a negative id such as ``-1001234567890``). A bot cannot join a group from an
+invite link — no Bot API method exists for that — so a member has to add it to
+the group; ``--list-chats`` then prints the numeric id to configure. In a group,
+**every member can command the bot**, because authorization is per chat.
+
 Only the configured chat (plus ``telegram.extra_chat_ids``) may issue commands;
 every other chat gets a refusal and nothing else. ``/run`` stays disabled unless
 ``telegram.allow_run_command`` is set, because a cycle spends LLM budget.
 
 CLI:
+    python3 telegram_bot.py --list-chats          # print the chat ids that messaged the bot
     python3 telegram_bot.py --test                # send a "tracker is wired up" message
     python3 telegram_bot.py --send-stats          # push the statistics block now
     python3 telegram_bot.py --poll                # answer commands until stopped
@@ -591,6 +598,51 @@ def run_poller(
             time.sleep(5)
 
 
+def discover_chats(client: TelegramClient) -> list[dict[str, Any]]:
+    """Summarize the chats visible in pending updates, newest last.
+
+    Non-destructive: the getUpdates offset is neither read nor written, so a
+    running poller still answers the same commands. Use it to find a group's
+    numeric id after adding the bot to the group.
+    """
+    seen: dict[str, dict[str, Any]] = {}
+    for update in client.get_updates(offset=None, timeout=0):
+        message = update.get("message") or {}
+        chat = message.get("chat") or {}
+        chat_id = chat.get("id")
+        if chat_id is None:
+            continue
+        sender = message.get("from") or {}
+        seen[str(chat_id)] = {
+            "chat_id": str(chat_id),
+            "type": chat.get("type", "?"),
+            "title": chat.get("title") or chat.get("username") or chat.get("first_name") or "",
+            "from": sender.get("username") or sender.get("first_name") or "",
+            "text": (message.get("text") or "")[:60],
+        }
+    return list(seen.values())
+
+
+def format_chat_list(chats: list[dict[str, Any]], configured: str | None = None) -> str:
+    """Render ``--list-chats`` output for a terminal."""
+    if not chats:
+        return (
+            "No pending updates.\n"
+            "Send the bot a message (in a group: add the bot first, then post "
+            "/id@yourbot), and run this again. If the command bot service is "
+            "already running it has consumed the updates — read its reply in "
+            "Telegram instead, or stop it: systemctl stop lowcap-telegram.service"
+        )
+    lines = [f"{'CHAT ID':>16}  {'TYPE':<10}  TITLE / FROM"]
+    for chat in chats:
+        marker = "  <- configured" if configured and chat["chat_id"] == str(configured) else ""
+        title = chat["title"] or chat["from"]
+        lines.append(f"{chat['chat_id']:>16}  {chat['type']:<10}  {title}{marker}")
+    lines.append("")
+    lines.append("Put the id you want into TELEGRAM_CHAT_ID in .env (group ids are negative).")
+    return "\n".join(lines)
+
+
 # ------------------------------------------------------------- notify helper
 
 
@@ -650,6 +702,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--config")
     parser.add_argument("--db")
     parser.add_argument("--test", action="store_true", help="Send a connectivity test message")
+    parser.add_argument(
+        "--list-chats",
+        action="store_true",
+        help="Print the chat ids that messaged the bot (find a group's numeric id)",
+    )
     parser.add_argument("--send-stats", action="store_true", help="Push the statistics block")
     parser.add_argument("--poll", action="store_true", help="Answer commands until stopped")
     parser.add_argument("--once", action="store_true", help="Drain pending commands and exit")
@@ -668,6 +725,10 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 2
+
+    if args.list_chats:
+        print(format_chat_list(discover_chats(client), os.environ.get("TELEGRAM_CHAT_ID")))
+        return 0
 
     if args.test:
         client.send_message("✅ <b>Lowcap tracker</b> is wired up.\n" + format_help(config))

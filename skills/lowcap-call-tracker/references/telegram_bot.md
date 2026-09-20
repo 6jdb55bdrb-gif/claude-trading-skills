@@ -25,6 +25,47 @@ set)`.
 - `/run` executes a full cycle, so it is disabled unless
   `telegram.allow_run_command: true`.
 
+## Private chat or group
+
+`TELEGRAM_CHAT_ID` accepts either:
+
+| Target | Id shape | Notes |
+|---|---|---|
+| private chat with the bot | positive, e.g. `4242` | only you see the pushes |
+| group / supergroup | **negative**, e.g. `-1001234567890` | everyone in the group sees them |
+
+**A bot cannot join a group from an invite link.** The Bot API has no
+join-by-invite method, so a human member adds the bot to the group
+(group title → *Add members* → search the bot's `@username`). An invite link is
+for people, not for bots.
+
+Once the bot is in the group, find the numeric id:
+
+```bash
+python3 scripts/telegram_bot.py --list-chats
+```
+
+It prints every chat with a pending update, so posting `/id@yourbot` in the group
+and running the command is enough. Reading the id is non-destructive: the
+getUpdates offset is untouched, so a running poller keeps working.
+
+Two group-specific Telegram behaviours:
+
+- **Privacy mode** (on by default) means the bot only receives commands addressed
+  to it: `/stats@yourbot`. Either address commands that way, or turn privacy off
+  in @BotFather (`/setprivacy` → *Disable*), or make the bot a group admin.
+  `parse_command` strips the `@mention`, so both forms work.
+- **Converting a basic group to a supergroup changes its id.** Re-run
+  `--list-chats` and update `.env` if commands suddenly stop being authorized.
+
+> **Authorization is per chat, not per person.** With a group id configured,
+> every current and future member of that group can run `/stats`, `/open` and
+> `/calls` — and `/run` if it is enabled. A group invite link can be forwarded
+> by anyone who has it, so treat the link as the real access control: keep the
+> group private, revoke and regenerate the link if it leaks (group → *Invite
+> Links* → *Revoke*), and leave `telegram.allow_run_command` off for a shared
+> group.
+
 ## Push behaviour
 
 | Key | Default | Effect |

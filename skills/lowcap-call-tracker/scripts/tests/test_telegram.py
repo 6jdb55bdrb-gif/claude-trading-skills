@@ -678,3 +678,121 @@ def test_learning_loop_summary_when_there_is_nothing_to_propose(tmp_db, config):
 
     message = telegram_summary(analyse(tmp_db, config))
     assert "Weekly learning loop" in message
+
+
+# --------------------------------------------------------------- group chats
+
+
+def test_group_chat_ids_are_negative_and_work(monkeypatch, config):
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "-1001234567890")
+    assert tb.credentials(config) == ("t", "-1001234567890")
+    assert tb.authorized_chats(config, "-1001234567890") == {"-1001234567890"}
+
+
+def test_group_member_command_with_mention_is_authorized(config, tmp_db):
+    """In privacy mode Telegram only delivers /cmd@bot, which must still work."""
+    command, args = tb.parse_command("/calls@lowcap_tracker_bot 5")
+    reply = tb.handle_command(
+        command,
+        args,
+        config=config,
+        db_path=tmp_db.path,
+        chat_id="-1001234567890",
+        allowed=tb.authorized_chats(config, "-1001234567890"),
+    )
+    assert "Recent calls" in reply
+
+
+def test_a_different_group_is_not_authorized(config, tmp_db):
+    reply = tb.handle_command(
+        "/stats",
+        [],
+        config=config,
+        db_path=tmp_db.path,
+        chat_id="-1009999999999",
+        allowed=tb.authorized_chats(config, "-1001234567890"),
+    )
+    assert reply == "Not authorized."
+
+
+def test_push_targets_the_configured_group(wired, monkeypatch):
+    config, sent, transport = wired
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "-1001234567890")
+    tb.notify(config, "group push", transport=transport)
+    assert sent[0]["chat_id"] == "-1001234567890"
+
+
+def _chat_update(update_id, chat_id, chat_type, title, text):
+    return {
+        "update_id": update_id,
+        "message": {
+            "chat": {"id": chat_id, "type": chat_type, "title": title},
+            "from": {"username": "operator"},
+            "text": text,
+        },
+    }
+
+
+def test_discover_chats_summarizes_pending_updates(wired):
+    config, _sent, _transport = wired
+    updates = [
+        _chat_update(1, -1001234567890, "supergroup", "Lowcap calls", "/id@bot"),
+        _chat_update(2, -1001234567890, "supergroup", "Lowcap calls", "again"),
+        {
+            "update_id": 3,
+            "message": {
+                "chat": {"id": 4242, "type": "private", "first_name": "You"},
+                "from": {"first_name": "You"},
+                "text": "/start",
+            },
+        },
+    ]
+    client = _client(config, lambda method, payload: updates)
+    chats = tb.discover_chats(client)
+    assert [chat["chat_id"] for chat in chats] == ["-1001234567890", "4242"]  # de-duplicated
+    assert chats[0]["type"] == "supergroup"
+    assert chats[0]["title"] == "Lowcap calls"
+    assert chats[1]["title"] == "You"
+
+
+def test_discover_chats_does_not_consume_updates(wired, tmp_path):
+    """Reading ids must not advance the offset a running poller depends on."""
+    config, _sent, _transport = wired
+    config["telegram"]["offset_file"] = str(tmp_path / "offset.json")
+    tb.save_offset(config, 500)
+    seen_payloads = []
+
+    def transport(method, payload):
+        seen_payloads.append(payload)
+        return [_chat_update(1, -100123, "group", "G", "/id")]
+
+    tb.discover_chats(_client(config, transport))
+    assert "offset" not in seen_payloads[0]
+    assert tb.load_offset(config) == 500  # untouched
+
+
+def test_chat_list_marks_the_configured_chat():
+    rendered = tb.format_chat_list(
+        [
+            {
+                "chat_id": "-1001234567890",
+                "type": "supergroup",
+                "title": "Lowcap calls",
+                "from": "",
+                "text": "",
+            },
+            {"chat_id": "4242", "type": "private", "title": "You", "from": "You", "text": ""},
+        ],
+        configured="-1001234567890",
+    )
+    assert "<- configured" in rendered
+    assert rendered.count("configured") == 1
+    assert "group ids are negative" in rendered
+
+
+def test_empty_chat_list_explains_what_to_do():
+    rendered = tb.format_chat_list([])
+    assert "No pending updates" in rendered
+    assert "/id@yourbot" in rendered
+    assert "lowcap-telegram.service" in rendered

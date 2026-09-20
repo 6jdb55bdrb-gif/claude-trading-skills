@@ -258,6 +258,33 @@ systemctl status lowcap-telegram.service
 
 Re-running `setup_vps.sh` does this for you once the token is in `.env`.
 
+### Sending to a group instead of a private chat
+
+Want the calls in a group (yourself plus others, or just a place to keep them)?
+
+1. **Add the bot to the group** — open the group, tap its title, *Add members*,
+   search your bot's `@username`, add it. A bot cannot join from an invite link;
+   somebody has to add it.
+2. **Post `/id@yourbot` in the group.**
+3. **Read the id on the server:**
+
+   ```bash
+   sudo -u lowcap /opt/lowcap-tracker/venv/bin/python \
+     /opt/lowcap-tracker/repo/skills/lowcap-call-tracker/scripts/telegram_bot.py --list-chats
+   ```
+
+   Group ids are negative, e.g. `-1001234567890`. Put that into
+   `TELEGRAM_CHAT_ID=` in `/opt/lowcap-tracker/.env`.
+4. **Let it hear plain commands** (optional): in @BotFather send `/setprivacy`,
+   pick your bot, choose *Disable*. Without this, address the bot explicitly:
+   `/stats@yourbot`. Making the bot a group admin works too.
+5. Restart the bot: `sudo systemctl restart lowcap-telegram.service`.
+
+⚠️ **Everyone in that group can command the bot** — authorization is per chat,
+not per person — and anyone holding the group's invite link can join. Keep the
+group private, revoke the link if it leaks (group → *Invite Links* → *Revoke*),
+and leave `/run` disabled in a shared group.
+
 ### What you can send it
 
 | Command | Reply |
@@ -303,6 +330,9 @@ Then `sudo systemctl restart lowcap-telegram.service`.
 | No Telegram messages arrive | Check `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env`, then run `telegram_bot.py --test`. The run log prints `telegram: not sent (reason)` when it is skipped. |
 | Telegram says "Not authorized." | `TELEGRAM_CHAT_ID` does not match the chat you are messaging from. Send `/id` and paste the number it replies with into `.env`. |
 | Bot answers pushes but not commands | The command bot is a separate service: `sudo systemctl enable --now lowcap-telegram.service`. |
+| In a group the bot ignores `/stats` | Telegram privacy mode. Send `/stats@yourbot`, or disable privacy in @BotFather (`/setprivacy`), or make the bot an admin. |
+| Group commands stopped working | Converting a group to a supergroup changes its id. Re-run `--list-chats` and update `TELEGRAM_CHAT_ID`. |
+| `--list-chats` prints nothing | The running bot already consumed the updates. Post a new message, or `sudo systemctl stop lowcap-telegram.service` first. |
 | Want to stop everything | `systemctl disable --now lowcap-tracker.timer lowcap-learning.timer lowcap-telegram.service` |
 | Want to start over | `rm -rf /opt/lowcap-tracker` and re-run Step 3. |
 

@@ -132,6 +132,7 @@ automatically** — apply an item only when the user approves it.
 ### Step 7: Telegram (optional)
 
 ```bash
+python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --list-chats  # find a chat/group id
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --test       # check the wiring
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --poll       # answer commands
 ```
@@ -208,7 +209,7 @@ override document with `--config` and it is deep-merged over the default.
 | `ANTHROPIC_API_KEY` | the LLM role review (without it: deterministic heuristic backend) |
 | `FINVIZ_API_KEY` | FinViz Elite CSV export (without it: public HTML, page-limited) |
 | `TELEGRAM_BOT_TOKEN` | Telegram notifications and the command bot (without it: no Telegram) |
-| `TELEGRAM_CHAT_ID` | the one chat allowed to receive pushes and issue commands |
+| `TELEGRAM_CHAT_ID` | the one chat allowed to receive pushes and issue commands (a group id is negative; every group member is then authorized) |
 
 Prices come from yfinance — free, no key.
 
