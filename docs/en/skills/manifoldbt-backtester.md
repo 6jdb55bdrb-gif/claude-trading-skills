@@ -3,7 +3,7 @@ layout: default
 title: "Manifoldbt Backtester"
 grand_parent: English
 parent: Skill Guides
-nav_order: 41
+nav_order: 42
 lang_peer: /ja/skills/manifoldbt-backtester/
 permalink: /en/skills/manifoldbt-backtester/
 generated: true

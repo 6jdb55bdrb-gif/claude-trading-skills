@@ -983,6 +983,53 @@ skills:
   workflows:
   - core-portfolio-weekly
   - kanchi-dividend-weekly
+- id: lowcap-call-tracker
+  display_name: Lowcap Call Tracker
+  category: advanced-satellite
+  status: beta
+  operational_role:
+    type: standalone
+    rationale: End-to-end pipeline (screen, five-role review, call tracking, statistics)
+      that reuses sibling skills as components rather than running inside another workflow.
+  summary: Screen US low-cap stocks and ETFs for explosive moves, run every hit through
+    a five-role review (Researcher, Technician, Skeptic, Risk Manager, Judge), and track
+    the resulting calls and shadow calls in SQLite with PnL, hit rate, and per-role accuracy.
+  timeframe: daily
+  difficulty: advanced
+  integrations:
+  - id: finviz
+    type: screener
+    requirement: optional
+    note: FINVIZ Elite CSV export when FINVIZ_API_KEY is set; otherwise the public
+      screener HTML is parsed (page-limited)
+  - id: anthropic_api
+    type: web
+    requirement: optional
+    note: Anthropic Messages API for the five roles (cheap model for the four analysts,
+      stronger model for the Judge) with a monthly spend cap; without a key the
+      deterministic heuristic backend runs offline
+  - id: yfinance
+    type: market_data
+    requirement: required
+    note: Free price updates for open and shadow calls; no API key
+  - id: local_sqlite
+    type: local_file
+    requirement: required
+    note: SQLite call database, role verdicts, price history, and token-spend ledger
+  - id: local_calculation
+    type: calculation
+    requirement: not_required
+    note: Heuristic role scoring, PnL, closing rule, statistics, and learning-loop proposals
+  inputs:
+  - finviz_screener_rows
+  - daily_ohlcv
+  - role_prompts
+  outputs:
+  - lowcap_calls
+  - role_verdicts
+  - call_statistics
+  - improvement_proposals
+  workflows: []
 - id: macro-regime-detector
   display_name: Macro Regime Detector
   category: market-regime

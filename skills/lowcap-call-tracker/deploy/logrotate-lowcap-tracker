@@ -1,0 +1,10 @@
+/opt/lowcap-tracker/logs/*.log {
+    weekly
+    rotate 8
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+    su lowcap lowcap
+}

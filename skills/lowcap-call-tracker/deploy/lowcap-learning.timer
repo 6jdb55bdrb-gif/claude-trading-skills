@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the lowcap learning loop weekly
+
+[Timer]
+OnCalendar=Sun *-*-* 22:30:00
+Persistent=true
+Unit=lowcap-learning.service
+
+[Install]
+WantedBy=timers.target

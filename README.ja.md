@@ -242,6 +242,7 @@ FMP / FINVIZ / Alpaca の有料サブスクをまだ持っていない場合は�
 |---|---|---|---|---|
 | **Earnings Trade Analyzer** (`earnings-trade-analyzer`) | Analyze recent post-earnings stocks using a 5-factor scoring system (Gap Size, Pre-Earnings Trend, Volume Trend, MA200 Position, MA50 Position). | `fmp` **required** | workflow_step | production |
 | **Institutional Flow Tracker** (`institutional-flow-tracker`) | Use this skill to track institutional investor ownership changes and portfolio flows using 13F filings data. | `fmp` **required** | standalone | production |
+| **Lowcap Call Tracker** (`lowcap-call-tracker`) | Screen US low-cap stocks and ETFs for explosive moves, run every hit through a five-role review (Researcher, Technician, Skeptic, Risk Manager, Judge), and track the resulting calls and shadow calls in SQLite with PnL, hit rate, and per-role accuracy. | `finviz` optional, `anthropic_api` optional, `yfinance` **required**, `local_sqlite` **required**, `local_calculation` — | standalone | beta |
 | **Options Strategy Advisor** (`options-strategy-advisor`) | Options trading strategy analysis and simulation tool. | `fmp` optional | standalone | production |
 | **Pair Trade Screener** (`pair-trade-screener`) | Statistical arbitrage tool for identifying and analyzing pair trading opportunities. | `fmp` **required** | standalone | production |
 | **Parabolic Short Trade Planner** (`parabolic-short-trade-planner`) | Screen US equities for parabolic exhaustion patterns and generate conditional pre-market short plans, then evaluate intraday trigger fires from live 5-min bars. | `fmp` **required**, `alpaca` optional | standalone | production |
@@ -357,6 +358,7 @@ Core + Satellite の主導線は上記の「おすすめの始め方」にまと
 - **マーケットブレッドアナライザー**、**アップトレンドアナライザー**、**セクターアナリスト**: APIキー不要（GitHubの無料CSVデータを使用。セクターアナリストはオプションでチャート画像も利用可）
 - **テーマ検出器**: コア機能にAPIキー不要（FINVIZパブリック + yfinance）。FMP APIは銘柄選定強化用（オプション）、FINVIZ Eliteは銘柄リスト取得用（オプション）
 - **FinVizスクリーナー**: APIキー不要（パブリックFinVizスクリーナー）。FINVIZ Eliteは`$FINVIZ_API_KEY`環境変数から自動検出（オプション）
+- **Lowcap Call Tracker**: APIキー不要で動作（パブリックFinVizスクリーナー + 無料のyfinance価格取得）。FINVIZ Eliteはスクリーニング高速化用（オプション）、`ANTHROPIC_API_KEY`は5役割のLLMレビュー用（オプション、未設定時は決定論的なオフライン採点にフォールバック、月間コスト上限あり）
 - **かんち式配当3スキル**（`kanchi-dividend-sop` / `kanchi-dividend-review-monitor` / `kanchi-dividend-us-tax-accounting`）: APIキー不要（上流データは他スキル出力または手動入力を利用）
 - **エッジ候補エージェント** (`edge-candidate-agent`): APIキー不要（ローカルYAML生成、ローカルパイプラインリポジトリに対して検証）
 - **トレード仮説アイデエータ** (`trade-hypothesis-ideator`): APIキー不要（ローカルJSON仮説パイプライン、任意で戦略エクスポート）

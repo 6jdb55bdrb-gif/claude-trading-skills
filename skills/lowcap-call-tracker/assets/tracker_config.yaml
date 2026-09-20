@@ -1,0 +1,198 @@
+# Lowcap Call Tracker — default configuration.
+#
+# Copy this file (or point --config at it) and edit locally. Every threshold the
+# workflow depends on lives here; scripts never hardcode a tunable value.
+schema_version: 1
+
+tracker:
+  # SQLite database holding calls, shadow calls, role verdicts and price history.
+  db_path: state/lowcap_calls.db
+  # Per-run artifacts follow the repository convention (reports/ is gitignored).
+  reports_dir: reports/lowcap-tracker
+  # These two are committed and pushed after each run so they can be read from a
+  # phone, so they live in a tracked directory, not under reports/.
+  stats_file: tracker-output/stats.md
+  improvements_file: tracker-output/improvements.md
+  # PnL (direction-corrected) at or below this closes the call as WRONG.
+  # This is the only auto-close rule.
+  close_threshold_pct: -80.0
+  # Equal-weight assumption used for "total portfolio PnL" across TAKE calls.
+  equal_weight_pct: 100.0
+  # Inputs handed to the position-sizer skill for the RISK MANAGER role.
+  account_size: 10000.0
+  risk_pct: 1.0
+  max_position_pct: 10.0
+  # Safety valve: never open more than this many new calls in one run.
+  max_new_calls_per_run: 10
+
+screener:
+  # auto -> elite when FINVIZ_API_KEY is set, else public HTML.
+  mode: auto
+  # Public HTML pages to walk per view (20 rows per page).
+  max_pages: 2
+  # OTC exclusion strategy:
+  #   explicit     -> exch_amex|nasd|nyse multi-select (Elite multi-select syntax)
+  #   universe     -> rely on FinViz's listed-exchange universe (public-safe)
+  #   per_exchange -> one pass per exchange, merged (public-safe, 3x requests)
+  #   auto         -> explicit in Elite mode, universe in public mode
+  exchange_mode: auto
+  exchanges: [amex, nasd, nyse]
+  # FinViz view codes merged per variant (ownership carries Float / Short Float).
+  views:
+    overview: 111
+    ownership: 131      # Float, Float Short (stocks only)
+    performance: 141    # Rel Volume, Avg Volume, period performance
+    technical: 171      # SMA20/50/200 distance, 52W High/Low, RSI, ATR
+  # Seconds between HTTP requests (public HTML mode is rate-limit sensitive).
+  request_delay_seconds: 1.5
+  # Rows whose exchange is reported and is not in this set are dropped.
+  allowed_exchanges: [AMEX, NASD, NASDAQ, NYSE, NYSE ARCA, ARCA, BATS, CBOE]
+
+  variants:
+    squeeze:
+      asset_type: stock
+      label: Squeeze (high short float, low float)
+      views: [overview, ownership, performance, technical]
+      filters:
+        - cap_smallunder      # market cap under $2B (small + micro + nano)
+        - sh_price_1to20      # price $1-$20 (custom range)
+        - sh_avgvol_o500      # average volume over 500K
+        - sh_relvol_o2        # relative volume over 2
+        - ta_perf_dup         # up today
+        - ta_sma20_pa         # price above SMA20
+        - ta_sma50_pa         # price above SMA50
+        - ind_stocksonly      # exclude funds/ETFs
+        - geo_usa             # US companies
+        - sh_float_u20        # float under 20M shares
+        - sh_short_o15        # short float over 15%
+      order: "-relativevolume"
+      view: technical
+
+    momentum_breakout:
+      asset_type: stock
+      label: Momentum breakout (new 52w high, RelVol > 3)
+      views: [overview, ownership, performance, technical]
+      filters:
+        - cap_smallunder
+        - sh_price_1to20
+        - sh_avgvol_o500
+        - sh_relvol_o3        # relative volume over 3 (variant-specific)
+        - ta_perf_dup
+        - ta_sma20_pa
+        - ta_sma50_pa
+        - ta_highlow52w_nh    # new 52-week high
+        - ind_stocksonly
+        - geo_usa
+        - sh_float_u20
+      # Short float is NOT required here: a fresh 52w-high breakout is not
+      # necessarily heavily shorted, and requiring >15% empties the variant.
+      # Set short_float_filter to sh_short_o15 to enforce the global floor.
+      optional_filters:
+        short_float_filter: sh_short_o15
+      # Add "short_float_filter" here to enforce the global >15% short-float floor.
+      enable_optional: []
+      order: "-change"
+      view: technical
+
+    etf_momentum:
+      asset_type: etf
+      label: ETF momentum (new 52w high, RelVol > 2)
+      # No ownership view: FinViz publishes no float / short-float data for ETFs,
+      # so those filters (and market cap) would drop every ETF row.
+      views: [overview, performance, technical]
+      filters:
+        - ind_exchangetradedfund
+        - sh_price_1to20
+        - sh_avgvol_o500
+        - sh_relvol_o2
+        - ta_perf_dup
+        - ta_sma20_pa
+        - ta_sma50_pa
+        - ta_highlow52w_nh
+      order: "-change"
+      view: technical
+
+roles:
+  # auto -> llm when ANTHROPIC_API_KEY is set and the monthly cap has room,
+  # else the deterministic heuristic backend (offline-safe).
+  backend: auto
+  models:
+    worker: claude-haiku-4-5   # RESEARCHER / TECHNICIAN / SKEPTIC / RISK MANAGER
+    judge: claude-sonnet-5     # JUDGE
+  max_tokens:
+    worker: 1200
+    judge: 1200
+  judge:
+    # A TAKE needs at least this confidence; below it the call becomes a shadow call.
+    min_confidence_to_take: 55
+    # A TAKE is impossible unless the Judge explicitly answers the Skeptic.
+    require_skeptic_answer: true
+  # Heuristic-backend and learning-loop weighting. skeptic is subtracted:
+  # its score is OBJECTION SEVERITY (0 = no objection, 10 = disqualifying).
+  weights:
+    researcher: 1.0
+    technician: 1.0
+    risk_manager: 0.6
+    skeptic: 1.2
+  # Enrichment of role inputs by reusing sibling skills.
+  reuse:
+    episodic_pivot_analyzer: true   # RESEARCHER catalyst scoring
+    weekly_price_action: true       # TECHNICIAN weekly structure
+    position_sizer: true            # RISK MANAGER sizing
+
+llm:
+  # Hard monthly ceiling. Once month-to-date spend reaches it, role review
+  # falls back to the heuristic backend instead of calling the API.
+  monthly_spend_cap_usd: 10.0
+  # USD per 1M tokens. Update when Anthropic pricing changes.
+  prices_per_mtok:
+    claude-haiku-4-5:
+      input: 1.0
+      output: 5.0
+      cache_read: 0.1
+    claude-sonnet-5:
+      input: 2.0
+      output: 10.0
+      cache_read: 0.2
+    claude-opus-5:
+      input: 5.0
+      output: 25.0
+      cache_read: 0.5
+
+market:
+  timezone: America/New_York
+  # Weekend / holiday sessions skip screening; the price update always runs.
+  skip_screening_when_closed: true
+  regular_open: "09:30"
+  regular_close: "16:00"
+  # Screening also runs outside regular hours on a trading day (pre/post market),
+  # because RelVol and change are still published. Set false to require RTH.
+  allow_extended_hours: true
+  # US market holidays (static; extend as needed).
+  holidays:
+    - 2026-01-01
+    - 2026-01-19
+    - 2026-02-16
+    - 2026-04-03
+    - 2026-05-25
+    - 2026-06-19
+    - 2026-07-03
+    - 2026-09-07
+    - 2026-11-26
+    - 2026-12-25
+    - 2027-01-01
+    - 2027-01-18
+    - 2027-02-15
+    - 2027-03-26
+    - 2027-05-31
+    - 2027-06-18
+    - 2027-07-05
+    - 2027-09-06
+    - 2027-11-25
+    - 2027-12-24
+
+learning:
+  # Minimum closed/resolved calls before the weekly loop draws conclusions.
+  min_samples: 10
+  lookback_days: 90
+  confidence_buckets: [[0, 40], [40, 70], [70, 100]]

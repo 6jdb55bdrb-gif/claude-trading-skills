@@ -3,7 +3,7 @@ layout: default
 title: "Residual Edge Analyzer"
 grand_parent: English
 parent: Skill Guides
-nav_order: 52
+nav_order: 53
 lang_peer: /ja/skills/residual-edge-analyzer/
 permalink: /en/skills/residual-edge-analyzer/
 generated: true

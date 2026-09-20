@@ -240,6 +240,7 @@ The detailed catalog below is **auto-generated** from `skills-index.yaml` by `sc
 |---|---|---|---|---|
 | **Earnings Trade Analyzer** (`earnings-trade-analyzer`) | Analyze recent post-earnings stocks using a 5-factor scoring system (Gap Size, Pre-Earnings Trend, Volume Trend, MA200 Position, MA50 Position). | `fmp` **required** | workflow_step | production |
 | **Institutional Flow Tracker** (`institutional-flow-tracker`) | Use this skill to track institutional investor ownership changes and portfolio flows using 13F filings data. | `fmp` **required** | standalone | production |
+| **Lowcap Call Tracker** (`lowcap-call-tracker`) | Screen US low-cap stocks and ETFs for explosive moves, run every hit through a five-role review (Researcher, Technician, Skeptic, Risk Manager, Judge), and track the resulting calls and shadow calls in SQLite with PnL, hit rate, and per-role accuracy. | `finviz` optional, `anthropic_api` optional, `yfinance` **required**, `local_sqlite` **required**, `local_calculation` — | standalone | beta |
 | **Options Strategy Advisor** (`options-strategy-advisor`) | Options trading strategy analysis and simulation tool. | `fmp` optional | standalone | production |
 | **Pair Trade Screener** (`pair-trade-screener`) | Statistical arbitrage tool for identifying and analyzing pair trading opportunities. | `fmp` **required** | standalone | production |
 | **Parabolic Short Trade Planner** (`parabolic-short-trade-planner`) | Screen US equities for parabolic exhaustion patterns and generate conditional pre-market short plans, then evaluate intraday trigger fires from live 5-min bars. | `fmp` **required**, `alpaca` optional | standalone | production |
@@ -412,6 +413,7 @@ Several skills require API keys for data access:
 | **Exposure Coach** | 🟡 Optional | ❌ Not used | ❌ Not used | FMP only when institutional-flow-tracker data is included |
 | **Signal Postmortem** | 🟡 Optional | ❌ Not used | ❌ Not used | FMP for fetching realized returns; manual price entry also supported |
 | Dual-Axis Skill Reviewer | ❌ Not used | ❌ Not used | ❌ Not used | Deterministic scoring + optional LLM review |
+| **Lowcap Call Tracker** | ❌ Not used | 🟡 Optional | ❌ Not used | FINVIZ Elite speeds up screening (public HTML otherwise); `ANTHROPIC_API_KEY` optional for the five-role LLM review (a deterministic offline backend runs without it, and a monthly spend cap is enforced); prices via free yfinance |
 
 ### API Setup
 

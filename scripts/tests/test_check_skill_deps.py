@@ -281,3 +281,43 @@ def test_smoke_verifies_packaged_manifest(tmp_path: Path) -> None:
 def test_smoke_rejects_unsafe_skill_id() -> None:
     assert deps.run_smoke("../evil", REPO_ROOT) == 1
     assert deps.run_smoke("", REPO_ROOT) == 1
+
+
+def test_sibling_skill_module_is_not_a_third_party_import(tmp_path: Path) -> None:
+    """Cross-skill reuse (sys.path + import) is repository code, not a distribution."""
+    root = _make_tmp_root(
+        tmp_path,
+        "demo",
+        {
+            "requirements.txt": "# stdlib-only\n",
+            "scripts/run.py": (
+                "from open_finviz_screener import build_url\n"
+                "from weekly_price_action import run_weekly_price_action\n"
+                "print(build_url, run_weekly_price_action)\n"
+            ),
+        },
+    )
+    report = deps.check_skill("demo", root, {})
+    assert report.ok, report.errors
+    assert report.required == []
+
+
+def test_unlisted_cross_skill_module_still_fails_closed(tmp_path: Path) -> None:
+    root = _make_tmp_root(
+        tmp_path,
+        "demo",
+        {
+            "requirements.txt": "# stdlib-only\n",
+            "scripts/run.py": "from some_other_skill_module import thing\nprint(thing)\n",
+        },
+    )
+    report = deps.check_skill("demo", root, {})
+    assert not report.ok
+    assert any("unmapped" in error for error in report.errors)
+
+
+def test_lowcap_call_tracker_declares_its_optionals() -> None:
+    report = deps.check_skill("lowcap-call-tracker", REPO_ROOT)
+    assert report.ok, report.errors
+    assert sorted(report.optional) == ["anthropic", "beautifulsoup4"]
+    assert sorted(report.required) == ["pyyaml", "requests", "yfinance"]

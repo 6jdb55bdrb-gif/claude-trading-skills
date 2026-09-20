@@ -1267,3 +1267,55 @@ class TestSkillFlagNavOrderAssignment:
             line.startswith("OK:") and "gamma-target.md matches" in line for line in check_lines
         )
         assert not any(line.startswith("DRIFT:") and "gamma-target" in line for line in check_lines)
+
+
+def test_slugify_maps_percent_to_pct() -> None:
+    """ "Stockbee 20% Study" must slug onto its real directory name."""
+    assert _slugify("Stockbee 20% Study") == "stockbee-20pct-study"
+    assert _slugify("US Market Bubble Detector") == "us-market-bubble-detector"
+
+
+def test_percent_display_name_is_recognized_in_a_catalog_table() -> None:
+    """A matrix row for a %-named skill counts as present, so no duplicate is added."""
+    table = "| Stockbee 20% Study | Required | -- | -- |\n"
+    assert "stockbee-20pct-study" in _extract_catalog_slugs(table)
+
+
+def test_index_display_names_are_used_for_appended_matrix_rows(tmp_path: Path) -> None:
+    from generate_skill_docs import index_display_names, update_catalog_api_matrix
+
+    skills_dir = tmp_path / "skills"
+    skills_dir.mkdir()
+    (tmp_path / "skills-index.yaml").write_text(
+        "schema_version: 1\nskills:\n- id: demo-20pct-study\n  display_name: Demo 20% Study\n",
+        encoding="utf-8",
+    )
+    docs_dir = tmp_path / "docs"
+    (docs_dir / "en").mkdir(parents=True)
+    (docs_dir / "en" / "skill-catalog.md").write_text(
+        "## API Requirements Matrix\n\n"
+        "| Skill | FMP API | FINVIZ Elite | Alpaca |\n"
+        "|---|---|---|---|\n"
+        "| Something Else | -- | -- | -- |\n",
+        encoding="utf-8",
+    )
+
+    names = index_display_names(skills_dir)
+    assert names == {"demo-20pct-study": "Demo 20% Study"}
+
+    update_catalog_api_matrix(
+        docs_dir,
+        [("demo-20pct-study", {}, {"fmp": "Required"})],
+        display_names=names,
+    )
+    rendered = (docs_dir / "en" / "skill-catalog.md").read_text(encoding="utf-8")
+    assert "| Demo 20% Study | ✅ Required" in rendered or "| Demo 20% Study |" in rendered
+    assert "20pct Study |" not in rendered
+
+
+def test_index_display_names_degrades_without_an_index(tmp_path: Path) -> None:
+    from generate_skill_docs import index_display_names
+
+    skills_dir = tmp_path / "skills"
+    skills_dir.mkdir()
+    assert index_display_names(skills_dir) == {}

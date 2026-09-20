@@ -1,0 +1,14 @@
+[Unit]
+Description=Run the lowcap call tracker every 4 hours
+
+[Timer]
+# Every 4 hours from midnight UTC, and once shortly after boot so a reboot
+# never skips a cycle.
+OnCalendar=*-*-* 00/4:05:00
+OnBootSec=3min
+Persistent=true
+RandomizedDelaySec=120
+Unit=lowcap-tracker.service
+
+[Install]
+WantedBy=timers.target

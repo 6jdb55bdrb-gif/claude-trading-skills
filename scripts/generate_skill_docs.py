@@ -209,8 +209,14 @@ def parse_api_requirements(claude_md: Path) -> dict[str, dict]:
 
 
 def _slugify(name: str) -> str:
-    """Convert a display name to a directory slug."""
-    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    """Convert a display name to a directory slug.
+
+    ``%`` becomes ``pct`` so a display name such as "Stockbee 20% Study" maps
+    onto the ``stockbee-20pct-study`` directory; dropping the character instead
+    produced a slug that matched no skill, which made catalog de-duplication
+    miss the existing row and append a duplicate.
+    """
+    return re.sub(r"[^a-z0-9]+", "-", name.lower().replace("%", "pct")).strip("-")
 
 
 # ---------------------------------------------------------------------------
@@ -834,6 +840,30 @@ generated: true
 # ---------------------------------------------------------------------------
 
 
+def index_display_names(skills_dir: Path) -> dict[str, str]:
+    """Map skill id -> display_name from skills-index.yaml.
+
+    The catalog checker validates matrix rows against those display names, so a
+    row this generator appends must use the same spelling ("Stockbee 20% Study",
+    not the slug-derived "Stockbee 20pct Study"). Missing or unreadable index:
+    callers fall back to ``_title_case``.
+    """
+    index_path = skills_dir.parent / "skills-index.yaml"
+    if not index_path.is_file():
+        return {}
+    try:
+        import yaml
+
+        data = yaml.safe_load(index_path.read_text(encoding="utf-8")) or {}
+    except Exception:  # pragma: no cover - degraded path, slug titles still work
+        return {}
+    names: dict[str, str] = {}
+    for entry in data.get("skills") or []:
+        if isinstance(entry, dict) and entry.get("id") and entry.get("display_name"):
+            names[str(entry["id"])] = str(entry["display_name"])
+    return names
+
+
 def _title_case(slug: str) -> str:
     """Convert slug to title case, preserving known acronyms."""
     acronyms = {
@@ -1119,6 +1149,7 @@ def _api_status_ja(api_info: dict | None) -> tuple[str, str, str]:
 def update_catalog_api_matrix(
     docs_dir: Path,
     all_skills: list[tuple[str, dict, dict | None]],
+    display_names: dict[str, str] | None = None,
 ) -> None:
     """Add missing skills to the API Requirements Matrix in catalog pages."""
     for lang in ("en", "ja"):
@@ -1174,7 +1205,7 @@ def update_catalog_api_matrix(
             if slug in existing_slugs:
                 continue
 
-            title = _title_case(skill_name)
+            title = (display_names or {}).get(skill_name) or _title_case(skill_name)
 
             if lang == "en":
                 fmp, finviz, alpaca = _api_status_en(api_info)
@@ -1515,7 +1546,11 @@ def main(argv: list[str] | None = None) -> int:
         data = parse_skill_md(d / "SKILL.md")
         all_skills_for_catalog.append((d.name, data, api_reqs.get(d.name)))
 
-    update_catalog_api_matrix(args.docs_dir, all_skills_for_catalog)
+    update_catalog_api_matrix(
+        args.docs_dir,
+        all_skills_for_catalog,
+        display_names=index_display_names(args.skills_dir),
+    )
 
     if args.catalog_category:
         print(

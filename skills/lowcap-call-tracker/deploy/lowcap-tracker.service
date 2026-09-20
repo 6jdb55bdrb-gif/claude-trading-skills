@@ -1,0 +1,22 @@
+[Unit]
+Description=Lowcap call tracker — one screening + role-review + price-update cycle
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=lowcap
+Group=lowcap
+WorkingDirectory=/opt/lowcap-tracker/repo
+Environment=APP_DIR=/opt/lowcap-tracker
+ExecStart=/opt/lowcap-tracker/repo/skills/lowcap-call-tracker/deploy/run_tracker.sh
+TimeoutStartSec=1800
+# The service only needs its own app directory and the checkout.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/opt/lowcap-tracker
+
+[Install]
+WantedBy=multi-user.target

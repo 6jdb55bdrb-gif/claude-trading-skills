@@ -115,7 +115,21 @@ IMPORT_TO_DIST = {
     "yaml": "pyyaml",
     "jsonschema": "jsonschema",
     "packaging": "packaging",
+    "anthropic": "anthropic",
 }
+
+# Modules a skill imports from ANOTHER skill's ``scripts/`` directory after
+# extending ``sys.path`` (deliberate cross-skill reuse rather than a copy).
+# They are repository code, not distributions, so they are treated like the
+# importing skill's own modules. Entries are explicit so the gate stays
+# fail-closed: an unlisted cross-skill import is still an error, and every
+# listed import must be guarded for the standalone-package case.
+SIBLING_SKILL_MODULES = frozenset(
+    {
+        "open_finviz_screener",  # finviz-screener: URL builder + view codes
+        "weekly_price_action",  # technical-analyst: weekly structure checks
+    }
+)
 
 # Extra required distributions keyed by skill for runtime uses invisible to
 # the AST (e.g. a parser backend named only by a string literal).
@@ -248,7 +262,7 @@ def scan_skill_imports(skill_dir: Path) -> tuple[set[str], set[str], dict[str, b
     (e.g. ``fmp_client.py``'s ``import yfinance``) are detected.
     """
     scripts_dir = skill_dir / "scripts"
-    first_party = _first_party_modules(scripts_dir)
+    first_party = _first_party_modules(scripts_dir) | SIBLING_SKILL_MODULES
     third_party: set[str] = set()
     dynamic: set[str] = set()
     modes: dict[str, list[bool]] = {}

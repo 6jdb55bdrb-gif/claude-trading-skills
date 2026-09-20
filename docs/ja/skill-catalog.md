@@ -10,7 +10,7 @@ permalink: /ja/skill-catalog/
 # スキル一覧
 {: .no_toc }
 
-全74個のClaude Trading Skillsをカテゴリ別に紹介します。各スキルのAPI要件バッジで、利用に必要な外部サービスをすぐに確認できます。
+全75個のClaude Trading Skillsをカテゴリ別に紹介します。各スキルのAPI要件バッジで、利用に必要な外部サービスをすぐに確認できます。
 {: .fs-6 .fw-300 }
 
 > 検索は英語スキル名（"CANSLIM", "VCP", "FinViz"等）での検索を推奨します。日本語の部分一致検索は制限があります。
@@ -77,6 +77,7 @@ permalink: /ja/skill-catalog/
 | `kanchi-dividend-review-monitor` | `workflow_step` | — |
 | `kanchi-dividend-sop` | `workflow_step` | — |
 | `kanchi-dividend-us-tax-accounting` | `workflow_step` | — |
+| `lowcap-call-tracker` | `standalone` | End-to-end pipeline (screen, five-role review, call tracking, statistics) that reuses sibling skills as components rather than running inside another workflow. |
 | `macro-regime-detector` | `workflow_step` | — |
 | `manifoldbt-backtester` | `research_only` | — |
 | `market-breadth-analyzer` | `workflow_step` | — |
@@ -132,6 +133,7 @@ permalink: /ja/skill-catalog/
 | **Stockbee Momentum Burst Screener** | Stockbee型の短期モメンタムバースト候補をスクリーニング。4%ブレイクアウト、ドルブレイクアウト、レンジ拡大トリガーをセットアップ品質・リスク幅で0-100点（A/B/Watch）評価。候補生成専用で technical-analyst / position-sizer に接続 | <span class="badge badge-api">FMP必須</span> <span class="badge badge-optional">ローカルJSON任意</span> |
 | **[Stockbee Exhaustion Hammer Screener]({{ '/ja/skills/stockbee-exhaustion-hammer-screener/' | relative_url }})** | Stockbee型の売り枯れハンマー候補をスクリーニング。流動性、直前モメンタム、押し目の深さ、undercut/reclaim、長い下ヒゲ、終値位置、ストップまでのリスクを評価する候補生成専用スキル | <span class="badge badge-api">FMP必須</span> <span class="badge badge-optional">ローカルJSON任意</span> |
 | **Finviz Screener** | 自然言語（日本語/英語）でFinVizスクリーニング条件を構築。500以上のフィルターコードに対応し、Chromeで結果を表示。**テーマクロス検索**（30以上のテーマ × 268サブテーマ）で「AI × 物流」「データセンター × 電力」等のナラティブベース検索が可能 | <span class="badge badge-free">API不要</span> <span class="badge badge-optional">FINVIZ任意</span> |
+| **[Lowcap Call Tracker]({{ '/ja/skills/lowcap-call-tracker/' | relative_url }})** | 米国小型株・ETFの急騰候補を3つのFinVizバリアント（スクイーズ、モメンタムブレイクアウト、ETFモメンタム）で抽出し、5つの役割（リサーチャー、テクニシャン、スケプティック、リスクマネージャー、ジャッジ）でレビューしてからコール化。SQLiteでコールとシャドーコール（見送り）の両方を追跡し、損益・的中率・役割別精度・週次の改善提案を出力 | <span class="badge badge-free">API不要</span> <span class="badge badge-optional">FINVIZ任意</span> <span class="badge badge-optional">Anthropic API任意</span> |
 | **Value Dividend Screener** | 高配当バリュー株をスクリーニング。P/E、P/B、配当利回り、3年成長トレンドで多段階フィルタリング | <span class="badge badge-api">FMP必須</span> <span class="badge badge-optional">FINVIZ任意</span> |
 | **[US Undervalued Growth Screener]({{ '/ja/skills/us-undervalued-growth-screener/' | relative_url }})** | Claude Code向け米国中小型GARPスクリーナー。FMP直接取得パイプラインとローカルキャッシュ、FY1予想正規化、流動性検証、フォワード同一基準バリュエーション、SBC調整FCF、公開前監査、自己完結型エビデンスバンドル | <span class="badge badge-optional">FMP推奨</span> |
 | **Dividend Growth Pullback Screener** | 年間配当成長12%以上の高品質配当成長株で、RSI 40以下のプルバック中の銘柄を検出 | <span class="badge badge-api">FMP必須</span> <span class="badge badge-optional">FINVIZ任意</span> |
@@ -326,6 +328,7 @@ permalink: /ja/skill-catalog/
 | Edge Strategy Reviewer | - | - | - |
 | Exposure Coach | - | - | - |
 | Finviz Screener | - | 任意 | - |
+| Lowcap Call Tracker | - | 任意 | - |
 | FTD Detector | 必須 | - | - |
 | Futures Position Sizer | - | - | - |
 | IBD Distribution Day Monitor | 必須 | - | - |
