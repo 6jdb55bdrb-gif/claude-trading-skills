@@ -1,6 +1,6 @@
 ---
 name: lowcap-call-tracker
-description: Screen US low-cap stocks and ETFs for explosive moves, run every hit through a five-role review (Researcher, Technician, Skeptic, Risk Manager, Judge), and track the resulting calls and shadow calls in SQLite with PnL, hit rate and per-role accuracy. Use when the user asks for low-float / short-squeeze / momentum-breakout screening, wants candidates argued over before they become calls, wants to track whether their calls were right, or wants the tracker deployed on a VPS to run every 4 hours.
+description: Screen US low-cap stocks and ETFs for explosive moves, run every hit through a five-role review (Researcher, Technician, Skeptic, Risk Manager, Judge), and track the resulting calls and shadow calls in SQLite with PnL, hit rate and per-role accuracy. Use when the user asks for low-float / short-squeeze / momentum-breakout screening, wants candidates argued over before they become calls, wants to track whether their calls were right, wants run summaries and call statistics pushed to Telegram, or wants the tracker deployed on a VPS to run every 4 hours.
 ---
 
 # Lowcap Call Tracker
@@ -129,7 +129,21 @@ Writes `tracker-output/improvements.md` with numbered, approvable proposals for
 role prompts, screener filters and Judge weighting. **Nothing is applied
 automatically** — apply an item only when the user approves it.
 
-### Step 7: Deploy (optional)
+### Step 7: Telegram (optional)
+
+```bash
+python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --test       # check the wiring
+python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --poll       # answer commands
+```
+
+With `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` set, every run pushes a summary
+(new calls with the Judge's decision, open-call PnL, closes, statistics, LLM
+cost) and the weekly loop pushes its proposals. The command bot answers
+`/stats`, `/open`, `/calls`, `/shadow`, `/last` from the configured chat only.
+Read `references/telegram_bot.md` for the authorization rules, the message
+contract and the polling model.
+
+### Step 8: Deploy (optional)
 
 `deploy/VPS_SETUP.md` is a step-by-step guide for a non-coder: create an Ubuntu
 24.04 VPS, SSH in, run `deploy/setup_vps.sh`, check the timers, read the logs.
@@ -155,6 +169,10 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - **PnL is direction-corrected:** long `(now − entry) / entry`, short
   `(entry − now) / entry`.
 - **Weekends and holidays skip screening, never the price update.**
+- **A failing Telegram bot never fails a run.** Notification errors are caught
+  and reported in the run output; the database, statistics and git push proceed.
+- **Only the configured chat can command the bot.** Every other chat gets a
+  refusal; `/run` additionally requires `telegram.allow_run_command`.
 - **The monthly LLM cap is hard.** At `llm.monthly_spend_cap_usd` the roles fall
   back to deterministic scoring instead of spending more.
 
@@ -176,6 +194,9 @@ override document with `--config` and it is deep-merged over the default.
 | `roles.models.judge` | claude-sonnet-5 | Judge |
 | `roles.judge.min_confidence_to_take` | 55 | below this a TAKE becomes a shadow call |
 | `llm.monthly_spend_cap_usd` | 10.0 | hard ceiling, then heuristic backend |
+| `telegram.enabled` | true | master switch (still needs a token) |
+| `telegram.notify_when` | changes | `changes` or `always` |
+| `telegram.allow_run_command` | false | `/run` from the phone |
 | `market.skip_screening_when_closed` | true | weekend / holiday behaviour |
 
 ---
@@ -186,6 +207,8 @@ override document with `--config` and it is deep-merged over the default.
 |---|---|
 | `ANTHROPIC_API_KEY` | the LLM role review (without it: deterministic heuristic backend) |
 | `FINVIZ_API_KEY` | FinViz Elite CSV export (without it: public HTML, page-limited) |
+| `TELEGRAM_BOT_TOKEN` | Telegram notifications and the command bot (without it: no Telegram) |
+| `TELEGRAM_CHAT_ID` | the one chat allowed to receive pushes and issue commands |
 
 Prices come from yfinance — free, no key.
 
@@ -197,6 +220,8 @@ Prices come from yfinance — free, no key.
   gaps, OTC exclusion, tuning notes
 - `references/role_review_protocol.md` — the five roles, JSON schemas, score
   polarity, the Judge gate, cost model
+- `references/telegram_bot.md` — push behaviour, command list, authorization,
+  message limits and the polling model
 - `references/tracker_schema.md` — SQLite schema, PnL and outcome definitions,
   every statistic and how to read it
 - `assets/tracker_config.yaml` — packaged default configuration

@@ -139,6 +139,9 @@ to stop following the log (that stops the *watching*, not the tracker).
 On a weekend or a market holiday the log says `screening skipped, price update
 only` — that is the intended behaviour.
 
+> Want the results pushed to your phone instead of read from a log? That is
+> Step 9 — it takes about three minutes.
+
 ---
 
 ## Step 7 — Check that it keeps running
@@ -203,6 +206,90 @@ you only state what changes).
 
 ---
 
+## Step 9 — Telegram alerts (optional, recommended)
+
+Get every run pushed to your phone, and ask the tracker questions from Telegram.
+
+**1. Create the bot.** In Telegram, message [@BotFather](https://t.me/BotFather):
+send `/newbot`, pick a name and a username ending in `bot`. BotFather replies
+with a token that looks like `8123456789:AA...`. Copy it.
+
+**2. Put the token on the server.**
+
+```bash
+nano /opt/lowcap-tracker/.env
+```
+
+Fill in the Telegram lines:
+
+```
+TELEGRAM_BOT_TOKEN=paste-the-token-from-botfather
+TELEGRAM_CHAT_ID=
+```
+
+Save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`).
+
+**3. Find your chat id.** Open your new bot in Telegram and send it `/start`,
+then on the server run:
+
+```bash
+sudo -u lowcap /opt/lowcap-tracker/venv/bin/python \
+  /opt/lowcap-tracker/repo/skills/lowcap-call-tracker/scripts/telegram_bot.py --once
+```
+
+The bot replies in Telegram with `Chat id: 123456789`. Put that number into
+`TELEGRAM_CHAT_ID=` in `.env` (same `nano` command as above) and save.
+
+**4. Test it.**
+
+```bash
+sudo -u lowcap /opt/lowcap-tracker/venv/bin/python \
+  /opt/lowcap-tracker/repo/skills/lowcap-call-tracker/scripts/telegram_bot.py --test
+```
+
+You should get a "Lowcap tracker is wired up" message listing the commands.
+
+**5. Turn on the command bot** (so it answers you, not just pushes):
+
+```bash
+sudo systemctl enable --now lowcap-telegram.service
+systemctl status lowcap-telegram.service
+```
+
+Re-running `setup_vps.sh` does this for you once the token is in `.env`.
+
+### What you can send it
+
+| Command | Reply |
+|---|---|
+| `/stats` | full statistics — hit rate, PnL, breakdowns, per-role accuracy |
+| `/open` | open calls with live PnL |
+| `/calls 20` | the most recent calls (default 10) |
+| `/shadow` | the open calls the Judge skipped, tracked the same way |
+| `/last` | what the most recent run did |
+| `/id` | this chat's id (setup helper) |
+| `/help` | the command list |
+
+Only your chat id can use these; any other chat gets "Not authorized."
+`/run` (a full cycle on demand) stays off until you set
+`telegram.allow_run_command: true` — a cycle spends LLM budget.
+
+### Quieter or louder
+
+In `/opt/lowcap-tracker/tracker_config.yaml` (create it if it does not exist —
+only the keys you list are overridden):
+
+```yaml
+telegram:
+  notify_when: always        # default "changes": quiet runs stay silent
+  include_role_detail: true  # add each role's score to new calls
+  enabled: false             # turn Telegram off entirely
+```
+
+Then `sudo systemctl restart lowcap-telegram.service`.
+
+---
+
 ## Troubleshooting
 
 | Symptom | What to do |
@@ -213,7 +300,10 @@ you only state what changes).
 | `git push failed` in the log | Step 5 — the deploy key is missing, lacks write access, or the remote is still HTTPS. |
 | No new calls for days | Normal: these filters are tight. Check the log says `screening` ran, and try loosening a filter in the config. |
 | `public screener parsing needs beautifulsoup4` | Run `update.sh` (it installs the requirements), or add a `FINVIZ_API_KEY` to use the Elite export path. |
-| Want to stop everything | `systemctl disable --now lowcap-tracker.timer lowcap-learning.timer` |
+| No Telegram messages arrive | Check `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env`, then run `telegram_bot.py --test`. The run log prints `telegram: not sent (reason)` when it is skipped. |
+| Telegram says "Not authorized." | `TELEGRAM_CHAT_ID` does not match the chat you are messaging from. Send `/id` and paste the number it replies with into `.env`. |
+| Bot answers pushes but not commands | The command bot is a separate service: `sudo systemctl enable --now lowcap-telegram.service`. |
+| Want to stop everything | `systemctl disable --now lowcap-tracker.timer lowcap-learning.timer lowcap-telegram.service` |
 | Want to start over | `rm -rf /opt/lowcap-tracker` and re-run Step 3. |
 
 ## Where things live on the server
@@ -224,6 +314,7 @@ you only state what changes).
 | `/opt/lowcap-tracker/venv` | Python virtual environment |
 | `/opt/lowcap-tracker/.env` | your API keys (never committed) |
 | `/opt/lowcap-tracker/logs/tracker.log` | run log, rotated weekly, 8 kept |
+| `/opt/lowcap-tracker/logs/telegram.log` | Telegram bot log, rotated with the rest |
 | `/opt/lowcap-tracker/repo/state/lowcap_calls.db` | the SQLite call database |
 | `/opt/lowcap-tracker/repo/tracker-output/stats.md` | statistics, pushed to GitHub |
 | `/opt/lowcap-tracker/repo/tracker-output/improvements.md` | weekly proposals, pushed to GitHub |

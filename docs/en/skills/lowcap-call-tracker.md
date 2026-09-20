@@ -12,7 +12,7 @@ generated: true
 # Lowcap Call Tracker
 {: .no_toc }
 
-Screen US low-cap stocks and ETFs for explosive moves, run every hit through a five-role review (Researcher, Technician, Skeptic, Risk Manager, Judge), and track the resulting calls and shadow calls in SQLite with PnL, hit rate and per-role accuracy. Use when the user asks for low-float / short-squeeze / momentum-breakout screening, wants candidates argued over before they become calls, wants to track whether their calls were right, or wants the tracker deployed on a VPS to run every 4 hours.
+Screen US low-cap stocks and ETFs for explosive moves, run every hit through a five-role review (Researcher, Technician, Skeptic, Risk Manager, Judge), and track the resulting calls and shadow calls in SQLite with PnL, hit rate and per-role accuracy. Use when the user asks for low-float / short-squeeze / momentum-breakout screening, wants candidates argued over before they become calls, wants to track whether their calls were right, wants run summaries and call statistics pushed to Telegram, or wants the tracker deployed on a VPS to run every 4 hours.
 {: .fs-6 .fw-300 }
 
 <span class="badge badge-free">No API</span> <span class="badge badge-optional">FINVIZ Optional</span>
@@ -173,7 +173,21 @@ Writes `tracker-output/improvements.md` with numbered, approvable proposals for
 role prompts, screener filters and Judge weighting. **Nothing is applied
 automatically** — apply an item only when the user approves it.
 
-### Step 7: Deploy (optional)
+### Step 7: Telegram (optional)
+
+```bash
+python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --test       # check the wiring
+python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --poll       # answer commands
+```
+
+With `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` set, every run pushes a summary
+(new calls with the Judge's decision, open-call PnL, closes, statistics, LLM
+cost) and the weekly loop pushes its proposals. The command bot answers
+`/stats`, `/open`, `/calls`, `/shadow`, `/last` from the configured chat only.
+Read `references/telegram_bot.md` for the authorization rules, the message
+contract and the polling model.
+
+### Step 8: Deploy (optional)
 
 `deploy/VPS_SETUP.md` is a step-by-step guide for a non-coder: create an Ubuntu
 24.04 VPS, SSH in, run `deploy/setup_vps.sh`, check the timers, read the logs.
@@ -190,6 +204,7 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 
 - `skills/lowcap-call-tracker/references/role_review_protocol.md`
 - `skills/lowcap-call-tracker/references/screener_variants.md`
+- `skills/lowcap-call-tracker/references/telegram_bot.md`
 - `skills/lowcap-call-tracker/references/tracker_schema.md`
 
 **Scripts:**
@@ -208,3 +223,4 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - `skills/lowcap-call-tracker/scripts/screener_variants.py`
 - `skills/lowcap-call-tracker/scripts/skill_adapters.py`
 - `skills/lowcap-call-tracker/scripts/stats.py`
+- `skills/lowcap-call-tracker/scripts/telegram_bot.py`

@@ -99,7 +99,8 @@ chmod 600 "$APP_DIR/.env"
 echo "==> 6/8 installing systemd units"
 chmod +x "$REPO_DIR/skills/lowcap-call-tracker/deploy/"*.sh
 for unit in lowcap-tracker.service lowcap-tracker.timer \
-            lowcap-learning.service lowcap-learning.timer; do
+            lowcap-learning.service lowcap-learning.timer \
+            lowcap-telegram.service; do
     sed -e "s#/opt/lowcap-tracker#$APP_DIR#g" -e "s#^User=lowcap#User=$SERVICE_USER#" \
         -e "s#^Group=lowcap#Group=$SERVICE_USER#" \
         "$REPO_DIR/skills/lowcap-call-tracker/deploy/$unit" >"/etc/systemd/system/$unit"
@@ -107,6 +108,16 @@ for unit in lowcap-tracker.service lowcap-tracker.timer \
 done
 systemctl daemon-reload
 systemctl enable --now lowcap-tracker.timer lowcap-learning.timer
+
+# The Telegram bot only runs once a token exists; setup_vps.sh re-checks this
+# on every run, so filling in .env and re-running is enough to switch it on.
+if grep -Eq '^TELEGRAM_BOT_TOKEN=.+' "$APP_DIR/.env"; then
+    systemctl enable --now lowcap-telegram.service
+    echo "    Telegram bot enabled"
+else
+    echo "    Telegram bot NOT enabled: add TELEGRAM_BOT_TOKEN to $APP_DIR/.env,"
+    echo "    then: sudo systemctl enable --now lowcap-telegram.service"
+fi
 
 echo "==> 7/8 installing log rotation"
 sed -e "s#/opt/lowcap-tracker#$APP_DIR#g" -e "s#su lowcap lowcap#su $SERVICE_USER $SERVICE_USER#" \
@@ -145,6 +156,8 @@ Setup complete.
   Edit the API key:      sudo nano $APP_DIR/.env
   Run one cycle now:     sudo systemctl start lowcap-tracker.service
   Watch the log:         sudo tail -f $APP_DIR/logs/tracker.log
+  Test Telegram:         sudo -u $SERVICE_USER $VENV_DIR/bin/python \
+                           $REPO_DIR/skills/lowcap-call-tracker/scripts/telegram_bot.py --test
   Next scheduled runs:   systemctl list-timers 'lowcap-*'
   Latest statistics:     cat $REPO_DIR/tracker-output/stats.md
   Update later:          sudo $REPO_DIR/skills/lowcap-call-tracker/deploy/update.sh

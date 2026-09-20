@@ -992,8 +992,9 @@ skills:
     rationale: End-to-end pipeline (screen, five-role review, call tracking, statistics)
       that reuses sibling skills as components rather than running inside another workflow.
   summary: Screen US low-cap stocks and ETFs for explosive moves, run every hit through
-    a five-role review (Researcher, Technician, Skeptic, Risk Manager, Judge), and track
-    the resulting calls and shadow calls in SQLite with PnL, hit rate, and per-role accuracy.
+    a five-role review (Researcher, Technician, Skeptic, Risk Manager, Judge), track the
+    resulting calls and shadow calls in SQLite with PnL, hit rate, and per-role accuracy,
+    and push each run plus on-demand statistics to Telegram.
   timeframe: daily
   difficulty: advanced
   integrations:
@@ -1012,6 +1013,12 @@ skills:
     type: market_data
     requirement: required
     note: Free price updates for open and shadow calls; no API key
+  - id: telegram
+    type: web
+    requirement: optional
+    note: Telegram Bot API for run/statistics pushes and a command bot (/stats, /open,
+      /calls); credentials come from TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID, and a
+      failed send never fails a run
   - id: local_sqlite
     type: local_file
     requirement: required

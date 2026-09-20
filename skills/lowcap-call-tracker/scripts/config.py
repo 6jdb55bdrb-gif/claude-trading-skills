@@ -75,7 +75,7 @@ def load_config(path: str | os.PathLike[str] | None = None) -> dict[str, Any]:
 
 
 def _validate(config: dict[str, Any]) -> None:
-    for section in ("tracker", "screener", "roles", "llm", "market", "learning"):
+    for section in ("tracker", "screener", "roles", "llm", "market", "telegram", "learning"):
         if not isinstance(config.get(section), dict):
             raise ConfigError(f"configuration section '{section}' is missing or not a mapping")
     variants = config["screener"].get("variants")
@@ -91,11 +91,17 @@ def _validate(config: dict[str, Any]) -> None:
         raise ConfigError("tracker.close_threshold_pct must be a negative number")
 
 
-def resolve_path(config: dict[str, Any], key: str, *, base: Path | None = None) -> Path:
-    """Resolve a ``tracker.<key>`` path against the repository root."""
-    raw = config["tracker"].get(key)
+def resolve_path(
+    config: dict[str, Any],
+    key: str,
+    *,
+    base: Path | None = None,
+    section: str = "tracker",
+) -> Path:
+    """Resolve a ``<section>.<key>`` path against the repository root."""
+    raw = (config.get(section) or {}).get(key)
     if not raw:
-        raise ConfigError(f"tracker.{key} is not configured")
+        raise ConfigError(f"{section}.{key} is not configured")
     candidate = Path(raw)
     if candidate.is_absolute():
         return candidate

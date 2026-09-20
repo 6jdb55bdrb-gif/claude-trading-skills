@@ -191,6 +191,36 @@ market:
     - 2027-11-25
     - 2027-12-24
 
+telegram:
+  # Push a summary to Telegram after every run, and (optionally) answer
+  # commands from your phone. Credentials come from the environment only:
+  #   TELEGRAM_BOT_TOKEN  — from @BotFather
+  #   TELEGRAM_CHAT_ID    — your chat with the bot (the bot replies to /id)
+  # Without a token the tracker runs exactly as before; nothing is sent.
+  enabled: true
+  # always  -> a message after every run, including quiet weekend runs
+  # changes -> only when something happened (new calls, a close, an error)
+  notify_when: changes
+  # Attach the statistics block to the run notification.
+  include_stats: true
+  # Attach the per-role verdict lines for each new call.
+  include_role_detail: false
+  # Send quietly (no phone notification sound) when nothing was opened or closed.
+  silent_when_quiet: true
+  # Answer commands sent to the bot (needs the poller service; see deploy/).
+  allow_commands: true
+  # /run triggers a full tracker cycle from your phone. Off by default: a cycle
+  # spends LLM budget, and the timer already runs every 4 hours.
+  allow_run_command: false
+  # Extra chat ids allowed to command the bot, beyond TELEGRAM_CHAT_ID.
+  extra_chat_ids: []
+  # getUpdates long-poll timeout, seconds.
+  poll_timeout_seconds: 50
+  # Telegram hard-limits a message to 4096 characters; longer messages are split.
+  max_message_chars: 3900
+  # Persisted getUpdates offset so a restart never replays old commands.
+  offset_file: state/lowcap_telegram_offset.json
+
 learning:
   # Minimum closed/resolved calls before the weekly loop draws conclusions.
   min_samples: 10

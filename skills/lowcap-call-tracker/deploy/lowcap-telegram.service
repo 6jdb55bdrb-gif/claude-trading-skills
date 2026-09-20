@@ -1,0 +1,23 @@
+[Unit]
+Description=Lowcap call tracker — Telegram command bot (long-polling)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lowcap
+Group=lowcap
+WorkingDirectory=/opt/lowcap-tracker/repo
+Environment=APP_DIR=/opt/lowcap-tracker
+ExecStart=/opt/lowcap-tracker/repo/skills/lowcap-call-tracker/deploy/run_telegram.sh
+# Long-polling drops out on any network blip; come straight back.
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/opt/lowcap-tracker
+
+[Install]
+WantedBy=multi-user.target

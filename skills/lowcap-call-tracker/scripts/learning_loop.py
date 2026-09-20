@@ -26,6 +26,7 @@ from typing import Any
 
 from call_db import CallDatabase
 from stats import ROLES, compute_stats
+from telegram_bot import notify
 
 from config import load_config, resolve_path
 
@@ -253,6 +254,32 @@ def render_markdown(analysis: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def telegram_summary(analysis: dict[str, Any]) -> str:
+    """One Telegram message summarizing the weekly proposals."""
+    from telegram_bot import escape_html
+
+    proposals = analysis.get("proposals") or []
+    lines = [
+        "🧪 <b>Weekly learning loop</b>",
+        f"<i>{analysis['calls_in_window']} calls / {analysis['resolved_in_window']} priced "
+        f"in the last {analysis['lookback_days']} days</i>",
+        "",
+    ]
+    if not proposals:
+        lines.append("No changes proposed — every lever is performing within expectations.")
+    else:
+        lines.append(f"<b>{len(proposals)} proposal(s)</b> — nothing applied automatically:")
+        for index, proposal in enumerate(proposals, start=1):
+            lines.append(
+                f"{index}. [{escape_html(proposal['severity'].upper())}] "
+                f"{escape_html(proposal['lever'])} — <code>{escape_html(proposal['target'])}</code>"
+            )
+            lines.append(f"    <i>{escape_html(proposal['finding'])}</i>")
+    lines.append("")
+    lines.append("Full detail in <code>tracker-output/improvements.md</code>.")
+    return "\n".join(lines)
+
+
 def is_due(config: dict[str, Any], *, days: int = 7) -> bool:
     path = resolve_path(config, "improvements_file")
     if not path.is_file():
@@ -268,6 +295,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--write", action="store_true", help="Write improvements.md")
     parser.add_argument("--if-due", action="store_true", help="Exit 0 without work if run <7d ago")
     parser.add_argument("--json", action="store_true")
+    parser.add_argument("--no-telegram", action="store_true", help="Skip the Telegram notification")
     args = parser.parse_args(argv)
 
     config = load_config(args.config)
@@ -288,6 +316,8 @@ def main(argv: list[str] | None = None) -> int:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(render_markdown(analysis), encoding="utf-8")
         print(f"improvements.md: {path}")
+        if not args.no_telegram:
+            print(f"telegram: {notify(config, telegram_summary(analysis))}")
     return 0
 
 

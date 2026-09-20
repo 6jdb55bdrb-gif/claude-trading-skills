@@ -9,6 +9,7 @@ Designed to be the systemd timer entrypoint (every 4 hours). Ordering matters:
    auto-close rule (PnL <= ``tracker.close_threshold_pct`` → WRONG).
 3. Screening + role review, inserting new calls (TAKE) and shadow calls (SKIP).
 4. Statistics printed and written to ``stats.md``.
+5. A Telegram summary, when a bot token is configured (see ``telegram_bot.py``).
 
 CLI:
     python3 run_cycle.py --dry-run --fixture fixtures/dry_run_hits.json
@@ -31,6 +32,7 @@ from market_hours import session_state
 from price_update import format_updates, update_open_calls
 from role_review import format_review, review_hits
 from stats import compute_stats, render_text, write_stats_file
+from telegram_bot import notify_run
 
 from config import load_config, resolve_path
 
@@ -72,6 +74,7 @@ def run_cycle(
     offline: bool = False,
     now: datetime | None = None,
     db_path: str | None = None,
+    telegram: bool = True,
 ) -> dict[str, Any]:
     """Execute one cycle and return a structured report."""
     run_id = make_run_id(now)
@@ -166,6 +169,13 @@ def run_cycle(
             )
             report["stats_file"] = write_stats_file(stats, config)
 
+    # A broken or unconfigured bot must never fail a run: notify_run swallows
+    # its own errors and reports what happened in the run report.
+    if telegram and not dry_run:
+        report["telegram"] = notify_run(report, config)
+    elif telegram and dry_run:
+        report["telegram"] = {"sent": False, "reason": "dry run"}
+
     return report
 
 
@@ -233,6 +243,12 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
     )
     if report.get("stats_file"):
         lines.append(f"  stats.md: {report['stats_file']}")
+    telegram_result = report.get("telegram")
+    if telegram_result:
+        status = (
+            "sent" if telegram_result.get("sent") else f"not sent ({telegram_result.get('reason')})"
+        )
+        lines.append(f"  telegram: {status}")
     for error in report["errors"]:
         lines.append(f"  ERROR: {error}")
     if verbose:
@@ -257,6 +273,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dry-run", action="store_true", help="Review without writing calls")
     parser.add_argument("--offline", action="store_true", help="Skip network-dependent adapters")
     parser.add_argument("--git-push", action="store_true", help="Push stats.md / improvements.md")
+    parser.add_argument("--no-telegram", action="store_true", help="Skip the Telegram notification")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--verbose", action="store_true", help="Also print every role verdict")
     args = parser.parse_args(argv)
@@ -274,6 +291,7 @@ def main(argv: list[str] | None = None) -> int:
         dry_run=args.dry_run,
         offline=args.offline or args.backend == "heuristic",
         db_path=args.db,
+        telegram=not args.no_telegram,
     )
 
     if args.json:

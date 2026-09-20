@@ -19,8 +19,13 @@ install -m 644 skills/lowcap-call-tracker/deploy/lowcap-tracker.service /etc/sys
 install -m 644 skills/lowcap-call-tracker/deploy/lowcap-tracker.timer /etc/systemd/system/
 install -m 644 skills/lowcap-call-tracker/deploy/lowcap-learning.service /etc/systemd/system/
 install -m 644 skills/lowcap-call-tracker/deploy/lowcap-learning.timer /etc/systemd/system/
+install -m 644 skills/lowcap-call-tracker/deploy/lowcap-telegram.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl restart lowcap-tracker.timer lowcap-learning.timer
+# Only bounce the bot when it is enabled; an unconfigured bot stays off.
+if systemctl is-enabled --quiet lowcap-telegram.service 2>/dev/null; then
+    systemctl restart lowcap-telegram.service
+fi
 
 echo "==> done. Timers:"
 systemctl list-timers 'lowcap-*' --no-pager

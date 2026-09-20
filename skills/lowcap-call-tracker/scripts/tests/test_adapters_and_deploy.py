@@ -1,6 +1,7 @@
 """Sibling-skill reuse adapters and the VPS deployment kit."""
 
 import os
+import re
 import stat
 import subprocess
 from datetime import date, timedelta
@@ -290,3 +291,69 @@ def test_runtime_scripts_do_not_hardcode_home_paths():
         text = path.read_text(encoding="utf-8")
         assert "/Users" + os.sep not in text
         assert os.sep + "home" + os.sep not in text
+
+
+# ------------------------------------------------------ telegram deployment
+
+
+def test_telegram_unit_and_wrapper_exist():
+    assert (DEPLOY / "lowcap-telegram.service").is_file()
+    wrapper = DEPLOY / "run_telegram.sh"
+    assert wrapper.is_file()
+    assert wrapper.stat().st_mode & stat.S_IXUSR
+    assert subprocess.run(["bash", "-n", str(wrapper)], capture_output=True).returncode == 0
+
+
+def test_telegram_service_restarts_on_failure():
+    """Long-polling drops on any network blip, so the bot must come back."""
+    unit = (DEPLOY / "lowcap-telegram.service").read_text(encoding="utf-8")
+    assert "Restart=always" in unit
+    assert "run_telegram.sh" in unit
+    assert "User=lowcap" in unit
+
+
+def test_telegram_wrapper_exits_quietly_without_a_token():
+    script = (DEPLOY / "run_telegram.sh").read_text(encoding="utf-8")
+    assert 'if [ -z "${TELEGRAM_BOT_TOKEN:-}" ]' in script
+    assert "--poll" in script
+
+
+def test_setup_enables_the_bot_only_when_a_token_is_present():
+    script = (DEPLOY / "setup_vps.sh").read_text(encoding="utf-8")
+    assert "lowcap-telegram.service" in script
+    assert "TELEGRAM_BOT_TOKEN=.+" in script  # the grep guard
+    assert "systemctl enable --now lowcap-telegram.service" in script
+
+
+def test_update_script_only_bounces_an_enabled_bot():
+    script = (DEPLOY / "update.sh").read_text(encoding="utf-8")
+    assert "is-enabled --quiet lowcap-telegram.service" in script
+
+
+def test_env_example_has_empty_telegram_placeholders():
+    env = (DEPLOY / ".env.example").read_text(encoding="utf-8")
+    assert "TELEGRAM_BOT_TOKEN=" in env
+    assert "TELEGRAM_CHAT_ID=" in env
+    # No token-shaped string may ship in the repository.
+    assert not re.search(r"\d{8,10}:[0-9A-Za-z_-]{30,}", env)
+
+
+def test_vps_guide_documents_the_telegram_step():
+    guide = (DEPLOY / "VPS_SETUP.md").read_text(encoding="utf-8")
+    for needle in (
+        "## Step 9 — Telegram alerts",
+        "@BotFather",
+        "TELEGRAM_CHAT_ID",
+        "--test",
+        "lowcap-telegram.service",
+        "Not authorized",
+    ):
+        assert needle in guide, needle
+
+
+def test_telegram_reference_exists():
+    reference = SKILL_ROOT / "references" / "telegram_bot.md"
+    assert reference.is_file()
+    text = reference.read_text(encoding="utf-8")
+    assert "never from" in text and "environment" in text  # credential rule
+    assert "/shadow" in text
