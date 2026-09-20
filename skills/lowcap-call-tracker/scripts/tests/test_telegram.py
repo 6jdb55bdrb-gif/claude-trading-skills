@@ -870,3 +870,43 @@ def test_public_link_form_is_usable_as_a_push_target(wired, monkeypatch):
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "https://t.me/lowcapcalls")
     tb.notify(config, "channel push", transport=transport)
     assert sent[0]["chat_id"] == "@lowcapcalls"
+
+
+# ------------------------------------------------------------- bot profile
+
+
+def test_setup_profile_publishes_the_menu_description_and_about(config):
+    calls = {}
+
+    def transport(method, payload):
+        calls[method] = payload
+        return True
+
+    result = tb.setup_profile(_client(config, transport), config=config)
+    assert set(calls) == {"setMyCommands", "setMyDescription", "setMyShortDescription"}
+    names = [entry["command"] for entry in calls["setMyCommands"]["commands"]]
+    assert names == ["stats", "open", "calls", "shadow", "last", "id", "help"]
+    assert "run" not in names  # disabled by default, so not advertised
+    assert result["published"] == 7
+    # Telegram's own limits.
+    assert len(calls["setMyDescription"]["description"]) <= 512
+    assert len(calls["setMyShortDescription"]["short_description"]) <= 120
+    for entry in calls["setMyCommands"]["commands"]:
+        assert entry["command"] == entry["command"].lower()
+        assert len(entry["description"]) <= 256
+
+
+def test_setup_profile_advertises_run_only_when_enabled(config):
+    calls = {}
+    config["telegram"]["allow_run_command"] = True
+    tb.setup_profile(_client(config, lambda m, p: calls.setdefault(m, p) or True), config=config)
+    names = [entry["command"] for entry in calls["setMyCommands"]["commands"]]
+    assert "run" in names
+    assert names[-1] == "help"  # help stays last in the menu
+
+
+def test_menu_and_help_cover_the_same_commands(config):
+    """The published menu must not drift from what the bot actually answers."""
+    help_text = tb.format_help(config)
+    for name, _description in tb.BOT_COMMANDS:
+        assert f"/{name}" in help_text

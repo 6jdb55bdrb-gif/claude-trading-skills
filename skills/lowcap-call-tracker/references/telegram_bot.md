@@ -140,12 +140,20 @@ the tests drive.
 ## Operating
 
 ```bash
+python3 scripts/telegram_bot.py --setup-profile # publish the command menu + about text
+python3 scripts/telegram_bot.py --list-chats    # find a chat/group id
 python3 scripts/telegram_bot.py --test          # connectivity check
 python3 scripts/telegram_bot.py --send-stats    # push statistics on demand
 python3 scripts/telegram_bot.py --once          # answer pending commands, exit
 python3 scripts/telegram_bot.py --poll          # run the command bot
 python3 scripts/run_cycle.py --no-telegram      # one run without notifying
 ```
+
+`--setup-profile` pushes `BOT_COMMANDS`, the description (the text Telegram shows
+on an empty chat) and the short "about" text through `setMyCommands`,
+`setMyDescription` and `setMyShortDescription`. It is idempotent, so re-run it
+after editing the command list; `/run` is advertised only when
+`telegram.allow_run_command` is on.
 
 On a VPS the command bot is `lowcap-telegram.service` (`Restart=always`, since
 long-polling drops on any network blip); `setup_vps.sh` enables it once a token

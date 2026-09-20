@@ -176,6 +176,7 @@ automatically** — apply an item only when the user approves it.
 ### Step 7: Telegram (optional)
 
 ```bash
+python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --setup-profile  # publish the command menu
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --list-chats  # find a chat/group id
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --test       # check the wiring
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --poll       # answer commands

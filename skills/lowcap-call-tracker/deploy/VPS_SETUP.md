@@ -249,6 +249,14 @@ sudo -u lowcap /opt/lowcap-tracker/venv/bin/python \
 
 You should get a "Lowcap tracker is wired up" message listing the commands.
 
+**4b. Publish the command menu** (optional, one line — Telegram then shows the
+commands in the app's ☰ menu):
+
+```bash
+sudo -u lowcap /opt/lowcap-tracker/venv/bin/python \
+  /opt/lowcap-tracker/repo/skills/lowcap-call-tracker/scripts/telegram_bot.py --setup-profile
+```
+
 **5. Turn on the command bot** (so it answers you, not just pushes):
 
 ```bash

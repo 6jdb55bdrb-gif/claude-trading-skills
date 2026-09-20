@@ -434,6 +434,57 @@ def format_calls_message(rows: list[Any], *, title: str, limit: int = 20) -> str
     return "\n".join(lines)
 
 
+# The command menu Telegram shows in the app. Kept in one place so the menu, the
+# /help reply and the documentation cannot drift apart.
+BOT_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("stats", "Full statistics: hit rate, PnL, breakdowns, per-role accuracy"),
+    ("open", "Open calls with live PnL"),
+    ("calls", "Recent calls — /calls 20 for more"),
+    ("shadow", "Open shadow calls (the ones the Judge skipped)"),
+    ("last", "What the most recent run did"),
+    ("id", "This chat's id (setup helper)"),
+    ("help", "Show the command list"),
+)
+BOT_SHORT_DESCRIPTION = (
+    "Screens US low-cap stocks and ETFs, argues each candidate through five "
+    "roles, and tracks every call's PnL."
+)
+BOT_DESCRIPTION = (
+    "I screen US low caps and ETFs for explosive moves every 4 hours, run each "
+    "hit past a Researcher, Technician, Skeptic, Risk Manager and Judge, then "
+    "track the calls I take AND the ones I skip so you can see whether the Judge "
+    "adds value.\n\n"
+    "Send /stats for hit rate and PnL, /open for live positions, /calls for "
+    "recent calls, /help for everything."
+)
+
+
+def setup_profile(
+    client: TelegramClient,
+    *,
+    config: dict[str, Any] | None = None,
+    include_run: bool | None = None,
+) -> dict[str, Any]:
+    """Publish the command menu, description and about text to Telegram.
+
+    Idempotent: re-running after editing ``BOT_COMMANDS`` republishes the menu.
+    ``/run`` only appears in the menu when it is actually enabled.
+    """
+    if include_run is None:
+        include_run = bool((config or {}).get("telegram", {}).get("allow_run_command"))
+    commands = [{"command": name, "description": text} for name, text in BOT_COMMANDS]
+    if include_run:
+        commands.insert(-1, {"command": "run", "description": "Run a tracker cycle now"})
+    results = {
+        "commands": client._post("setMyCommands", {"commands": commands}),
+        "description": client._post("setMyDescription", {"description": BOT_DESCRIPTION}),
+        "short_description": client._post(
+            "setMyShortDescription", {"short_description": BOT_SHORT_DESCRIPTION}
+        ),
+    }
+    return {"published": len(commands), "results": results}
+
+
 def format_help(config: dict[str, Any]) -> str:
     telegram = config.get("telegram") or {}
     lines = [
@@ -743,6 +794,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--db")
     parser.add_argument("--test", action="store_true", help="Send a connectivity test message")
     parser.add_argument(
+        "--setup-profile",
+        action="store_true",
+        help="Publish the command menu, description and about text to Telegram",
+    )
+    parser.add_argument(
         "--list-chats",
         action="store_true",
         help="Print the chat ids that messaged the bot (find a group's numeric id)",
@@ -765,6 +821,11 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 2
+
+    if args.setup_profile:
+        result = setup_profile(client, config=config)
+        print(f"published {result['published']} commands, description and about text")
+        return 0
 
     if args.list_chats:
         print(format_chat_list(discover_chats(client), os.environ.get("TELEGRAM_CHAT_ID")))
