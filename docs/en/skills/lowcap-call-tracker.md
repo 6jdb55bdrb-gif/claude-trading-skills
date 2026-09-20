@@ -224,5 +224,6 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - `skills/lowcap-call-tracker/scripts/run_cycle.py`
 - `skills/lowcap-call-tracker/scripts/screener_variants.py`
 - `skills/lowcap-call-tracker/scripts/skill_adapters.py`
+- `skills/lowcap-call-tracker/scripts/state_snapshot.py`
 - `skills/lowcap-call-tracker/scripts/stats.py`
 - `skills/lowcap-call-tracker/scripts/telegram_bot.py`
