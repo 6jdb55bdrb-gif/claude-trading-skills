@@ -250,9 +250,30 @@ def build_client(
 
 
 def _pnl_tag(pnl: float | None) -> str:
+    """Signed PnL, or an em dash when the call has never been priced."""
     if pnl is None:
-        return "?"
+        return "—"
     return f"{pnl:+.1f}%"
+
+
+def _num(value: Any, spec: str = ".2f", suffix: str = "") -> str:
+    """Render a number for a message; an absent value reads '—', never 'None'."""
+    if value is None or value == "":
+        return "—"
+    try:
+        return format(float(value), spec) + suffix
+    except (TypeError, ValueError):
+        return escape_html(value)
+
+
+def _stale_note(update: dict[str, Any]) -> str:
+    """Flag an open call whose price could not be refreshed this run."""
+    if update.get("priced", True):
+        return ""
+    days = update.get("stale_days")
+    if days:
+        return f" ⏸ <i>no price for {days}d</i>"
+    return " ⏸ <i>no price</i>"
 
 
 def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> str:
@@ -301,10 +322,13 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
         lines.append(f"<b>Open calls</b> ({len(open_updates)})")
         for update in open_updates[:10]:
             kind = "" if update.get("kind") == KIND_ACTIVE else " · shadow"
+            age = update.get("age_days")
+            age_note = f" · {age}d" if age else ""
             lines.append(
                 f"• <b>{escape_html(update['ticker'])}</b> {escape_html(update['direction'])} "
-                f"{update['entry_price']:.2f} → {update['price']:.2f} "
-                f"<b>{_pnl_tag(update.get('pnl_pct'))}</b>{kind}"
+                f"{_num(update['entry_price'])} → {_num(update['price'])} "
+                f"<b>{_pnl_tag(update.get('pnl_pct'))}</b>{kind}{age_note}"
+                f"{_stale_note(update)}"
             )
         if len(open_updates) > 10:
             lines.append(f"  …and {len(open_updates) - 10} more")
@@ -319,7 +343,7 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
         for update in closed:
             lines.append(
                 f"❌ <b>{escape_html(update['ticker'])}</b> {_pnl_tag(update.get('pnl_pct'))} "
-                f"— stopped out at the {price_update.get('threshold_pct')}% threshold"
+                f"— stopped out at the {_num(price_update.get('threshold_pct'), '.0f')}% threshold"
             )
 
     if telegram.get("include_stats", True) and report.get("stats"):
@@ -361,25 +385,36 @@ def format_stats_message(stats: dict[str, Any], *, compact: bool = False) -> str
     overall = stats.get("overall", {})
     portfolio = stats.get("portfolio", {})
     take_vs_skip = stats.get("take_vs_skip", {})
+    if not overall.get("total"):
+        return (
+            "<b>Stats</b>\nNo calls yet — the tracker has not opened one. "
+            "Every screened candidate becomes a call or a shadow call, so this "
+            "fills up on the first run that finds something."
+        )
+
     lines = [
         "<b>Stats</b>",
         f"calls {overall.get('total')} · open {overall.get('open')} · "
         f"right {overall.get('right')} · wrong {overall.get('wrong')} · "
-        f"neutral {overall.get('neutral')} · hit rate {overall.get('hit_rate_pct')}%",
-        f"avg PnL {overall.get('avg_pnl_pct')}% · portfolio (equal weight, TAKE) "
-        f"{portfolio.get('equal_weight_pnl_pct_take_only')}%",
+        f"neutral {overall.get('neutral')} · hit rate "
+        f"{_num(overall.get('hit_rate_pct'), '.1f', '%')}",
+        f"avg PnL {_num(overall.get('avg_pnl_pct'), '.2f', '%')} · portfolio "
+        f"(equal weight, TAKE) "
+        f"{_num(portfolio.get('equal_weight_pnl_pct_take_only'), '.2f', '%')}",
     ]
     best, worst = overall.get("best_call"), overall.get("worst_call")
     if best:
-        lines.append(
-            f"best {escape_html(best['ticker'])} {best['pnl_pct']:+.1f}% · "
-            f"worst {escape_html(worst['ticker'])} {worst['pnl_pct']:+.1f}%"
-            if worst
-            else f"best {escape_html(best['ticker'])} {best['pnl_pct']:+.1f}%"
-        )
+        line = f"best {escape_html(best['ticker'])} {_pnl_tag(best.get('pnl_pct'))}"
+        if worst and worst.get("ticker") != best.get("ticker"):
+            line += f" · worst {escape_html(worst['ticker'])} {_pnl_tag(worst.get('pnl_pct'))}"
+        lines.append(line)
+    take_block = take_vs_skip.get("take", {})
+    shadow_block = take_vs_skip.get("skip_shadow", {})
     lines.append(
-        f"TAKE {take_vs_skip.get('take', {}).get('avg_pnl_pct')}% vs shadow "
-        f"{take_vs_skip.get('skip_shadow', {}).get('avg_pnl_pct')}% → "
+        f"TAKE {_num(take_block.get('avg_pnl_pct'), '.2f', '%')} "
+        f"(n={take_block.get('total', 0)}) vs shadow "
+        f"{_num(shadow_block.get('avg_pnl_pct'), '.2f', '%')} "
+        f"(n={shadow_block.get('total', 0)}) → "
         f"{escape_html(take_vs_skip.get('verdict', '—'))}"
     )
     if compact:
@@ -397,9 +432,12 @@ def format_stats_message(stats: dict[str, Any], *, compact: bool = False) -> str
         lines.append("")
         lines.append(f"<b>{title}</b>")
         for name, values in block.items():
+            if not values.get("total"):
+                continue
             lines.append(
                 f"• {escape_html(name)}: n={values.get('total')} "
-                f"hit {values.get('hit_rate_pct')}% avg {values.get('avg_pnl_pct')}%"
+                f"hit {_num(values.get('hit_rate_pct'), '.1f', '%')} "
+                f"avg {_num(values.get('avg_pnl_pct'), '.2f', '%')}"
             )
     roles = stats.get("role_accuracy") or {}
     if roles:
@@ -407,9 +445,9 @@ def format_stats_message(stats: dict[str, Any], *, compact: bool = False) -> str
         lines.append("<b>Role accuracy</b> (skeptic: lower is better)")
         for role, values in roles.items():
             lines.append(
-                f"• {escape_html(role)}: winners {values.get('avg_score_winners')} vs "
-                f"{values.get('avg_score_others')} · corr {values.get('corr_score_vs_pnl')} "
-                f"(n={values.get('samples')})"
+                f"• {escape_html(role)}: winners {_num(values.get('avg_score_winners'), '.1f')} "
+                f"vs {_num(values.get('avg_score_others'), '.1f')} · corr "
+                f"{_num(values.get('corr_score_vs_pnl'), '.2f')} (n={values.get('samples', 0)})"
             )
     return "\n".join(lines)
 
@@ -425,9 +463,10 @@ def format_calls_message(rows: list[Any], *, title: str, limit: int = 20) -> str
         marker = "🟢" if (pnl or 0) > 0 else ("🔴" if status == "closed" else "⚪️")
         lines.append(
             f"{marker} <b>{escape_html(row['ticker'])}</b> {escape_html(row['direction'])} "
-            f"{escape_html(row['kind'])} · {row['entry_price']:.2f} → "
-            f"{(row['current_price'] or 0):.2f} <b>{_pnl_tag(pnl)}</b> · "
-            f"{escape_html(row['screen_variant'] or '—')} · conf {row['confidence']} · {status}"
+            f"{escape_html(row['kind'])} · {_num(row['entry_price'])} → "
+            f"{_num(row['current_price'])} <b>{_pnl_tag(pnl)}</b> · "
+            f"{escape_html(row['screen_variant'] or '—')} · conf "
+            f"{row['confidence'] if row['confidence'] is not None else '—'} · {status}"
         )
     if len(rows) > limit:
         lines.append(f"…and {len(rows) - limit} more")
@@ -437,10 +476,12 @@ def format_calls_message(rows: list[Any], *, title: str, limit: int = 20) -> str
 # The command menu Telegram shows in the app. Kept in one place so the menu, the
 # /help reply and the documentation cannot drift apart.
 BOT_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("report", "The whole picture: open calls, statistics, last run"),
     ("stats", "Full statistics: hit rate, PnL, breakdowns, per-role accuracy"),
     ("open", "Open calls with live PnL"),
     ("calls", "Recent calls — /calls 20 for more"),
     ("shadow", "Open shadow calls (the ones the Judge skipped)"),
+    ("call", "Every role's verdict for one ticker — /call SSDEV"),
     ("last", "What the most recent run did"),
     ("id", "This chat's id (setup helper)"),
     ("help", "Show the command list"),
@@ -485,14 +526,120 @@ def setup_profile(
     return {"published": len(commands), "results": results}
 
 
+def format_report_message(db: CallDatabase, config: dict[str, Any]) -> str:
+    """The whole picture in one message: open calls, statistics, last run."""
+    from stats import compute_stats
+
+    open_rows = list(db.open_calls())
+    active = [row for row in open_rows if row["kind"] == KIND_ACTIVE]
+    shadow = [row for row in open_rows if row["kind"] != KIND_ACTIVE]
+    lines = ["📋 <b>Tracker report</b>", ""]
+
+    if open_rows:
+        lines.append(f"<b>Open</b> — {len(active)} active / {len(shadow)} shadow")
+        for row in sorted(open_rows, key=lambda item: item["pnl_pct"] or 0, reverse=True):
+            tag = "" if row["kind"] == KIND_ACTIVE else " · shadow"
+            lines.append(
+                f"• <b>{escape_html(row['ticker'])}</b> {escape_html(row['direction'])} "
+                f"{_num(row['entry_price'])} → {_num(row['current_price'])} "
+                f"<b>{_pnl_tag(row['pnl_pct'])}</b>{tag} · "
+                f"{escape_html(row['screen_variant'] or '—')}"
+            )
+    else:
+        lines.append("<b>Open</b> — none")
+
+    closed = [row for row in db.all_calls() if row["status"] != STATUS_OPEN]
+    if closed:
+        lines.append("")
+        lines.append(f"<b>Closed</b> — {len(closed)} stopped out at the threshold")
+        for row in closed[-5:]:
+            lines.append(
+                f"• <b>{escape_html(row['ticker'])}</b> {_pnl_tag(row['pnl_pct'])} "
+                f"· {escape_html(row['screen_variant'] or '—')}"
+            )
+
+    lines.append("")
+    lines.append(format_stats_message(compute_stats(db, config), compact=True))
+
+    runs = db.runs(limit=1)
+    if runs:
+        run = runs[0]
+        lines.append("")
+        lines.append(
+            f"<i>last run {escape_html(run['started_at'])} · "
+            f"screening {'yes' if run['screening_ran'] else 'no'} · "
+            f"{run['new_calls'] or 0} new · {run['closed'] or 0} closed</i>"
+        )
+    return "\n".join(lines)
+
+
+def format_call_detail(db: CallDatabase, ticker: str) -> str:
+    """Every role's verdict for one ticker — why the call was taken or skipped."""
+    ticker = ticker.strip().upper()
+    row = db.open_call_for(ticker)
+    if row is None:
+        matches = [item for item in db.all_calls() if item["ticker"] == ticker]
+        if not matches:
+            return f"No call for <b>{escape_html(ticker)}</b>. Try /calls to see recent ones."
+        row = matches[-1]
+
+    verdicts = db.verdicts_for(row["id"])
+    researcher = verdicts.get("researcher", {})
+    technician = verdicts.get("technician", {})
+    skeptic = verdicts.get("skeptic", {})
+    risk = verdicts.get("risk_manager", {})
+    judge = verdicts.get("judge", {})
+    status = "open" if row["status"] == STATUS_OPEN else "closed"
+
+    lines = [
+        f"🔍 <b>{escape_html(row['ticker'])}</b> — {escape_html(row['judge_decision'])} "
+        f"({row['confidence']}) · {escape_html(row['kind'])} · {status}",
+        f"<i>{escape_html(row['screen_variant'] or '—')} · called "
+        f"{escape_html(str(row['call_date'])[:16])}</i>",
+        "",
+        f"entry {_num(row['entry_price'])} → {_num(row['current_price'])} "
+        f"<b>{_pnl_tag(row['pnl_pct'])}</b> · stop {_num(row['stop_price'])} "
+        f"· target {_num(row['target_price'])}",
+        "",
+        f"<b>Researcher {_num(researcher.get('score'), '.1f')}</b> — "
+        f"{escape_html(researcher.get('catalyst_type') or '—')}: "
+        f"{escape_html(researcher.get('catalyst_summary') or '—')}",
+        f"<b>Technician {_num(technician.get('score'), '.1f')}</b> — "
+        f"{escape_html(technician.get('trend') or '—')}, "
+        f"{escape_html(technician.get('volume_pattern') or '—')}, "
+        f"{_num(technician.get('extension_pct_sma20'), '.0f', '%')} above SMA20",
+        f"<b>Skeptic {_num(skeptic.get('score'), '.1f')}</b> (severity) — "
+        f"{escape_html(skeptic.get('strongest_objection') or '—')}",
+        f"<b>Risk {_num(risk.get('score'), '.1f')}</b> — "
+        f"{escape_html(risk.get('direction') or '—')}, "
+        f"{escape_html(risk.get('stop_basis') or '—')} stop, "
+        f"{row['shares'] if row['shares'] is not None else '—'} shares",
+        "",
+        f"<b>Judge:</b> {escape_html(judge.get('reason') or row['judge_reason'] or '—')}",
+    ]
+    answer = judge.get("skeptic_answer")
+    if answer:
+        label = (
+            "objection answered"
+            if judge.get("skeptic_objections_answered")
+            else "objection NOT answered"
+        )
+        lines.append(f"<i>{label}: {escape_html(answer)}</i>")
+    if judge.get("gate_overrides"):
+        lines.append("<i>gate: " + escape_html("; ".join(judge["gate_overrides"])) + "</i>")
+    return "\n".join(lines)
+
+
 def format_help(config: dict[str, Any]) -> str:
     telegram = config.get("telegram") or {}
     lines = [
         "<b>Lowcap tracker bot</b>",
+        "/report — the whole picture: open calls, stats, last run",
         "/stats — full statistics",
         "/open — open calls with live PnL",
         "/calls [n] — the most recent calls (default 10)",
         "/shadow — open shadow calls (the ones the Judge skipped)",
+        "/call TICKER — every role's verdict for one call",
         "/last — what the most recent run did",
         "/id — this chat's id (for setup)",
         "/help — this message",
@@ -550,6 +697,12 @@ def handle_command(
         return format_run_notification(report, config)
 
     with CallDatabase(db_path) as db:
+        if command == "/report":
+            return format_report_message(db, config)
+        if command == "/call":
+            if not args:
+                return "Usage: /call TICKER — for example <code>/call SSDEV</code>"
+            return format_call_detail(db, args[0])
         if command == "/stats":
             return format_stats_message(compute_stats(db, config))
         if command == "/open":
@@ -804,6 +957,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Print the chat ids that messaged the bot (find a group's numeric id)",
     )
     parser.add_argument("--send-stats", action="store_true", help="Push the statistics block")
+    parser.add_argument(
+        "--report", action="store_true", help="Push the full report (open calls, stats, last run)"
+    )
     parser.add_argument("--poll", action="store_true", help="Answer commands until stopped")
     parser.add_argument("--once", action="store_true", help="Drain pending commands and exit")
     parser.add_argument("--max-rounds", type=int, default=None, help="Stop after N poll rounds")
@@ -834,6 +990,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.test:
         client.send_message("✅ <b>Lowcap tracker</b> is wired up.\n" + format_help(config))
         print("test message sent")
+        return 0
+
+    if args.report:
+        with CallDatabase(db_path) as db:
+            client.send_message(format_report_message(db, config))
+        print("report sent")
         return 0
 
     if args.send_stats:

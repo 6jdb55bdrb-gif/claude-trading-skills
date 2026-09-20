@@ -276,7 +276,7 @@ def test_run_notification_flags_a_stop_out(config):
     message = tb.format_run_notification(report, config)
     assert "Closed" in message
     assert "-85.0%" in message
-    assert "-80.0% threshold" in message
+    assert "-80% threshold" in message
 
 
 def test_run_notification_reports_a_skipped_weekend_screen(config):
@@ -885,9 +885,19 @@ def test_setup_profile_publishes_the_menu_description_and_about(config):
     result = tb.setup_profile(_client(config, transport), config=config)
     assert set(calls) == {"setMyCommands", "setMyDescription", "setMyShortDescription"}
     names = [entry["command"] for entry in calls["setMyCommands"]["commands"]]
-    assert names == ["stats", "open", "calls", "shadow", "last", "id", "help"]
+    assert names == [
+        "report",
+        "stats",
+        "open",
+        "calls",
+        "shadow",
+        "call",
+        "last",
+        "id",
+        "help",
+    ]
     assert "run" not in names  # disabled by default, so not advertised
-    assert result["published"] == 7
+    assert result["published"] == 9
     # Telegram's own limits.
     assert len(calls["setMyDescription"]["description"]) <= 512
     assert len(calls["setMyShortDescription"]["short_description"]) <= 120
@@ -910,3 +920,139 @@ def test_menu_and_help_cover_the_same_commands(config):
     help_text = tb.format_help(config)
     for name, _description in tb.BOT_COMMANDS:
         assert f"/{name}" in help_text
+
+
+# ------------------------------------------------------- reporting contract
+
+
+def test_stats_on_an_empty_tracker_reads_as_a_sentence(tmp_db, config):
+    """'hit rate None%' is not an acceptable thing to send someone."""
+    from stats import compute_stats
+
+    message = tb.format_stats_message(compute_stats(tmp_db, config), compact=True)
+    assert "None" not in message
+    assert "No calls yet" in message
+
+
+def test_no_message_ever_contains_the_word_none(tmp_db, config):
+    """A None leaking into a message is a reporting bug, everywhere."""
+    from stats import compute_stats
+
+    call_id = tmp_db.insert_call(review_payload("AAA", entry=10.0), run_id="r1")
+    tmp_db.conn.execute(
+        "UPDATE calls SET current_price = NULL, pnl_pct = NULL WHERE id = ?", (call_id,)
+    )
+    tmp_db.conn.commit()
+    rows = list(tmp_db.all_calls())
+    messages = [
+        tb.format_stats_message(compute_stats(tmp_db, config)),
+        tb.format_calls_message(rows, title="Recent calls"),
+        tb.format_report_message(tmp_db, config),
+        tb.format_call_detail(tmp_db, "AAA"),
+        tb.format_run_notification(_report(), config),
+    ]
+    for message in messages:
+        assert "None" not in message, message
+        assert "—" in message or "no price" in message
+
+
+def test_an_unpriced_open_call_still_appears_in_the_run_report(config):
+    """Regression: a call yfinance cannot price used to vanish from the message."""
+    report = _report()
+    report["price_update"]["updates"] = [
+        {
+            "ticker": "SSDEV",
+            "direction": "long",
+            "kind": "shadow",
+            "entry_price": 1.04,
+            "price": 1.04,
+            "pnl_pct": 0.0,
+            "closed": False,
+            "priced": False,
+            "stale_days": 3,
+            "age_days": 4,
+        }
+    ]
+    report["price_update"]["missing_prices"] = ["SSDEV"]
+    message = tb.format_run_notification(report, config)
+    assert "SSDEV" in message
+    assert "no price for 3d" in message
+    assert "4d" in message  # how long the call has been open
+
+
+def test_report_command_covers_open_closed_and_stats(tmp_db, config):
+    winner = tmp_db.insert_call(review_payload("WIN", entry=10.0), run_id="r1")
+    tmp_db.apply_price(winner, 13.0, close_threshold_pct=-80.0)
+    dead = tmp_db.insert_call(review_payload("DEAD", entry=10.0), run_id="r1")
+    tmp_db.apply_price(dead, 1.0, close_threshold_pct=-80.0)
+    tmp_db.start_run("r1", session_reason="regular trading hours", screening_ran=True)
+    tmp_db.finish_run(
+        "r1",
+        {
+            "hits": 2,
+            "reviewed": 2,
+            "new_calls": 2,
+            "new_takes": 2,
+            "new_shadows": 0,
+            "closed": 1,
+            "priced": 2,
+            "backend": "heuristic",
+            "llm_cost_usd": 0.0,
+        },
+    )
+    message = tb.format_report_message(tmp_db, config)
+    assert "Tracker report" in message
+    assert "WIN" in message and "+30.0%" in message
+    assert "Closed" in message and "DEAD" in message
+    assert "hit rate" in message
+    assert "last run" in message
+
+
+def test_report_on_an_empty_tracker_says_so(tmp_db, config):
+    message = tb.format_report_message(tmp_db, config)
+    assert "<b>Open</b> — none" in message
+    assert "No calls yet" in message
+
+
+def test_call_detail_shows_every_role(tmp_db, config):
+    call_id = tmp_db.insert_call(
+        review_payload("AAA", entry=10.0, scores=(8.0, 7.0, 2.0, 6.0)), run_id="r1"
+    )
+    tmp_db.apply_price(call_id, 11.0, close_threshold_pct=-80.0)
+    message = tb.format_call_detail(tmp_db, "aaa")  # case-insensitive
+    assert "AAA" in message
+    assert "Researcher 8.0" in message
+    assert "Technician 7.0" in message
+    assert "Skeptic 2.0" in message and "severity" in message
+    assert "Risk 6.0" in message
+    assert "+10.0%" in message
+
+
+def test_call_detail_labels_an_unanswered_objection_correctly(tmp_db, config):
+    review = review_payload("BBB", decision="SKIP", entry=4.0)
+    review["verdicts"]["judge"] = {
+        "role": "judge",
+        "decision": "SKIP",
+        "reason": "Skeptic objection unanswered (dilution)",
+        "skeptic_objections_answered": False,
+        "skeptic_answer": "Objection stands unanswered: offering risk",
+        "gate_overrides": ["Skeptic objection not explicitly answered"],
+    }
+    tmp_db.insert_call(review, run_id="r1")
+    message = tb.format_call_detail(tmp_db, "BBB")
+    assert "objection NOT answered" in message
+    assert "gate:" in message
+
+
+def test_call_detail_for_an_unknown_ticker(tmp_db):
+    assert "No call for" in tb.format_call_detail(tmp_db, "NOPE")
+
+
+def test_call_command_requires_a_ticker(config, tmp_db):
+    assert "Usage: /call" in _handle("/call", config, tmp_db.path)
+
+
+def test_report_and_call_are_in_help_and_the_menu(config):
+    help_text = tb.format_help(config)
+    assert "/report" in help_text and "/call TICKER" in help_text
+    assert [name for name, _ in tb.BOT_COMMANDS if name in {"report", "call"}] == ["report", "call"]

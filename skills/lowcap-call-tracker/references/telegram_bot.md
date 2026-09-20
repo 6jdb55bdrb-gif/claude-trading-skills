@@ -104,14 +104,31 @@ writes, statistics and git push all happen regardless.
 
 | Command | Reply |
 |---|---|
+| `/report` | the whole picture in one message: open calls with PnL, anything closed, the statistics block, and when the last run happened |
 | `/stats` | full statistics: hit rate, PnL, breakdowns by direction / asset type / variant / confidence, per-role accuracy |
 | `/open` | open calls with live PnL |
 | `/calls [n]` | the n most recent calls, default 10, capped at 50 |
 | `/shadow` | open shadow calls — the ones the Judge skipped |
+| `/call TICKER` | every role's verdict for one call — catalyst, trend, the Skeptic's objection, the plan, and the Judge's reasoning. This is the command for asking "why did it take that?" |
 | `/last` | the most recent run: screening state, hits, new calls, closes, LLM cost |
 | `/id`, `/start` | this chat's id, and whether it is authorized |
 | `/help` | the command list |
 | `/run` | a full tracker cycle (disabled by default) |
+
+## Reporting rules
+
+- **Every open call appears in every report**, including one whose price could
+  not be refreshed. An unpriced call keeps its last known figures and is marked
+  `⏸ no price for Nd` — a position must never quietly drop out of a report
+  because a data source lost it.
+- **No message ever prints `None`.** An absent number renders as `—`, and an
+  empty tracker says so in words instead of "hit rate None%". A test asserts the
+  string `None` appears in no message.
+- Open-call lines carry the call's age in days, so a stale call is visible
+  without opening the database.
+- `telegram.include_role_detail` (on by default) adds each role's score and the
+  Skeptic's objection under every new call, which is what makes a run summary
+  judgeable rather than just a list of tickers.
 
 ## Message mechanics
 
@@ -140,6 +157,8 @@ the tests drive.
 ## Operating
 
 ```bash
+python3 scripts/run_cycle.py --notify always    # scan now and report, even if nothing changed
+python3 scripts/telegram_bot.py --report        # push the full report without scanning
 python3 scripts/telegram_bot.py --setup-profile # publish the command menu + about text
 python3 scripts/telegram_bot.py --list-chats    # find a chat/group id
 python3 scripts/telegram_bot.py --test          # connectivity check

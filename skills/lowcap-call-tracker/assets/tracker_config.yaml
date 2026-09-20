@@ -208,8 +208,10 @@ telegram:
   notify_when: changes
   # Attach the statistics block to the run notification.
   include_stats: true
-  # Attach the per-role verdict lines for each new call.
-  include_role_detail: false
+  # Attach the per-role verdict lines for each new call. On by default: while
+  # you are judging whether the pipeline is any good, the scores and the
+  # Skeptic's objection are the whole point of the message.
+  include_role_detail: true
   # Send quietly (no phone notification sound) when nothing was opened or closed.
   silent_when_quiet: true
   # Answer commands sent to the bot (needs the poller service; see deploy/).

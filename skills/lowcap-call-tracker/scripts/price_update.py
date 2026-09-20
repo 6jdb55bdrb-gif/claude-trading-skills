@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 from typing import Any
 
 from call_db import CallDatabase, pnl_pct
@@ -27,6 +28,19 @@ try:
     HAS_YFINANCE = True
 except ImportError:  # pragma: no cover - offline installs pass --prices-json
     HAS_YFINANCE = False
+
+
+def _age_days(stamp: Any, now: datetime) -> int | None:
+    """Whole days between an ISO timestamp and *now*; None when unparseable."""
+    if not stamp:
+        return None
+    try:
+        moment = datetime.fromisoformat(str(stamp))
+    except ValueError:
+        return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=timezone.utc)
+    return max(0, (now - moment).days)
 
 
 def fetch_prices(tickers: list[str]) -> dict[str, float]:
@@ -83,25 +97,44 @@ def update_open_calls(
 
     updates: list[dict[str, Any]] = []
     missing: list[str] = []
+    now = datetime.now(timezone.utc)
     for row in open_calls:
         price = resolved.get(row["ticker"])
+        common = {
+            "direction": row["direction"],
+            "kind": row["kind"],
+            "entry_price": row["entry_price"],
+            "variant": row["screen_variant"],
+            "asset_type": row["asset_type"],
+            "call_date": row["call_date"],
+            "age_days": _age_days(row["call_date"], now),
+        }
         if price is None:
+            # An open call that cannot be priced must still be REPORTED, with its
+            # last known figures and how stale they are — dropping it from the
+            # report is how a position quietly disappears.
             missing.append(row["ticker"])
+            updates.append(
+                {
+                    "call_id": row["id"],
+                    "ticker": row["ticker"],
+                    "price": row["current_price"],
+                    "pnl_pct": row["pnl_pct"],
+                    "closed": False,
+                    "priced": False,
+                    "last_price_at": row["last_price_at"],
+                    "stale_days": _age_days(row["last_price_at"], now),
+                    **common,
+                }
+            )
             continue
         result = db.apply_price(row["id"], float(price), close_threshold_pct=threshold)
-        result.update(
-            {
-                "direction": row["direction"],
-                "kind": row["kind"],
-                "entry_price": row["entry_price"],
-                "variant": row["screen_variant"],
-                "asset_type": row["asset_type"],
-            }
-        )
+        result.update({"priced": True, "stale_days": 0, **common})
         updates.append(result)
 
     return {
-        "priced": len(updates),
+        "priced": sum(1 for update in updates if update["priced"]),
+        "open": len(updates),
         "closed": sum(1 for update in updates if update["closed"]),
         "missing_prices": missing,
         "updates": updates,
@@ -112,14 +145,21 @@ def update_open_calls(
 def format_updates(result: dict[str, Any]) -> str:
     lines = []
     for update in sorted(result["updates"], key=lambda item: item["pnl_pct"] or 0, reverse=True):
-        tag = "CLOSED (WRONG)" if update["closed"] else update["kind"].upper()
+        if update["closed"]:
+            tag = "CLOSED (WRONG)"
+        elif not update.get("priced", True):
+            stale = update.get("stale_days")
+            tag = f"{update['kind'].upper()} · NO PRICE" + (f" ({stale}d stale)" if stale else "")
+        else:
+            tag = update["kind"].upper()
+        price = update["price"]
+        pnl = update["pnl_pct"]
         lines.append(
             f"  {update['ticker']:<6} {update['direction']:<5} "
-            f"entry={update['entry_price']:<8.2f} now={update['price']:<8.2f} "
-            f"pnl={update['pnl_pct']:+.1f}%  {tag}"
+            f"entry={update['entry_price']:<8.2f} "
+            f"now={'-' if price is None else format(price, '.2f'):<8} "
+            f"pnl={'-' if pnl is None else format(pnl, '+.1f') + '%':<8} {tag}"
         )
-    if result["missing_prices"]:
-        lines.append(f"  no price for: {', '.join(result['missing_prices'])}")
     return "\n".join(lines) or "  (no open calls)"
 
 

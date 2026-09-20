@@ -77,9 +77,13 @@ def run_cycle(
     db_path: str | None = None,
     telegram: bool = True,
     snapshot: str | None = None,
+    notify_when: str | None = None,
 ) -> dict[str, Any]:
     """Execute one cycle and return a structured report."""
     run_id = make_run_id(now)
+    if notify_when:
+        # An on-demand report should arrive even when the run changed nothing.
+        config = {**config, "telegram": {**config.get("telegram", {}), "notify_when": notify_when}}
     session = session_state(config, now)
     screening_allowed = session["screening_allowed"] or force_screen
     report: dict[str, Any] = {
@@ -290,6 +294,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--offline", action="store_true", help="Skip network-dependent adapters")
     parser.add_argument("--git-push", action="store_true", help="Push stats.md / improvements.md")
     parser.add_argument("--no-telegram", action="store_true", help="Skip the Telegram notification")
+    parser.add_argument(
+        "--notify",
+        choices=["always", "changes"],
+        help="Override telegram.notify_when for this run ('always' for an on-demand report)",
+    )
+    parser.add_argument(
+        "--snapshot",
+        help="JSON state snapshot: imported into an empty database, rewritten after the run",
+    )
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--verbose", action="store_true", help="Also print every role verdict")
     args = parser.parse_args(argv)
@@ -309,6 +322,7 @@ def main(argv: list[str] | None = None) -> int:
         db_path=args.db,
         telegram=not args.no_telegram,
         snapshot=args.snapshot,
+        notify_when=args.notify,
     )
 
     if args.json:

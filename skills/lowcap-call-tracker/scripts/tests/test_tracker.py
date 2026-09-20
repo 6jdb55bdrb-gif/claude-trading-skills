@@ -451,3 +451,64 @@ def test_update_reports_missing_prices_when_yfinance_is_absent(tmp_db, config, m
     result = price_update.update_open_calls(tmp_db, config)
     assert result["priced"] == 0
     assert result["missing_prices"] == ["AAA"]
+
+
+# ------------------------------------------------- CLI surface (regression)
+
+
+def test_cli_exposes_every_flag_the_scheduler_uses():
+    """A flag missing from the parser breaks the scheduled run, not the tests:
+    run_cycle() takes the keyword, so only an actual CLI parse catches it."""
+    import run_cycle as rc
+
+    parser_flags = set()
+    import argparse
+
+    original = argparse.ArgumentParser.add_argument
+
+    def capture(self, *args, **kwargs):
+        for arg in args:
+            if isinstance(arg, str) and arg.startswith("--"):
+                parser_flags.add(arg)
+        return original(self, *args, **kwargs)
+
+    argparse.ArgumentParser.add_argument = capture
+    try:
+        with pytest.raises(SystemExit):
+            rc.main(["--help"])
+    finally:
+        argparse.ArgumentParser.add_argument = original
+
+    for flag in ("--snapshot", "--notify", "--no-telegram", "--screen-mode", "--backend"):
+        assert flag in parser_flags, f"{flag} is not exposed on the CLI"
+
+
+def test_notify_override_forces_a_report_on_a_quiet_run(config, tmp_path, monkeypatch):
+    """--notify always is how an on-demand report is requested."""
+    import telegram_bot as tb
+
+    config["tracker"]["stats_file"] = str(tmp_path / "stats.md")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "4242")
+    sent = []
+    monkeypatch.setattr(
+        tb,
+        "build_client",
+        lambda cfg, transport=None: tb.TelegramClient(
+            token="t", chat_id="4242", transport=lambda m, p: sent.append(p) or {"message_id": 1}
+        ),
+    )
+
+    quiet = dict(
+        backend="heuristic",
+        offline=True,
+        prices={},
+        db_path=str(tmp_path / "cycle.db"),
+        now=datetime(2026, 9, 19, 15, 0, tzinfo=timezone.utc),  # a Saturday: no screening
+    )
+    default = run_cycle(config, **quiet)
+    assert default["telegram"]["sent"] is False  # notify_when=changes, nothing changed
+
+    forced = run_cycle(config, notify_when="always", **quiet)
+    assert forced["telegram"]["sent"] is True
+    assert "Lowcap tracker" in sent[-1]["text"]

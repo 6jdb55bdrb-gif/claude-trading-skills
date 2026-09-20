@@ -1,6 +1,6 @@
 # Lowcap Call Tracker — Statistics
 
-**Generated:** 2026-09-20T19:08:04+00:00  
+**Generated:** 2026-09-20T19:23:46+00:00  
 **Auto-close threshold:** -80.0% (PnL at or below closes as WRONG)
 
 ## Overall
@@ -70,7 +70,8 @@
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20260920T190737Z | 2026-09-20T19:07:37+00:00 | yes | — | — | — |
+| run_20260920T192342Z | 2026-09-20T19:23:42+00:00 | no | — | — | — |
+| run_20260920T190737Z | 2026-09-20T19:07:37+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260920T190654Z | 2026-09-20T19:06:54+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260920T190421Z | 2026-09-20T19:04:21+00:00 | yes | 1 | 0 | 0.0 |
 

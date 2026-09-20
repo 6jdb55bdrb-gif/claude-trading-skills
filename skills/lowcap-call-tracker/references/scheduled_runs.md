@@ -34,6 +34,10 @@ git add tracker-output/ && git commit -m "chore(lowcap-tracker): scheduled run <
 No `--force-screen`: on weekends and US holidays the cycle is supposed to skip
 screening and only refresh prices.
 
+For an **on-demand** report (the "scan now and tell me" case), add
+`--notify always` so the summary is sent even when the run changed nothing;
+scheduled runs leave it off so a quiet cycle stays silent.
+
 ## Credentials
 
 `TELEGRAM_BOT_TOKEN` must reach the fired session **as an environment variable of
