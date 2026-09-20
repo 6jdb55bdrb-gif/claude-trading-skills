@@ -190,6 +190,7 @@ override document with `--config` and it is deep-merged over the default.
 | `tracker.close_threshold_pct` | -80.0 | the only auto-close rule |
 | `tracker.account_size` / `risk_pct` | 10000 / 1.0 | inputs for the position sizer |
 | `tracker.max_new_calls_per_run` | 10 | safety valve per cycle |
+| `tracker.snapshot_file` | null | JSON state snapshot for throwaway checkouts |
 | `screener.mode` | auto | elite / public / fixture |
 | `screener.exchange_mode` | auto | explicit / universe / per_exchange (OTC exclusion) |
 | `roles.models.worker` | claude-haiku-4-5 | Researcher / Technician / Skeptic / Risk Manager |
@@ -222,6 +223,9 @@ Prices come from yfinance — free, no key.
   gaps, OTC exclusion, tuning notes
 - `references/role_review_protocol.md` — the five roles, JSON schemas, score
   polarity, the Judge gate, cost model
+- `scripts/state_snapshot.py` — export/import the whole database as JSON, so a
+  scheduled run on a fresh checkout keeps dedupe state and PnL history, and the
+  move to another host carries every open call across
 - `references/telegram_bot.md` — push behaviour, command list, authorization,
   message limits and the polling model
 - `references/tracker_schema.md` — SQLite schema, PnL and outcome definitions,

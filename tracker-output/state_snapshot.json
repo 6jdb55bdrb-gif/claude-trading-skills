@@ -1,0 +1,156 @@
+{
+ "counts": {
+  "calls": 1,
+  "llm_usage": 0,
+  "price_history": 1,
+  "role_verdicts": 5,
+  "runs": 3
+ },
+ "exported_at": "2026-09-20T19:10:14+00:00",
+ "snapshot_version": 1,
+ "tables": {
+  "calls": [
+   {
+    "asset_type": "stock",
+    "backend": "heuristic",
+    "call_date": "2026-09-20T19:04:44+00:00",
+    "close_reason": null,
+    "closed_at": null,
+    "confidence": 43,
+    "current_price": 1.04,
+    "direction": "long",
+    "entry_price": 1.04,
+    "id": 1,
+    "judge_decision": "SKIP",
+    "judge_reason": "Skeptic objection unanswered (dilution)",
+    "kind": "shadow",
+    "last_price_at": "2026-09-20T19:04:44+00:00",
+    "notes": null,
+    "pnl_pct": 0.0,
+    "position_usd": 945.36,
+    "researcher_score": 4.5,
+    "risk_manager_score": 8.0,
+    "risk_usd": 100.0,
+    "run_id": "run_20260920T190421Z",
+    "screen_variant": "squeeze",
+    "shares": 909.0,
+    "skeptic_score": 9.0,
+    "status": "OPEN",
+    "stop_price": 0.93,
+    "target_price": 1.26,
+    "technician_score": 6.0,
+    "ticker": "SSDEV"
+   }
+  ],
+  "llm_usage": [],
+  "price_history": [
+   {
+    "call_id": 1,
+    "id": 1,
+    "observed_at": "2026-09-20T19:04:44+00:00",
+    "pnl_pct": 0.0,
+    "price": 1.04
+   }
+  ],
+  "role_verdicts": [
+   {
+    "backend": "heuristic",
+    "call_id": 1,
+    "created_at": "2026-09-20T19:04:44+00:00",
+    "id": 1,
+    "role": "researcher",
+    "score": 4.5,
+    "verdict_json": "{\"role\": \"researcher\", \"score\": 4.5, \"catalyst_type\": \"sector_theme\", \"catalyst_summary\": \"No catalyst identified from available data.\", \"catalyst_date\": null, \"sector_theme\": \"Asset Management\", \"insider_buying\": false, \"evidence\": [], \"reasons\": [\"episodic-pivot analyzer: UNCLASSIFIED_EP score 42 rating D\", \"catalyst type not identifiable from the event record\", \"relative volume 3.1x corroborates a real event\"], \"backend\": \"heuristic\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 1,
+    "created_at": "2026-09-20T19:04:44+00:00",
+    "id": 2,
+    "role": "technician",
+    "score": 6.0,
+    "verdict_json": "{\"role\": \"technician\", \"score\": 6.0, \"trend\": \"uptrend\", \"support\": 0.93, \"resistance\": 100.0, \"volume_pattern\": \"confirming\", \"extension_pct_sma20\": 11.9, \"breakout_quality\": \"not_a_breakout\", \"reasons\": [\"price above both SMA20 and SMA50\", \"relative volume 3.1x confirms the move\", \"no weekly price history: scored from screener fields only (cap 6)\"], \"backend\": \"heuristic\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 1,
+    "created_at": "2026-09-20T19:04:44+00:00",
+    "id": 3,
+    "role": "skeptic",
+    "score": 9.0,
+    "verdict_json": "{\"role\": \"skeptic\", \"score\": 9.0, \"strongest_objection\": \"$1.04 share price is prime ATM/shelf-offering territory\", \"objection_category\": \"dilution\", \"risk_flags\": [\"only $1.1M average dollar volume to exit into\", \"$1.04 share price is prime ATM/shelf-offering territory\", \"66% short float may be a correct thesis, not fuel\"], \"what_would_change_my_mind\": \"A filed prospectus showing the ATM is exhausted, or a closed raise that removes the overhang.\", \"reasons\": [\"only $1.1M average dollar volume to exit into\", \"$1.04 share price is prime ATM/shelf-offering territory\", \"66% short float may be a correct thesis, not fuel\"], \"backend\": \"heuristic\", \"score_polarity\": \"severity: 0 = no objection, 10 = disqualifying\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 1,
+    "created_at": "2026-09-20T19:04:44+00:00",
+    "id": 4,
+    "role": "risk_manager",
+    "score": 8.0,
+    "verdict_json": "{\"role\": \"risk_manager\", \"score\": 8.0, \"direction\": \"long\", \"direction_reason\": \"every variant screens for strength; default long\", \"entry\": 1.04, \"stop\": 0.93, \"stop_basis\": \"structure\", \"target\": 1.26, \"r_multiple_to_target\": 2.0, \"shares\": 909, \"position_usd\": 945.36, \"risk_usd\": 100.0, \"position_pct_of_account\": 9.45, \"reasons\": [\"structural stop at 0.93 (10.6% away)\"], \"backend\": \"heuristic\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 1,
+    "created_at": "2026-09-20T19:04:44+00:00",
+    "id": 5,
+    "role": "judge",
+    "score": null,
+    "verdict_json": "{\"role\": \"judge\", \"decision\": \"SKIP\", \"confidence\": 43, \"reason\": \"Skeptic objection unanswered (dilution)\", \"skeptic_objections_answered\": false, \"skeptic_answer\": \"Objection stands unanswered: $1.04 share price is prime ATM/shelf-offering territory\", \"key_risk\": \"$1.04 share price is prime ATM/shelf-offering territory\", \"reasons\": [\"researcher 4.5 / technician 6.0 / risk 8.0 vs skeptic severity 9.0\", \"weighted confidence 43\", \"Objection stands unanswered: $1.04 share price is prime ATM/shelf-offering territory\"], \"backend\": \"heuristic\"}"
+   }
+  ],
+  "runs": [
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-09-20T19:04:44+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 1,
+    "new_shadows": 1,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 0,
+    "reviewed": 1,
+    "run_id": "run_20260920T190421Z",
+    "screening_ran": 1,
+    "session_reason": "weekend \u2014 US market closed",
+    "started_at": "2026-09-20T19:04:21+00:00"
+   },
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-09-20T19:07:20+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 0,
+    "reviewed": 0,
+    "run_id": "run_20260920T190654Z",
+    "screening_ran": 1,
+    "session_reason": "weekend \u2014 US market closed",
+    "started_at": "2026-09-20T19:06:54+00:00"
+   },
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-09-20T19:08:04+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 0,
+    "reviewed": 0,
+    "run_id": "run_20260920T190737Z",
+    "screening_ran": 1,
+    "session_reason": "weekend \u2014 US market closed",
+    "started_at": "2026-09-20T19:07:37+00:00"
+   }
+  ]
+ }
+}

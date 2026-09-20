@@ -31,6 +31,7 @@ from llm_client import LLMClient, current_month
 from market_hours import session_state
 from price_update import format_updates, update_open_calls
 from role_review import format_review, review_hits
+from state_snapshot import export_snapshot, import_snapshot, snapshot_path
 from stats import compute_stats, render_text, write_stats_file
 from telegram_bot import notify_run
 
@@ -75,6 +76,7 @@ def run_cycle(
     now: datetime | None = None,
     db_path: str | None = None,
     telegram: bool = True,
+    snapshot: str | None = None,
 ) -> dict[str, Any]:
     """Execute one cycle and return a structured report."""
     run_id = make_run_id(now)
@@ -93,6 +95,12 @@ def run_cycle(
     }
 
     with CallDatabase(db_path or resolve_path(config, "db_path")) as db:
+        # A scheduled run on a throwaway working copy starts with an empty
+        # database; the snapshot carries dedupe state and PnL history across.
+        snapshot_file = snapshot_path(config, snapshot)
+        if snapshot_file and snapshot_file.is_file():
+            report["snapshot_import"] = import_snapshot(db, snapshot_file)
+
         if not dry_run:
             db.start_run(run_id, session_reason=session["reason"], screening_ran=screening_allowed)
 
@@ -168,6 +176,9 @@ def run_cycle(
                 },
             )
             report["stats_file"] = write_stats_file(stats, config)
+            if snapshot_file:
+                export_snapshot(db, snapshot_file)
+                report["snapshot_file"] = str(snapshot_file)
 
     # A broken or unconfigured bot must never fail a run: notify_run swallows
     # its own errors and reports what happened in the run report.
@@ -243,6 +254,11 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
     )
     if report.get("stats_file"):
         lines.append(f"  stats.md: {report['stats_file']}")
+    if report.get("snapshot_import", {}).get("imported"):
+        counts = report["snapshot_import"]["counts"]
+        lines.append(f"  state restored from snapshot: {counts['calls']} call(s)")
+    if report.get("snapshot_file"):
+        lines.append(f"  snapshot: {report['snapshot_file']}")
     telegram_result = report.get("telegram")
     if telegram_result:
         status = (
@@ -292,6 +308,7 @@ def main(argv: list[str] | None = None) -> int:
         offline=args.offline or args.backend == "heuristic",
         db_path=args.db,
         telegram=not args.no_telegram,
+        snapshot=args.snapshot,
     )
 
     if args.json:

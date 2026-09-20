@@ -24,6 +24,11 @@ tracker:
   max_position_pct: 10.0
   # Safety valve: never open more than this many new calls in one run.
   max_new_calls_per_run: 10
+  # JSON state snapshot (git-friendly). Set a path to make a run import it into
+  # an empty database and rewrite it afterwards — that is what lets a scheduled
+  # run on a fresh checkout keep dedupe state and PnL history. A server with a
+  # real disk does not need it; leave null there.
+  snapshot_file: null
 
 screener:
   # auto -> elite when FINVIZ_API_KEY is set, else public HTML.
