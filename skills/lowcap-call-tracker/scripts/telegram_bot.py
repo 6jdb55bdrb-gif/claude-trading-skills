@@ -525,7 +525,7 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("open", "Open calls with live PnL"),
     ("calls", "Recent calls — /calls 20 for more"),
     ("shadow", "Open shadow calls (the ones the Judge skipped)"),
-    ("call", "Every role's verdict for one ticker — /call SSDEV"),
+    ("call", "Every role's verdict for one ticker — /call SDEV"),
     ("last", "What the most recent run did"),
     ("id", "This chat's id (setup helper)"),
     ("help", "Show the command list"),
@@ -746,7 +746,7 @@ def handle_command(
             return format_report_message(db, config)
         if command == "/call":
             if not args:
-                return "Usage: /call TICKER — for example <code>/call SSDEV</code>"
+                return "Usage: /call TICKER — for example <code>/call SDEV</code>"
             return format_call_detail(db, args[0])
         if command == "/stats":
             return format_stats_message(compute_stats(db, config))
