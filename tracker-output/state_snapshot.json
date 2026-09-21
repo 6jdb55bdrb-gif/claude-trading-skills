@@ -1,12 +1,12 @@
 {
  "counts": {
-  "calls": 1,
+  "calls": 2,
   "llm_usage": 0,
-  "price_history": 1,
-  "role_verdicts": 5,
-  "runs": 8
+  "price_history": 2,
+  "role_verdicts": 10,
+  "runs": 9
  },
- "exported_at": "2026-09-21T10:37:01+00:00",
+ "exported_at": "2026-09-21T15:22:46+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -40,6 +40,37 @@
     "target_price": 1.26,
     "technician_score": 6.0,
     "ticker": "SSDEV"
+   },
+   {
+    "asset_type": "stock",
+    "backend": "heuristic",
+    "call_date": "2026-09-21T15:22:46+00:00",
+    "close_reason": null,
+    "closed_at": null,
+    "confidence": 26,
+    "current_price": 1.09,
+    "direction": "short",
+    "entry_price": 1.09,
+    "id": 2,
+    "judge_decision": "SKIP",
+    "judge_reason": "Skeptic objection unanswered (extension)",
+    "kind": "shadow",
+    "last_price_at": "2026-09-21T15:22:46+00:00",
+    "notes": null,
+    "pnl_pct": 0.0,
+    "position_usd": 494.86,
+    "researcher_score": 4.5,
+    "risk_manager_score": 5.5,
+    "risk_usd": 100.0,
+    "run_id": "run_20260921T152217Z",
+    "screen_variant": "squeeze",
+    "shares": 454.0,
+    "skeptic_score": 10.0,
+    "status": "OPEN",
+    "stop_price": 1.31,
+    "target_price": 0.65,
+    "technician_score": 2.0,
+    "ticker": "NNCPL"
    }
   ],
   "llm_usage": [],
@@ -50,6 +81,13 @@
     "observed_at": "2026-09-20T19:04:44+00:00",
     "pnl_pct": 0.0,
     "price": 1.04
+   },
+   {
+    "call_id": 2,
+    "id": 2,
+    "observed_at": "2026-09-21T15:22:46+00:00",
+    "pnl_pct": 0.0,
+    "price": 1.09
    }
   ],
   "role_verdicts": [
@@ -97,6 +135,51 @@
     "role": "judge",
     "score": null,
     "verdict_json": "{\"role\": \"judge\", \"decision\": \"SKIP\", \"confidence\": 43, \"reason\": \"Skeptic objection unanswered (dilution)\", \"skeptic_objections_answered\": false, \"skeptic_answer\": \"Objection stands unanswered: $1.04 share price is prime ATM/shelf-offering territory\", \"key_risk\": \"$1.04 share price is prime ATM/shelf-offering territory\", \"reasons\": [\"researcher 4.5 / technician 6.0 / risk 8.0 vs skeptic severity 9.0\", \"weighted confidence 43\", \"Objection stands unanswered: $1.04 share price is prime ATM/shelf-offering territory\"], \"backend\": \"heuristic\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 2,
+    "created_at": "2026-09-21T15:22:46+00:00",
+    "id": 6,
+    "role": "researcher",
+    "score": 4.5,
+    "verdict_json": "{\"role\": \"researcher\", \"score\": 4.5, \"catalyst_type\": \"sector_theme\", \"catalyst_summary\": \"No catalyst identified from available data.\", \"catalyst_date\": null, \"sector_theme\": \"Capital Markets\", \"insider_buying\": false, \"evidence\": [], \"reasons\": [\"episodic-pivot analyzer: UNCLASSIFIED_EP score 55 rating C\", \"catalyst type not identifiable from the event record\", \"relative volume 14.6x corroborates a real event\"], \"backend\": \"heuristic\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 2,
+    "created_at": "2026-09-21T15:22:46+00:00",
+    "id": 7,
+    "role": "technician",
+    "score": 2.0,
+    "verdict_json": "{\"role\": \"technician\", \"score\": 2.0, \"trend\": \"uptrend\", \"support\": 0.6, \"resistance\": 2.76, \"volume_pattern\": \"climactic\", \"extension_pct_sma20\": 82.73, \"breakout_quality\": \"not_a_breakout\", \"reasons\": [\"price above both SMA20 and SMA50\", \"relative volume 14.6x is blow-off territory\", \"83% above SMA20: entry risk is high\"], \"backend\": \"heuristic\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 2,
+    "created_at": "2026-09-21T15:22:46+00:00",
+    "id": 8,
+    "role": "skeptic",
+    "score": 10.0,
+    "verdict_json": "{\"role\": \"skeptic\", \"score\": 10.0, \"strongest_objection\": \"83% above SMA20 \\u2014 the move has already paid\", \"objection_category\": \"extension\", \"risk_flags\": [\"83% above SMA20 \\u2014 the move has already paid\", \"relative volume 14.6x looks climactic\", \"$1.09 share price is prime ATM/shelf-offering territory\", \"38% short float may be a correct thesis, not fuel\"], \"what_would_change_my_mind\": \"A pullback to within 10% of the SMA20 that holds on declining volume.\", \"reasons\": [\"83% above SMA20 \\u2014 the move has already paid\", \"relative volume 14.6x looks climactic\", \"$1.09 share price is prime ATM/shelf-offering territory\"], \"backend\": \"heuristic\", \"score_polarity\": \"severity: 0 = no objection, 10 = disqualifying\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 2,
+    "created_at": "2026-09-21T15:22:46+00:00",
+    "id": 9,
+    "role": "risk_manager",
+    "score": 5.5,
+    "verdict_json": "{\"role\": \"risk_manager\", \"score\": 5.5, \"direction\": \"short\", \"direction_reason\": \"climactic extension plus a severe objection: the edge is in the fade\", \"entry\": 1.09, \"stop\": 1.31, \"stop_basis\": \"structure\", \"target\": 0.65, \"r_multiple_to_target\": 2.0, \"shares\": 454, \"position_usd\": 494.86, \"risk_usd\": 100.0, \"position_pct_of_account\": 4.95, \"reasons\": [\"structural stop at 1.31 (20.2% away)\", \"stop distance above 18% of price: size becomes uneconomic\"], \"backend\": \"heuristic\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 2,
+    "created_at": "2026-09-21T15:22:46+00:00",
+    "id": 10,
+    "role": "judge",
+    "score": null,
+    "verdict_json": "{\"role\": \"judge\", \"decision\": \"SKIP\", \"confidence\": 26, \"reason\": \"Skeptic objection unanswered (extension)\", \"skeptic_objections_answered\": false, \"skeptic_answer\": \"Objection stands unanswered: 83% above SMA20 \\u2014 the move has already paid\", \"key_risk\": \"83% above SMA20 \\u2014 the move has already paid\", \"reasons\": [\"researcher 4.5 / technician 2.0 / risk 5.5 vs skeptic severity 10.0\", \"weighted confidence 26\", \"Objection stands unanswered: 83% above SMA20 \\u2014 the move has already paid\"], \"backend\": \"heuristic\"}"
    }
   ],
   "runs": [
@@ -235,6 +318,23 @@
     "screening_ran": 1,
     "session_reason": "trading day, extended hours",
     "started_at": "2026-09-21T10:36:35+00:00"
+   },
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-09-21T15:22:46+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 1,
+    "new_shadows": 1,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 0,
+    "reviewed": 1,
+    "run_id": "run_20260921T152217Z",
+    "screening_ran": 1,
+    "session_reason": "regular trading hours",
+    "started_at": "2026-09-21T15:22:17+00:00"
    }
   ]
  }
