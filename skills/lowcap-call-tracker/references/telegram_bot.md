@@ -17,13 +17,69 @@ set)`.
 - The token is read **only** from the environment, never from
   `tracker_config.yaml` — a leaked config file cannot control the bot, and the
   config is safe to commit.
-- `TELEGRAM_CHAT_ID` is the one chat allowed to command the bot;
-  `telegram.extra_chat_ids` adds more (a second device, a partner).
-- Any other chat gets `Not authorized.` and no data. `/id` and `/start` are the
-  only commands answered everywhere, because discovering the chat id is a setup
-  step — and they return nothing but that chat's own id.
-- `/run` executes a full cycle, so it is disabled unless
-  `telegram.allow_run_command: true`.
+- `TELEGRAM_CHAT_ID` is the **owner** chat: always an admin, and the first
+  target of every push.
+- Access is a property of a *chat*, not a person — whoever controls a chat id
+  sees whatever the bot sends there. Three roles exist:
+  - **admin** — the owner chat, `telegram.admin_chat_ids`, and any member
+    promoted with `/promote`. Admins mint and revoke invites, remove members,
+    and may use `/run` where it is enabled.
+  - **member** — a chat that redeemed a valid invite code, plus the legacy
+    `telegram.extra_chat_ids`. Members read; they never write.
+  - **none** — everybody else. Refused, and told to ask for an invite link.
+- Any other chat gets a refusal and no data. `/id` and `/start` are the only
+  commands answered everywhere, because discovering the chat id (and redeeming
+  an invite) are setup steps.
+- `/run` executes a full cycle and spends LLM budget, so it is admin-only AND
+  disabled unless `telegram.allow_run_command: true`.
+
+## Inviting friends
+
+`telegram.access_mode` decides who may join: `invite` (the default — a valid
+code is required), `open` (anyone who sends `/start`) or `closed` (no new
+members; existing ones keep their access).
+
+An invite is a short code carried by a Telegram deep link:
+
+```
+https://t.me/<botname>?start=ABCD2345
+```
+
+Tapping it sends `/start ABCD2345` to the bot, so a friend joins with one tap
+and never retypes anything. Codes avoid `O`, `0`, `I`, `1` and `l` so a code
+read off a screen cannot be mistyped.
+
+| Action | Admin does |
+|---|---|
+| mint a link | `/invite` (1 use, 14 days) or `/invite 5 30 poker friends` |
+| see live links | `/invites` |
+| kill a link | `/revoke CODE` |
+| see who has access | `/members` |
+| take access away | `/remove CHAT_ID`, or `/remove CHAT_ID ban` to block rejoining |
+| hand over admin | `/promote CHAT_ID` |
+
+From a terminal, without Telegram:
+
+```bash
+python3 scripts/telegram_bot.py --invite 3 --invite-days 7   # prints the link
+python3 scripts/telegram_bot.py --members
+```
+
+Rules the code enforces:
+
+- An invite carries a **use budget** and an **expiry**; both are checked at
+  redemption, and a spent, expired or revoked code is refused with the reason.
+- Redeeming twice from the same chat is idempotent — it does not burn a second
+  use, so a friend can tap the link again without consuming someone else's seat.
+- A member removed with `/remove` can rejoin with a fresh code; one removed with
+  `ban` cannot rejoin at all.
+- `/stop` lets a member leave on their own. The owner chat cannot `/stop` —
+  that would silence the tracker's own operator.
+- Members and invites live in the database. They are exported to
+  `tracker.members_file` (under `state/`, which git ignores) and **never** to
+  the committed `tracker-output/state_snapshot.json`: an invite code is a shared
+  secret, and a chat id identifies a person. A test asserts that neither a code
+  nor a display name can appear in the committed snapshot.
 
 ## Private chat or group
 
@@ -88,8 +144,17 @@ Two group-specific Telegram behaviours:
 | `telegram.enabled` | `true` | master switch (still needs a token) |
 | `telegram.notify_when` | `changes` | `changes` = only runs with a new call, a close or an error; `always` = every run, including quiet weekend price-only runs |
 | `telegram.include_stats` | `true` | append the compact statistics block |
-| `telegram.include_role_detail` | `false` | add each role's score and the Skeptic's objection under every new call |
+| `telegram.include_role_detail` | `true` | add each role's score and the Skeptic's objection under every new call |
 | `telegram.silent_when_quiet` | `true` | a run with nothing opened or closed arrives without a notification sound |
+| `telegram.access_mode` | `invite` | who may join: `invite`, `open` or `closed` |
+| `telegram.invite_uses` | `1` | how many friends one minted link admits |
+| `telegram.invite_expiry_days` | `14` | how long a minted link stays usable |
+
+Every run notification is **broadcast**: the owner chat first, then admins, then
+every active member. One unreachable chat never silences the rest — the send
+loop records the failure and carries on. A chat that blocked the bot (or was
+deleted) is marked `blocked` and dropped from later broadcasts; a transient
+failure such as a 502 costs nobody their subscription.
 
 A run notification carries, in order: the session line (so a skipped weekend
 screen is obvious), new calls with the Judge's decision and one-line reason,
@@ -111,9 +176,21 @@ writes, statistics and git push all happen regardless.
 | `/shadow` | open shadow calls — the ones the Judge skipped |
 | `/call TICKER` | every role's verdict for one call — catalyst, trend, the Skeptic's objection, the plan, and the Judge's reasoning. This is the command for asking "why did it take that?" |
 | `/last` | the most recent run: screening state, hits, new calls, closes, LLM cost |
-| `/id`, `/start` | this chat's id, and whether it is authorized |
-| `/help` | the command list |
-| `/run` | a full tracker cycle (disabled by default) |
+| `/id` | this chat's id and its role |
+| `/start [CODE]` | redeem an invite code, or greet a member who already has access |
+| `/stop` | leave the tracker (the owner chat cannot) |
+| `/help` | the command list — admins see the admin block too |
+| `/invite [uses] [days] [note]` | **admin** — mint an invite link |
+| `/invites` | **admin** — the links that still work |
+| `/revoke CODE` | **admin** — kill a link |
+| `/members` | **admin** — who has access |
+| `/remove CHAT_ID [ban]` | **admin** — take access away |
+| `/promote CHAT_ID` | **admin** — make a member an admin |
+| `/run` | **admin** — a full tracker cycle (disabled by default) |
+
+The published Telegram menu is scoped: members see the read commands, and the
+admin commands are published only to admin chats, so nobody is shown a button
+that would only refuse them.
 
 ## Reporting rules
 

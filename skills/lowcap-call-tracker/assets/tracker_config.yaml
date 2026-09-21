@@ -43,6 +43,10 @@ tracker:
   # run on a fresh checkout keep dedupe state and PnL history. A server with a
   # real disk does not need it; leave null there.
   snapshot_file: null
+  # Subscribers and invite codes, exported beside the snapshot when one is in
+  # use. Deliberately under state/ (gitignored): an invite code is a shared
+  # secret and a chat id identifies a person, so neither may be committed.
+  members_file: state/lowcap_members.json
 
 screener:
   # auto -> elite when FINVIZ_API_KEY is set, else public HTML.
@@ -233,7 +237,19 @@ telegram:
   # /run triggers a full tracker cycle from your phone. Off by default: a cycle
   # spends LLM budget, and the timer already runs every 4 hours.
   allow_run_command: false
-  # Extra chat ids allowed to command the bot, beyond TELEGRAM_CHAT_ID.
+  # Who may use the bot:
+  #   invite -> a friend needs an invite link you mint with /invite (default)
+  #   open   -> anyone who finds the bot and sends /start
+  #   closed -> no new members; existing ones keep their access
+  access_mode: invite
+  # Chats that always hold admin rights, beyond TELEGRAM_CHAT_ID. Admins mint
+  # and revoke invites, remove members, and may use /run when it is enabled.
+  admin_chat_ids: []
+  # How many people one invite link admits, and how long it stays usable.
+  invite_uses: 1
+  invite_expiry_days: 14
+  # Extra chat ids allowed to read the bot, beyond TELEGRAM_CHAT_ID. Redeemed
+  # invites are stored in the database instead; this stays for hand-wired chats.
   extra_chat_ids: []
   # getUpdates long-poll timeout, seconds.
   poll_timeout_seconds: 50

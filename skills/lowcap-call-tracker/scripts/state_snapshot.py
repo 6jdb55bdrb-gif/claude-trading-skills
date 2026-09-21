@@ -31,17 +31,28 @@ from config import load_config, resolve_path
 
 SNAPSHOT_VERSION = 1
 # Fixed allowlist: table names are interpolated into SQL, never user input.
+# The public snapshot is committed to git, so it carries no personal data.
 TABLES: tuple[str, ...] = ("calls", "role_verdicts", "price_history", "runs", "llm_usage")
+
+# Who can read the tracker. An invite code is a shared secret and a chat id
+# identifies a person, so these NEVER go in the committed snapshot — they are
+# exported separately, to a gitignored file.
+MEMBER_TABLES: tuple[str, ...] = ("subscribers", "invites")
 
 
 class SnapshotError(RuntimeError):
     """Raised when a snapshot cannot be read or does not match the schema."""
 
 
-def export_snapshot(db: CallDatabase, path: str | Path | None = None) -> dict[str, Any]:
-    """Serialize every table. Writes to *path* when given; returns the document."""
+def export_snapshot(
+    db: CallDatabase,
+    path: str | Path | None = None,
+    *,
+    tables_to_export: tuple[str, ...] = TABLES,
+) -> dict[str, Any]:
+    """Serialize the public tables. Writes to *path* when given; returns the document."""
     tables: dict[str, list[dict[str, Any]]] = {}
-    for table in TABLES:
+    for table in tables_to_export:
         rows = db.conn.execute(f"SELECT * FROM {table}")  # nosec B608 — fixed allowlist
         tables[table] = [dict(row) for row in rows]
     snapshot = {
@@ -82,24 +93,31 @@ def import_snapshot(
     path: str | Path,
     *,
     replace: bool = False,
+    tables_to_import: tuple[str, ...] = TABLES,
 ) -> dict[str, Any]:
     """Load a snapshot into *db*.
 
     Refuses a database that already holds calls unless *replace* is set, so a
     scheduled run can import unconditionally without ever clobbering live state.
     """
-    existing = db.conn.execute("SELECT COUNT(*) AS n FROM calls").fetchone()["n"]
+    guard_table = tables_to_import[0]
+    existing = db.conn.execute(
+        f"SELECT COUNT(*) AS n FROM {guard_table}"  # nosec B608 — fixed allowlist
+    ).fetchone()["n"]
     if existing and not replace:
-        return {"imported": False, "reason": f"database already holds {existing} call(s)"}
+        return {
+            "imported": False,
+            "reason": f"database already holds {existing} {guard_table} row(s)",
+        }
 
     snapshot = load_snapshot(path)
     tables = snapshot["tables"]
     counts: dict[str, int] = {}
     with db.conn:  # one transaction: a half-imported history is worse than none
         if replace:
-            for table in reversed(TABLES):
+            for table in reversed(tables_to_import):
                 db.conn.execute(f"DELETE FROM {table}")  # nosec B608 — fixed allowlist
-        for table in TABLES:
+        for table in tables_to_import:
             rows = tables.get(table) or []
             counts[table] = len(rows)
             for row in rows:
@@ -118,6 +136,21 @@ def import_snapshot(
     }
 
 
+def export_members(db: CallDatabase, path: str | Path) -> dict[str, Any]:
+    """Write subscribers and invites to *path*.
+
+    Kept out of the committed snapshot on purpose: an invite code is a shared
+    secret and a chat id identifies a person. The destination belongs under
+    ``state/``, which this repository does not track.
+    """
+    return export_snapshot(db, path, tables_to_export=MEMBER_TABLES)
+
+
+def import_members(db: CallDatabase, path: str | Path, *, replace: bool = False) -> dict[str, Any]:
+    """Load a member file written by :func:`export_members`."""
+    return import_snapshot(db, path, replace=replace, tables_to_import=MEMBER_TABLES)
+
+
 def snapshot_path(config: dict[str, Any], override: str | None = None) -> Path | None:
     """Resolve the configured snapshot path, or None when snapshots are off."""
     if override:
@@ -125,6 +158,19 @@ def snapshot_path(config: dict[str, Any], override: str | None = None) -> Path |
     if not (config.get("tracker") or {}).get("snapshot_file"):
         return None
     return resolve_path(config, "snapshot_file")
+
+
+def members_path(config: dict[str, Any], override: str | None = None) -> Path | None:
+    """Resolve the member file, defaulting beside the tracker's other state.
+
+    Never inside ``tracker-output/``: that directory is committed.
+    """
+    if override:
+        return Path(override)
+    configured = (config.get("tracker") or {}).get("members_file")
+    if not configured:
+        return None
+    return resolve_path(config, "members_file")
 
 
 def describe(snapshot: dict[str, Any]) -> str:

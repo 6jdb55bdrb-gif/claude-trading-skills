@@ -180,14 +180,21 @@ python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --setup-profile  # pu
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --list-chats  # find a chat/group id
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --test       # check the wiring
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --poll       # answer commands
+python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --invite 3   # mint an invite link
+python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --members    # who has access
 ```
 
 With `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` set, every run pushes a summary
 (new calls with the Judge's decision, open-call PnL, closes, statistics, LLM
 cost) and the weekly loop pushes its proposals. The command bot answers
-`/stats`, `/open`, `/calls`, `/shadow`, `/last` from the configured chat only.
-Read `references/telegram_bot.md` for the authorization rules, the message
-contract and the polling model.
+`/stats`, `/open`, `/calls`, `/shadow`, `/last`.
+
+To let friends follow along, mint an invite link with `/invite` (or the flag
+above) and send it to them: one tap admits them as a read-only **member**, and
+every run notification is then broadcast to everyone. Admins hold `/invite`,
+`/revoke`, `/members`, `/remove` and `/promote`; members hold nothing but the
+read commands and `/stop`. Read `references/telegram_bot.md` for the access
+rules, the message contract and the polling model.
 
 ### Step 8: Deploy (optional)
 
@@ -219,6 +226,7 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - `skills/lowcap-call-tracker/scripts/learning_loop.py`
 - `skills/lowcap-call-tracker/scripts/llm_client.py`
 - `skills/lowcap-call-tracker/scripts/market_hours.py`
+- `skills/lowcap-call-tracker/scripts/membership.py`
 - `skills/lowcap-call-tracker/scripts/option_contract.py`
 - `skills/lowcap-call-tracker/scripts/price_update.py`
 - `skills/lowcap-call-tracker/scripts/publish.py`

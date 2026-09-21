@@ -363,7 +363,7 @@ def _handle(command, config, db_path, *, chat="4242", args=None, run_fn=None):
         config=config,
         db_path=db_path,
         chat_id=chat,
-        allowed=tb.authorized_chats(config, "4242"),
+        owner_chat_id="4242",
         run_cycle_fn=run_fn,
     )
 
@@ -377,14 +377,15 @@ def test_parse_command_strips_the_bot_mention():
 
 def test_unauthorized_chat_gets_nothing_but_a_refusal(config, tmp_db):
     reply = _handle("/stats", config, tmp_db.path, chat="999")
-    assert reply == "Not authorized."
+    assert "invite" in reply.lower()
+    assert "hit rate" not in reply.lower()
 
 
 def test_id_works_from_any_chat_and_flags_authorization(config, tmp_db):
     mine = _handle("/id", config, tmp_db.path, chat="4242")
     theirs = _handle("/id", config, tmp_db.path, chat="999")
-    assert "4242" in mine and "not authorized" not in mine
-    assert "999" in theirs and "not authorized" in theirs
+    assert "4242" in mine and "no access" not in mine
+    assert "999" in theirs and "no access" in theirs
 
 
 def test_extra_chat_ids_are_authorized(config, tmp_db):
@@ -395,7 +396,7 @@ def test_extra_chat_ids_are_authorized(config, tmp_db):
         config=config,
         db_path=tmp_db.path,
         chat_id="777",
-        allowed=tb.authorized_chats(config, "4242"),
+        owner_chat_id="4242",
     )
     assert "Lowcap tracker bot" in reply
 
@@ -484,7 +485,7 @@ def test_a_failing_command_replies_instead_of_crashing(wired, tmp_db, monkeypatc
     config, sent, transport = wired
     client = _client(config, transport)
     monkeypatch.setattr(
-        tb, "format_help", lambda _config: (_ for _ in ()).throw(RuntimeError("boom"))
+        tb, "format_help", lambda _config, **_kw: (_ for _ in ()).throw(RuntimeError("boom"))
     )
     offset = tb.process_updates(client, [_update(3, "/help")], config=config, db_path=tmp_db.path)
     assert offset == 4
@@ -580,7 +581,9 @@ def test_cycle_sends_a_notification(wired, tmp_path, monkeypatch):
     import run_cycle as rc
 
     monkeypatch.setattr(
-        rc, "notify_run", lambda report, cfg: tb.notify_run(report, cfg, transport=transport)
+        rc,
+        "notify_run",
+        lambda report, cfg, **kw: tb.notify_run(report, cfg, transport=transport, **kw),
     )
     report = run_cycle(
         config,
@@ -638,7 +641,9 @@ def test_a_broken_bot_never_fails_a_run(wired, tmp_path, monkeypatch):
     import run_cycle as rc
 
     monkeypatch.setattr(
-        rc, "notify_run", lambda report, cfg: tb.notify_run(report, cfg, transport=broken)
+        rc,
+        "notify_run",
+        lambda report, cfg, **kw: tb.notify_run(report, cfg, transport=broken, **kw),
     )
     report = run_cycle(
         config,
@@ -687,7 +692,6 @@ def test_group_chat_ids_are_negative_and_work(monkeypatch, config):
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "-1001234567890")
     assert tb.credentials(config) == ("t", "-1001234567890")
-    assert tb.authorized_chats(config, "-1001234567890") == {"-1001234567890"}
 
 
 def test_group_member_command_with_mention_is_authorized(config, tmp_db):
@@ -699,7 +703,7 @@ def test_group_member_command_with_mention_is_authorized(config, tmp_db):
         config=config,
         db_path=tmp_db.path,
         chat_id="-1001234567890",
-        allowed=tb.authorized_chats(config, "-1001234567890"),
+        owner_chat_id="-1001234567890",
     )
     assert "Recent calls" in reply
 
@@ -711,9 +715,9 @@ def test_a_different_group_is_not_authorized(config, tmp_db):
         config=config,
         db_path=tmp_db.path,
         chat_id="-1009999999999",
-        allowed=tb.authorized_chats(config, "-1001234567890"),
+        owner_chat_id="-1001234567890",
     )
-    assert reply == "Not authorized."
+    assert "invite" in reply.lower()
 
 
 def test_push_targets_the_configured_group(wired, monkeypatch):
@@ -876,15 +880,22 @@ def test_public_link_form_is_usable_as_a_push_target(wired, monkeypatch):
 
 
 def test_setup_profile_publishes_the_menu_description_and_about(config):
-    calls = {}
+    calls = []
 
     def transport(method, payload):
-        calls[method] = payload
+        calls.append({"method": method, **payload})
         return True
 
     result = tb.setup_profile(_client(config, transport), config=config)
-    assert set(calls) == {"setMyCommands", "setMyDescription", "setMyShortDescription"}
-    names = [entry["command"] for entry in calls["setMyCommands"]["commands"]]
+    assert {call["method"] for call in calls} == {
+        "setMyCommands",
+        "setMyDescription",
+        "setMyShortDescription",
+    }
+    default = next(
+        call for call in calls if call["method"] == "setMyCommands" and "scope" not in call
+    )
+    names = [entry["command"] for entry in default["commands"]]
     assert names == [
         "report",
         "stats",
@@ -894,32 +905,51 @@ def test_setup_profile_publishes_the_menu_description_and_about(config):
         "call",
         "last",
         "id",
+        "stop",
         "help",
     ]
     assert "run" not in names  # disabled by default, so not advertised
-    assert result["published"] == 9
+    assert "invite" not in names  # admins only, published to their chat instead
+    assert result["published"] == 10
+    assert result["admin_scopes"] == 1
     # Telegram's own limits.
-    assert len(calls["setMyDescription"]["description"]) <= 512
-    assert len(calls["setMyShortDescription"]["short_description"]) <= 120
-    for entry in calls["setMyCommands"]["commands"]:
-        assert entry["command"] == entry["command"].lower()
-        assert len(entry["description"]) <= 256
+    description = next(call for call in calls if call["method"] == "setMyDescription")
+    short = next(call for call in calls if call["method"] == "setMyShortDescription")
+    assert len(description["description"]) <= 512
+    assert len(short["short_description"]) <= 120
+    for call in calls:
+        for entry in call.get("commands", []):
+            assert entry["command"] == entry["command"].lower()
+            assert len(entry["description"]) <= 256
 
 
 def test_setup_profile_advertises_run_only_when_enabled(config):
-    calls = {}
+    """/run is an admin power, so it appears in the admin menu only."""
+    calls = []
     config["telegram"]["allow_run_command"] = True
-    tb.setup_profile(_client(config, lambda m, p: calls.setdefault(m, p) or True), config=config)
-    names = [entry["command"] for entry in calls["setMyCommands"]["commands"]]
-    assert "run" in names
-    assert names[-1] == "help"  # help stays last in the menu
+    tb.setup_profile(
+        _client(config, lambda m, p: calls.append({"method": m, **p}) or True), config=config
+    )
+    menus = [call for call in calls if call["method"] == "setMyCommands"]
+    default = next(call for call in menus if "scope" not in call)
+    admin = next(call for call in menus if "scope" in call)
+    assert "run" not in [entry["command"] for entry in default["commands"]]
+    admin_names = [entry["command"] for entry in admin["commands"]]
+    assert "run" in admin_names
+    assert admin_names[-1] == "help"  # help stays last in the menu
 
 
 def test_menu_and_help_cover_the_same_commands(config):
     """The published menu must not drift from what the bot actually answers."""
-    help_text = tb.format_help(config)
+    import membership as ms
+
+    member_help = tb.format_help(config, role=ms.ROLE_MEMBER)
     for name, _description in tb.BOT_COMMANDS:
-        assert f"/{name}" in help_text
+        assert f"/{name}" in member_help
+
+    admin_help = tb.format_help(config, role=ms.ROLE_ADMIN)
+    for name, _description in tb.BOT_COMMANDS + tb.ADMIN_COMMANDS:
+        assert f"/{name}" in admin_help
 
 
 # ------------------------------------------------------- reporting contract

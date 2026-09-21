@@ -45,6 +45,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+import membership as ms
 from call_db import KIND_ACTIVE, STATUS_EXPIRED, STATUS_OPEN, CallDatabase
 from option_contract import days_to_expiry
 
@@ -528,7 +529,15 @@ BOT_COMMANDS: tuple[tuple[str, str], ...] = (
     ("call", "Every role's verdict for one ticker — /call SDEV"),
     ("last", "What the most recent run did"),
     ("id", "This chat's id (setup helper)"),
+    ("stop", "Leave the tracker — no further updates"),
     ("help", "Show the command list"),
+)
+ADMIN_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("invite", "Mint an invite link — /invite [uses] [days]"),
+    ("invites", "The invite links that still work"),
+    ("revoke", "Kill an invite link — /revoke CODE"),
+    ("members", "Who has access"),
+    ("remove", "Take access away — /remove CHAT_ID"),
 )
 BOT_SHORT_DESCRIPTION = (
     "Screens US low-cap stocks and ETFs, argues each candidate through five "
@@ -558,8 +567,13 @@ def setup_profile(
     if include_run is None:
         include_run = bool((config or {}).get("telegram", {}).get("allow_run_command"))
     commands = [{"command": name, "description": text} for name, text in BOT_COMMANDS]
+    admin_commands = commands[:-1] + [
+        {"command": name, "description": text} for name, text in ADMIN_COMMANDS
+    ]
     if include_run:
-        commands.insert(-1, {"command": "run", "description": "Run a tracker cycle now"})
+        admin_commands.append({"command": "run", "description": "Run a tracker cycle now"})
+    admin_commands.append(commands[-1])
+
     results = {
         "commands": client._post("setMyCommands", {"commands": commands}),
         "description": client._post("setMyDescription", {"description": BOT_DESCRIPTION}),
@@ -567,7 +581,25 @@ def setup_profile(
             "setMyShortDescription", {"short_description": BOT_SHORT_DESCRIPTION}
         ),
     }
-    return {"published": len(commands), "results": results}
+    # Admin chats see the invite commands; members never do, so nobody is
+    # tempted by a button that would only refuse them.
+    admin_chats = [str(client.chat_id)] + [
+        str(item) for item in ((config or {}).get("telegram", {}).get("admin_chat_ids") or [])
+    ]
+    scoped = 0
+    for admin_chat in dict.fromkeys(admin_chats):
+        try:
+            client._post(
+                "setMyCommands",
+                {
+                    "commands": admin_commands,
+                    "scope": {"type": "chat", "chat_id": admin_chat},
+                },
+            )
+            scoped += 1
+        except TelegramError:  # a group the bot has since left must not fail setup
+            continue
+    return {"published": len(commands), "admin_scopes": scoped, "results": results}
 
 
 def format_report_message(db: CallDatabase, config: dict[str, Any]) -> str:
@@ -675,7 +707,7 @@ def format_call_detail(db: CallDatabase, ticker: str) -> str:
     return "\n".join(lines)
 
 
-def format_help(config: dict[str, Any]) -> str:
+def format_help(config: dict[str, Any], *, role: str = ms.ROLE_ADMIN) -> str:
     telegram = config.get("telegram") or {}
     lines = [
         "<b>Lowcap tracker bot</b>",
@@ -687,21 +719,44 @@ def format_help(config: dict[str, Any]) -> str:
         "/call TICKER — every role's verdict for one call",
         "/last — what the most recent run did",
         "/id — this chat's id (for setup)",
+        "/stop — leave the tracker",
         "/help — this message",
     ]
-    if telegram.get("allow_run_command"):
-        lines.insert(-2, "/run — run a full tracker cycle now")
-    else:
-        lines.append("<i>/run is disabled (telegram.allow_run_command)</i>")
+    if role == ms.ROLE_ADMIN:
+        lines += [
+            "",
+            "<b>Admin</b>",
+            "/invite [uses] [days] [note] — mint an invite link for a friend",
+            "/invites — the links that still work",
+            "/revoke CODE — kill a link",
+            "/members — who has access",
+            "/remove CHAT_ID [ban] — take access away",
+            "/promote CHAT_ID — make a member an admin",
+        ]
+        if telegram.get("allow_run_command"):
+            lines.append("/run — run a full tracker cycle now")
+        else:
+            lines.append("<i>/run is disabled (telegram.allow_run_command)</i>")
     return "\n".join(lines)
 
 
 # ------------------------------------------------------------------ commands
 
 
-def authorized_chats(config: dict[str, Any], chat_id: str) -> set[str]:
-    extra = (config.get("telegram") or {}).get("extra_chat_ids") or []
-    return {str(chat_id), *(str(item) for item in extra)}
+_BOT_USERNAME: str | None = None
+
+
+def bot_username(config: dict[str, Any] | None = None) -> str:
+    """The bot's @name, asked once and cached. Empty when it cannot be read."""
+    global _BOT_USERNAME
+    if _BOT_USERNAME is not None:
+        return _BOT_USERNAME
+    try:
+        client = build_client(config or {})
+        _BOT_USERNAME = str((client._post("getMe", {}) or {}).get("username") or "")
+    except (TelegramDisabled, TelegramError):
+        _BOT_USERNAME = ""
+    return _BOT_USERNAME
 
 
 def parse_command(text: str) -> tuple[str, list[str]]:
@@ -713,6 +768,64 @@ def parse_command(text: str) -> tuple[str, list[str]]:
     return command, parts[1:]
 
 
+def _join_hint(config: dict[str, Any]) -> str:
+    """What a chat without access is told. Never leaks tracker content."""
+    if ms.access_mode(config) == "closed":
+        return "This bot is closed to new members."
+    return (
+        "Not authorized. This bot is invite-only — ask its owner for an "
+        "invite link, then tap it or send <code>/start YOURCODE</code>."
+    )
+
+
+REDEEM_REFUSALS = {
+    "unknown": "That invite code is not one of mine. Ask for a fresh invite link.",
+    "expired": "That invite link has expired. Ask for a fresh one.",
+    "spent": "That invite link has already been used up. Ask for a fresh one.",
+    "revoked": "That invite link was revoked. Ask for a fresh one.",
+    "banned": "This chat was removed from the tracker.",
+    "closed": "This bot is closed to new members.",
+}
+
+
+def format_welcome(config: dict[str, Any], *, role: str, returning: bool = False) -> str:
+    opening = "<b>Welcome back.</b>" if returning else "<b>Welcome to the Lowcap tracker.</b>"
+    body = (
+        "Every 4 hours I screen US low caps and ETFs, argue each candidate through "
+        "five roles, and track the calls — the ones taken AND the ones skipped.\n\n"
+        "Nothing here is advice: these are small, thin, violent stocks, and the "
+        "record is published so you can judge it for yourself."
+    )
+    return f"{opening}\n{body}\n\n{format_help(config, role=role)}"
+
+
+def _invite_reply(db: Any, config: dict[str, Any], args: list[str], chat_id: str) -> str:
+    telegram = config.get("telegram") or {}
+    uses = int(telegram.get("invite_uses", ms.DEFAULT_USES))
+    days: int | None = int(telegram.get("invite_expiry_days", ms.DEFAULT_EXPIRY_DAYS))
+    if args and args[0].isdigit():
+        uses = int(args[0])
+    if len(args) > 1 and args[1].isdigit():
+        days = int(args[1]) or None
+    note = " ".join(args[2:]) if len(args) > 2 else None
+    row = ms.create_invite(db, created_by=chat_id, max_uses=uses, expires_days=days, note=note)
+    username = bot_username(config)
+    window = f"expires in {days} day(s)" if days else "never expires"
+    if not username:
+        return (
+            f"Invite code <code>{row['code']}</code> — {uses} use(s), {window}.\n"
+            "Tell your friend to send the bot <code>/start "
+            f"{row['code']}</code>."
+        )
+    link = ms.invite_link(username, row["code"])
+    return (
+        f"<b>Invite link</b> — {uses} use(s), {window}\n"
+        f"{link}\n\n"
+        "Send that to a friend. One tap adds them; they can read the calls and "
+        "the stats, and nothing else."
+    )
+
+
 def handle_command(
     command: str,
     args: list[str],
@@ -720,28 +833,96 @@ def handle_command(
     config: dict[str, Any],
     db_path: str | Path,
     chat_id: str,
-    allowed: set[str],
+    owner_chat_id: str | None = None,
+    display_name: str | None = None,
     run_cycle_fn: Callable[[], dict[str, Any]] | None = None,
 ) -> str:
-    """Return the reply for one command. Unauthorized chats get a refusal."""
+    """Return the reply for one command, enforcing the caller's role."""
     telegram = config.get("telegram") or {}
-    if command in {"/id", "/start"}:
-        note = "" if str(chat_id) in allowed else "\n<i>This chat is not authorized.</i>"
-        return f"Chat id: <code>{escape_html(chat_id)}</code>{note}"
-    if str(chat_id) not in allowed:
-        return "Not authorized."
-    if command in {"/help", "/commands"}:
-        return format_help(config)
+    chat_id = str(chat_id)
 
     from stats import compute_stats  # local import: keeps --test cheap
 
-    if command == "/run":
-        if not telegram.get("allow_run_command") or run_cycle_fn is None:
-            return "/run is disabled. Enable telegram.allow_run_command to use it."
-        report = run_cycle_fn()
-        return format_run_notification(report, config)
-
     with CallDatabase(db_path) as db:
+        role = ms.access_for(db, config, owner_chat_id=owner_chat_id, chat_id=chat_id)
+        is_owner = owner_chat_id is not None and chat_id == str(owner_chat_id)
+        is_admin = role == ms.ROLE_ADMIN
+
+        if command == "/id":
+            note = "" if role != ms.ROLE_NONE else "\n<i>This chat has no access.</i>"
+            return f"Chat id: <code>{escape_html(chat_id)}</code> · {role}{note}"
+
+        if command == "/start":
+            if role != ms.ROLE_NONE:
+                if args:
+                    ms.add_subscriber(db, chat_id, display_name=display_name, role=role)
+                return format_welcome(config, role=role, returning=True)
+            code = args[0] if args else ""
+            if not code and ms.access_mode(config) == "open":
+                ms.add_subscriber(db, chat_id, display_name=display_name)
+                return format_welcome(config, role=ms.ROLE_MEMBER)
+            if not code:
+                return _join_hint(config)
+            result = ms.redeem_invite(
+                db, code, chat_id=chat_id, display_name=display_name, config=config
+            )
+            if not result["ok"]:
+                return REDEEM_REFUSALS.get(result["reason"], _join_hint(config))
+            return format_welcome(config, role=ms.ROLE_MEMBER)
+
+        if role == ms.ROLE_NONE:
+            return _join_hint(config)
+
+        if command in {"/help", "/commands"}:
+            return format_help(config, role=role)
+
+        if command == "/stop":
+            if is_owner:
+                return "You are the owner — /stop would silence your own tracker."
+            ms.remove_subscriber(db, chat_id)
+            return (
+                "Removed. You will get no further updates. Tap your invite link "
+                "again (or ask for a new one) to come back."
+            )
+
+        # ------------------------------------------------------- admin only
+        admin_commands = {"/invite", "/invites", "/revoke", "/members", "/remove", "/promote"}
+        if command in admin_commands or command == "/run":
+            if not is_admin:
+                return "That command is for admins only."
+
+        if command == "/invite":
+            return _invite_reply(db, config, args, chat_id)
+        if command == "/invites":
+            return ms.format_invites(ms.list_invites(db), bot_username(config))
+        if command == "/revoke":
+            if not args:
+                return "Usage: /revoke CODE — see /invites for the codes."
+            done = ms.revoke_invite(db, args[0])
+            return "Revoked." if done else "No usable invite with that code."
+        if command == "/members":
+            return ms.format_members(ms.list_subscribers(db), owner_chat_id=owner_chat_id)
+        if command == "/remove":
+            if not args:
+                return "Usage: /remove CHAT_ID — see /members for the ids."
+            target = str(args[0])
+            if owner_chat_id is not None and target == str(owner_chat_id):
+                return "The owner chat cannot be removed."
+            done = ms.remove_subscriber(db, target, banned="ban" in args[1:])
+            return f"Removed {escape_html(target)}." if done else "No member with that id."
+        if command == "/promote":
+            if not args:
+                return "Usage: /promote CHAT_ID — see /members for the ids."
+            done = ms.set_role(db, str(args[0]), ms.ROLE_ADMIN)
+            return "Promoted to admin." if done else "No member with that id."
+
+        if command == "/run":
+            if not telegram.get("allow_run_command") or run_cycle_fn is None:
+                return "/run is disabled. Enable telegram.allow_run_command to use it."
+            report = run_cycle_fn()
+            return format_run_notification(report, config)
+
+        # ------------------------------------------------------ read commands
         if command == "/report":
             return format_report_message(db, config)
         if command == "/call":
@@ -817,15 +998,24 @@ def process_updates(
     run_cycle_fn: Callable[[], dict[str, Any]] | None = None,
 ) -> int | None:
     """Answer every message update; return the next getUpdates offset."""
-    allowed = authorized_chats(config, client.chat_id)
     next_offset = None
     for update in updates:
         next_offset = int(update.get("update_id", 0)) + 1
         message = update.get("message") or {}
-        chat_id = str((message.get("chat") or {}).get("id", ""))
+        chat = message.get("chat") or {}
+        chat_id = str(chat.get("id", ""))
         command, args = parse_command(message.get("text", ""))
         if not command or not chat_id:
             continue
+        sender = message.get("from") or {}
+        display_name = (
+            chat.get("title")
+            or " ".join(
+                part for part in (sender.get("first_name"), sender.get("last_name")) if part
+            ).strip()
+            or sender.get("username")
+            or None
+        )
         try:
             reply = handle_command(
                 command,
@@ -833,7 +1023,8 @@ def process_updates(
                 config=config,
                 db_path=db_path,
                 chat_id=chat_id,
-                allowed=allowed,
+                owner_chat_id=client.chat_id,
+                display_name=display_name,
                 run_cycle_fn=run_cycle_fn,
             )
         except Exception as exc:  # a bad command must not kill the poller
@@ -935,23 +1126,64 @@ def format_chat_list(chats: list[dict[str, Any]], configured: str | None = None)
 # ------------------------------------------------------------- notify helper
 
 
+# A chat that will never be reachable again, versus a transient wobble. Only the
+# first kind costs someone their subscription.
+PERMANENT_SEND_FAILURES = (
+    "bot was blocked by the user",
+    "user is deactivated",
+    "chat not found",
+    "bot was kicked",
+    "group chat was deleted",
+    "have no rights to send",
+)
+
+
+def _is_permanent_failure(message: str) -> bool:
+    lowered = str(message).lower()
+    return any(marker in lowered for marker in PERMANENT_SEND_FAILURES)
+
+
 def notify(
     config: dict[str, Any],
     text: str,
     *,
     silent: bool = False,
     transport: Callable[[str, dict[str, Any]], dict[str, Any]] | None = None,
+    db_path: str | Path | None = None,
 ) -> dict[str, Any]:
-    """Best-effort send. Never raises: a broken bot must not fail a run."""
+    """Best-effort send to every subscriber. Never raises: a broken bot must
+    not fail a run, and one unreachable friend must not silence the rest."""
     try:
         client = build_client(config, transport=transport)
     except TelegramDisabled as exc:
         return {"sent": False, "reason": str(exc)}
-    try:
-        client.send_message(text, silent=silent)
-    except TelegramError as exc:
-        return {"sent": False, "reason": str(exc)}
-    return {"sent": True, "messages": len(client.sent)}
+
+    targets = [client.chat_id]
+    if db_path is not None:
+        with CallDatabase(db_path) as db:
+            targets = ms.broadcast_targets(db, config, owner_chat_id=client.chat_id)
+
+    delivered, failed, reasons = 0, [], []
+    for target in targets:
+        try:
+            client.send_message(text, chat_id=target, silent=silent)
+            delivered += 1
+        except TelegramError as exc:
+            failed.append(target)
+            reasons.append(f"{target}: {exc}")
+            if db_path is not None and _is_permanent_failure(str(exc)):
+                with CallDatabase(db_path) as db:
+                    ms.mark_blocked(db, target)
+
+    result: dict[str, Any] = {
+        "sent": delivered > 0,
+        "delivered": delivered,
+        "failed": failed,
+        "messages": len(client.sent),
+    }
+    if reasons:
+        result["reason"] = "; ".join(reasons)
+    return result
 
 
 def should_notify(report: dict[str, Any], config: dict[str, Any]) -> bool:
@@ -970,6 +1202,7 @@ def notify_run(
     config: dict[str, Any],
     *,
     transport: Callable[[str, dict[str, Any]], dict[str, Any]] | None = None,
+    db_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Send the run summary, honouring notify_when and the quiet-run setting."""
     telegram = config.get("telegram") or {}
@@ -983,6 +1216,7 @@ def notify_run(
         format_run_notification(report, config),
         silent=bool(quiet and telegram.get("silent_when_quiet", True)),
         transport=transport,
+        db_path=db_path,
     )
 
 
@@ -1005,6 +1239,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--report", action="store_true", help="Push the full report (open calls, stats, last run)"
     )
+    parser.add_argument(
+        "--invite",
+        nargs="?",
+        const="1",
+        metavar="USES",
+        help="Mint an invite link from the terminal (default 1 use)",
+    )
+    parser.add_argument(
+        "--invite-days", type=int, default=None, help="Days the minted link stays usable"
+    )
+    parser.add_argument("--members", action="store_true", help="List the chats with access")
     parser.add_argument("--poll", action="store_true", help="Answer commands until stopped")
     parser.add_argument("--once", action="store_true", help="Drain pending commands and exit")
     parser.add_argument("--max-rounds", type=int, default=None, help="Stop after N poll rounds")
@@ -1026,6 +1271,44 @@ def main(argv: list[str] | None = None) -> int:
     if args.setup_profile:
         result = setup_profile(client, config=config)
         print(f"published {result['published']} commands, description and about text")
+        return 0
+
+    if args.invite is not None:
+        telegram = config.get("telegram") or {}
+        days = args.invite_days
+        if days is None:
+            days = telegram.get("invite_expiry_days", ms.DEFAULT_EXPIRY_DAYS)
+        with CallDatabase(db_path) as db:
+            row = ms.create_invite(
+                db,
+                created_by=str(client.chat_id),
+                max_uses=int(args.invite),
+                expires_days=days,
+            )
+        username = bot_username(config)
+        if username:
+            print(ms.invite_link(username, row["code"]))
+        else:
+            print(f"code: {row['code']} (send the bot: /start {row['code']})")
+        print(
+            f"{row['max_uses']} use(s), "
+            + (f"expires {row['expires_at'][:10]}" if row["expires_at"] else "no expiry"),
+            file=sys.stderr,
+        )
+        return 0
+
+    if args.members:
+        with CallDatabase(db_path) as db:
+            rows = ms.list_subscribers(db)
+        if not rows:
+            print("no members yet")
+            return 0
+        print(f"{'CHAT ID':>16}  {'ROLE':<7}  {'JOINED':<10}  NAME")
+        for row in rows:
+            name = row["display_name"] or ""
+            print(
+                f"{row['chat_id']:>16}  {row['role']:<7}  {(row['joined_at'] or '')[:10]:<10}  {name}"
+            )
         return 0
 
     if args.list_chats:

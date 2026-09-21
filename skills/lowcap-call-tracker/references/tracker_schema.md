@@ -50,6 +50,27 @@ calls, takes, shadows, closes, prices, backend, LLM cost.
 Per role call: `run_id`, `month`, `role`, `model`, token counts and `cost_usd`.
 `month_to_date_spend()` sums this table for the monthly cap.
 
+### `subscribers`
+
+One row per chat with access: `chat_id` (primary key), `display_name`, `role`
+(`admin` / `member`), `status` (`active` / `removed` / `banned` / `blocked`),
+`joined_at`, `left_at`, `invited_by` and the `invite_code` redeemed. Only
+`active` rows receive broadcasts; a removed row is kept so a rejoin, a ban or a
+block stays on the record.
+
+### `invites`
+
+One row per invite code: `code` (primary key), `created_at`, `created_by`,
+`max_uses`, `uses`, `expires_at`, `revoked_at` and an optional `note`. A code is
+usable while it is un-revoked, un-expired and `uses < max_uses`; redemption
+increments `uses` in the same transaction that creates the subscriber.
+
+Both tables are exported to `tracker.members_file` (default
+`state/lowcap_members.json`, which git ignores) rather than to the committed
+`tracker-output/state_snapshot.json`. A scheduled run on a throwaway checkout
+keeps its calls and PnL from the public snapshot; codes and chat ids stay off
+the public record.
+
 ## PnL
 
 Direction-corrected, in percent of entry:

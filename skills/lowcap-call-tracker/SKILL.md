@@ -136,14 +136,21 @@ python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --setup-profile  # pu
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --list-chats  # find a chat/group id
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --test       # check the wiring
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --poll       # answer commands
+python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --invite 3   # mint an invite link
+python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --members    # who has access
 ```
 
 With `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` set, every run pushes a summary
 (new calls with the Judge's decision, open-call PnL, closes, statistics, LLM
 cost) and the weekly loop pushes its proposals. The command bot answers
-`/stats`, `/open`, `/calls`, `/shadow`, `/last` from the configured chat only.
-Read `references/telegram_bot.md` for the authorization rules, the message
-contract and the polling model.
+`/stats`, `/open`, `/calls`, `/shadow`, `/last`.
+
+To let friends follow along, mint an invite link with `/invite` (or the flag
+above) and send it to them: one tap admits them as a read-only **member**, and
+every run notification is then broadcast to everyone. Admins hold `/invite`,
+`/revoke`, `/members`, `/remove` and `/promote`; members hold nothing but the
+read commands and `/stop`. Read `references/telegram_bot.md` for the access
+rules, the message contract and the polling model.
 
 ### Step 8: Deploy (optional)
 
@@ -182,8 +189,12 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - **Weekends and holidays skip screening, never the price update.**
 - **A failing Telegram bot never fails a run.** Notification errors are caught
   and reported in the run output; the database, statistics and git push proceed.
-- **Only the configured chat can command the bot.** Every other chat gets a
-  refusal; `/run` additionally requires `telegram.allow_run_command`.
+- **Only the owner, admins and invited members can command the bot.** Every
+  other chat gets a refusal that tells it to ask for an invite link and nothing
+  else. Minting, revoking and removing are admin-only; `/run` additionally
+  requires `telegram.allow_run_command`.
+- **One unreachable member never silences a broadcast.** A chat that blocked the
+  bot is marked and skipped; a transient send failure costs nobody their access.
 - **The monthly LLM cap is hard.** At `llm.monthly_spend_cap_usd` the roles fall
   back to deterministic scoring instead of spending more.
 
@@ -211,7 +222,10 @@ override document with `--config` and it is deep-merged over the default.
 | `llm.monthly_spend_cap_usd` | 10.0 | hard ceiling, then heuristic backend |
 | `telegram.enabled` | true | master switch (still needs a token) |
 | `telegram.notify_when` | changes | `changes` or `always` |
-| `telegram.allow_run_command` | false | `/run` from the phone |
+| `telegram.allow_run_command` | false | `/run` from the phone (admins only) |
+| `telegram.access_mode` | invite | `invite`, `open` or `closed` |
+| `telegram.invite_uses` | 1 | friends one minted link admits |
+| `telegram.invite_expiry_days` | 14 | how long a link stays usable |
 | `market.skip_screening_when_closed` | true | weekend / holiday behaviour |
 
 ---

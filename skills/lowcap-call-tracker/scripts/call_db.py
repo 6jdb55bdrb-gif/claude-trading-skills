@@ -10,6 +10,8 @@ Tables
 ``price_history`` one row per price observation, per call.
 ``runs``          one row per tracker run.
 ``llm_usage``     token spend per role call, used for the monthly cap.
+``subscribers``   every chat with access, and the role it holds.
+``invites``       invite codes, their use budget and expiry.
 
 A ticker can hold only one open call at a time: a partial unique index on
 ``ticker WHERE status = 'OPEN'`` enforces de-duplication in the database rather
@@ -124,6 +126,29 @@ CREATE TABLE IF NOT EXISTS llm_usage (
     cost_usd REAL
 );
 CREATE INDEX IF NOT EXISTS idx_usage_month ON llm_usage (month);
+
+CREATE TABLE IF NOT EXISTS subscribers (
+    chat_id TEXT PRIMARY KEY,
+    display_name TEXT,
+    role TEXT NOT NULL DEFAULT 'member',
+    status TEXT NOT NULL DEFAULT 'active',
+    joined_at TEXT NOT NULL,
+    left_at TEXT,
+    invited_by TEXT,
+    invite_code TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_subscribers_status ON subscribers (status);
+
+CREATE TABLE IF NOT EXISTS invites (
+    code TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    created_by TEXT,
+    max_uses INTEGER NOT NULL DEFAULT 1,
+    uses INTEGER NOT NULL DEFAULT 0,
+    expires_at TEXT,
+    revoked_at TEXT,
+    note TEXT
+);
 """
 
 

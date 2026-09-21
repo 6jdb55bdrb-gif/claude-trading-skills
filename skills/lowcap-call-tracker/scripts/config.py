@@ -92,6 +92,11 @@ def _validate(config: dict[str, Any]) -> None:
             "tracker.close_threshold_pct must be a negative number, or null to disable "
             "the early stop-out (calls then close only at contract expiry)"
         )
+    mode = str(config["telegram"].get("access_mode", "invite")).lower()
+    if mode not in ("invite", "open", "closed"):
+        raise ConfigError(
+            f"telegram.access_mode must be 'invite', 'open' or 'closed' (got {mode!r})"
+        )
     if not config["tracker"].get("close_on_expiry", True) and threshold is None:
         raise ConfigError(
             "no close rule configured: set tracker.close_on_expiry true, or give "

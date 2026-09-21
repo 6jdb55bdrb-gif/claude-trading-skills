@@ -31,7 +31,14 @@ from llm_client import LLMClient, current_month
 from market_hours import session_state
 from price_update import format_updates, update_open_calls
 from role_review import format_review, review_hits
-from state_snapshot import export_snapshot, import_snapshot, snapshot_path
+from state_snapshot import (
+    export_members,
+    export_snapshot,
+    import_members,
+    import_snapshot,
+    members_path,
+    snapshot_path,
+)
 from stats import compute_stats, render_text, write_stats_file
 from telegram_bot import notify_run
 
@@ -98,12 +105,18 @@ def run_cycle(
         "errors": [],
     }
 
-    with CallDatabase(db_path or resolve_path(config, "db_path")) as db:
+    resolved_db_path = db_path or resolve_path(config, "db_path")
+    with CallDatabase(resolved_db_path) as db:
         # A scheduled run on a throwaway working copy starts with an empty
         # database; the snapshot carries dedupe state and PnL history across.
         snapshot_file = snapshot_path(config, snapshot)
         if snapshot_file and snapshot_file.is_file():
             report["snapshot_import"] = import_snapshot(db, snapshot_file)
+        # The member list lives beside the snapshot but never inside it: it holds
+        # invite codes and chat ids, and the snapshot is committed.
+        members_file = members_path(config) if snapshot_file else None
+        if members_file and members_file.is_file():
+            import_members(db, members_file)
 
         if not dry_run:
             db.start_run(run_id, session_reason=session["reason"], screening_ran=screening_allowed)
@@ -183,11 +196,13 @@ def run_cycle(
             if snapshot_file:
                 export_snapshot(db, snapshot_file)
                 report["snapshot_file"] = str(snapshot_file)
+            if members_file:
+                export_members(db, members_file)
 
     # A broken or unconfigured bot must never fail a run: notify_run swallows
     # its own errors and reports what happened in the run report.
     if telegram and not dry_run:
-        report["telegram"] = notify_run(report, config)
+        report["telegram"] = notify_run(report, config, db_path=resolved_db_path)
     elif telegram and dry_run:
         report["telegram"] = {"sent": False, "reason": "dry run"}
 

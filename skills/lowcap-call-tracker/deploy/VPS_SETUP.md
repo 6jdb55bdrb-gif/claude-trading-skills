@@ -266,6 +266,35 @@ systemctl status lowcap-telegram.service
 
 Re-running `setup_vps.sh` does this for you once the token is in `.env`.
 
+### Letting friends follow along
+
+Two ways, and they differ in who can do what.
+
+**Invite links (recommended).** Each friend gets their own private chat with the
+bot, and you keep a member list you can revoke one by one.
+
+1. Send the bot `/invite` (or `/invite 5 30` for a link 5 people may use within
+   30 days). It replies with a link like
+   `https://t.me/yourbot?start=ABCD2345`.
+2. Send that link to your friend. One tap and they are in — read-only.
+3. `/members` shows who joined, `/remove CHAT_ID` takes access away,
+   `/revoke CODE` kills a link that leaked.
+
+From the server, without Telegram:
+
+```bash
+sudo -u lowcap /opt/lowcap-tracker/venv/bin/python \
+  /opt/lowcap-tracker/repo/skills/lowcap-call-tracker/scripts/telegram_bot.py --invite 3
+```
+
+Members get every run notification, and can read `/report`, `/stats`, `/open`,
+`/calls`, `/shadow`, `/call TICKER` and `/last`. They cannot mint invites,
+remove anyone, or run a cycle. They can leave with `/stop`.
+
+**A group** (below) is the other way: one shared room, one shared chat id. It is
+simpler, but coarser — everyone in the group has the same access, and you cannot
+remove one person's access without removing them from the group.
+
 ### Sending to a group instead of a private chat
 
 Want the calls in a group (yourself plus others, or just a place to keep them)?
