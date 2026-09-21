@@ -4,9 +4,9 @@
   "llm_usage": 0,
   "price_history": 1,
   "role_verdicts": 5,
-  "runs": 7
+  "runs": 8
  },
- "exported_at": "2026-09-21T08:12:46+00:00",
+ "exported_at": "2026-09-21T10:37:01+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -218,6 +218,23 @@
     "screening_ran": 1,
     "session_reason": "trading day, extended hours",
     "started_at": "2026-09-21T08:12:20+00:00"
+   },
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-09-21T10:37:01+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 0,
+    "reviewed": 0,
+    "run_id": "run_20260921T103635Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-09-21T10:36:35+00:00"
    }
   ]
  }
