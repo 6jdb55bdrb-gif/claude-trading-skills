@@ -119,8 +119,8 @@ writes, statistics and git push all happen regardless.
 
 - **Every open call appears in every report**, including one whose price could
   not be refreshed. An unpriced call keeps its last known figures and is marked
-  `⏸ no price for Nd` — a position must never quietly drop out of a report
-  because a data source lost it.
+  `⏸ no price for 3d` (the count of stale days) — a position must never
+  quietly drop out of a report because a data source lost it.
 - **No message ever prints `None`.** An absent number renders as `—`, and an
   empty tracker says so in words instead of "hit rate None%". A test asserts the
   string `None` appears in no message.

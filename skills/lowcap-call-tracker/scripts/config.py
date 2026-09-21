@@ -87,8 +87,16 @@ def _validate(config: dict[str, Any]) -> None:
         if not variant.get("filters"):
             raise ConfigError(f"variant '{name}': at least one filter code is required")
     threshold = config["tracker"].get("close_threshold_pct")
-    if not isinstance(threshold, (int, float)) or threshold >= 0:
-        raise ConfigError("tracker.close_threshold_pct must be a negative number")
+    if threshold is not None and (not isinstance(threshold, (int, float)) or threshold >= 0):
+        raise ConfigError(
+            "tracker.close_threshold_pct must be a negative number, or null to disable "
+            "the early stop-out (calls then close only at contract expiry)"
+        )
+    if not config["tracker"].get("close_on_expiry", True) and threshold is None:
+        raise ConfigError(
+            "no close rule configured: set tracker.close_on_expiry true, or give "
+            "tracker.close_threshold_pct a negative number"
+        )
 
 
 def resolve_path(

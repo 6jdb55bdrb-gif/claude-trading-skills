@@ -13,9 +13,23 @@ tracker:
   # phone, so they live in a tracked directory, not under reports/.
   stats_file: tracker-output/stats.md
   improvements_file: tracker-output/improvements.md
-  # PnL (direction-corrected) at or below this closes the call as WRONG.
-  # This is the only auto-close rule.
-  close_threshold_pct: -80.0
+  # Calls are expressed as OPTIONS (call / put) and close when the contract
+  # expires — that is the only close rule.
+  close_on_expiry: true
+  # Legacy premium/underlying stop-out, disabled. Set a negative number to
+  # re-enable an early close at that PnL on the underlying.
+  close_threshold_pct: null
+  # Contract defaults the RISK MANAGER may override per setup.
+  options:
+    # Days to expiration when nothing about the setup argues otherwise.
+    default_dte: 30
+    # A fade of a climactic move needs less time than a catalyst-driven trend.
+    fade_dte: 21
+    catalyst_dte: 45
+    # US options expire on Fridays; the chosen date is snapped to one.
+    snap_to_friday: true
+    # Warn in reports when a call is this close to expiry.
+    expiry_warning_days: 7
   # Equal-weight assumption used for "total portfolio PnL" across TAKE calls.
   equal_weight_pct: 100.0
   # Inputs handed to the position-sizer skill for the RISK MANAGER role.

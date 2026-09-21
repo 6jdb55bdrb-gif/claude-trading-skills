@@ -12,7 +12,10 @@ found, 10 means disqualifying.
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
+
+from option_contract import build_contract
 
 CATALYST_TYPES = {
     "earnings",
@@ -357,8 +360,10 @@ def risk_manager(
     *,
     technician_verdict: dict[str, Any] | None = None,
     skeptic_verdict: dict[str, Any] | None = None,
+    researcher_verdict: dict[str, Any] | None = None,
     config: dict[str, Any] | None = None,
     sizing: dict[str, Any] | None = None,
+    as_of: date | None = None,
 ) -> dict:
     price = _num(hit.get("price"))
     atr = _num(hit.get("atr"))
@@ -372,6 +377,10 @@ def risk_manager(
             "role": "risk_manager",
             "score": 0.0,
             "direction": "none",
+            "instrument": "none",
+            "strike": None,
+            "expiry_date": None,
+            "dte": None,
             "direction_reason": "no usable price",
             "entry": None,
             "stop": None,
@@ -427,6 +436,10 @@ def risk_manager(
             "role": "risk_manager",
             "score": 1.0,
             "direction": "none",
+            "instrument": "none",
+            "strike": None,
+            "expiry_date": None,
+            "dte": None,
             "direction_reason": "stop collapses onto the entry",
             "entry": price,
             "stop": stop,
@@ -485,10 +498,32 @@ def risk_manager(
         score = min(score, 3.0)
         reasons.append("risk budget rounds to zero shares")
 
+    # The trade is expressed as an option: a call for the upside case, a put for
+    # the fade. The expiry horizon follows the setup, and the contract is what
+    # closes the call — nothing else does.
+    contract = build_contract(
+        instrument="put" if direction == "short" else "call",
+        price=price,
+        config=config,
+        technician=tech,
+        researcher=researcher_verdict,
+        skeptic=skeptic_verdict,
+        as_of=as_of,
+    )
+    reasons.append(
+        f"{contract['instrument']} {contract['strike']} exp {contract['expiry_date']} "
+        f"({contract['dte']}d, {contract['expiry_setup']} horizon)"
+    )
+
     return {
         "role": "risk_manager",
         "score": round(clamp(score), 1),
         "direction": direction if shares else "none",
+        "instrument": contract["instrument"] if shares else "none",
+        "strike": contract["strike"],
+        "expiry_date": contract["expiry_date"],
+        "dte": contract["dte"],
+        "expiry_setup": contract["expiry_setup"],
         "direction_reason": direction_reason,
         "entry": round(price, 4),
         "stop": stop,

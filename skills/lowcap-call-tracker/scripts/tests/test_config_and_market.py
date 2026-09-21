@@ -12,18 +12,44 @@ from config import ConfigError, load_config, repo_root, resolve_path
 def test_default_config_defines_three_variants(config):
     variants = config["screener"]["variants"]
     assert set(variants) == {"squeeze", "momentum_breakout", "etf_momentum"}
-    assert config["tracker"]["close_threshold_pct"] == -80.0
 
 
-def test_close_threshold_is_a_config_value_not_a_constant(config):
-    """The -80% rule must be tunable; scripts read it from configuration."""
+def test_calls_close_at_contract_expiry_by_default(config):
+    """Trades are options: the contract's expiry is the only close rule."""
+    assert config["tracker"]["close_on_expiry"] is True
+    assert config["tracker"]["close_threshold_pct"] is None
+    assert config["tracker"]["options"]["default_dte"] == 30
+
+
+def test_close_rules_are_config_values_not_constants(config):
+    """Both the expiry rule and the optional stop-out are read from config."""
     import inspect
 
     import price_update
 
     source = inspect.getsource(price_update.update_open_calls)
-    assert 'config["tracker"]["close_threshold_pct"]' in source
+    assert 'config["tracker"].get("close_threshold_pct")' in source
+    assert 'config["tracker"].get("close_on_expiry"' in source
     assert "-80" not in source
+
+
+def test_a_configured_threshold_is_still_accepted(tmp_path):
+    """The early stop-out is disabled, not deleted: a number re-enables it."""
+    overlay = tmp_path / "over.yaml"
+    overlay.write_text(
+        yaml.safe_dump({"tracker": {"close_threshold_pct": -80.0}}), encoding="utf-8"
+    )
+    assert load_config(overlay)["tracker"]["close_threshold_pct"] == -80.0
+
+
+def test_removing_every_close_rule_is_rejected(tmp_path):
+    overlay = tmp_path / "over.yaml"
+    overlay.write_text(
+        yaml.safe_dump({"tracker": {"close_on_expiry": False, "close_threshold_pct": None}}),
+        encoding="utf-8",
+    )
+    with pytest.raises(ConfigError, match="no close rule"):
+        load_config(overlay)
 
 
 def test_overlay_is_deep_merged(tmp_path):

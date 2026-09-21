@@ -10,7 +10,10 @@ SKIP — tracked identically so the Judge's value is measurable).
 | Column | Meaning |
 |---|---|
 | `ticker`, `asset_type` | symbol, `stock` or `etf` |
-| `direction` | `long` or `short` — from the Risk Manager |
+| `direction` | PnL convention: `long` for a call, `short` for a put |
+| `instrument` | `call` or `put` — what is actually traded |
+| `expiry_date` | the contract's expiration (a Friday); closing it is the only close rule |
+| `strike` | nearest strike to the money on the side the trade needs |
 | `kind` | `active` or `shadow` |
 | `call_date`, `entry_price` | when the call was made and at what price |
 | `screen_variant` | `squeeze`, `momentum_breakout`, `etf_momentum` |
@@ -61,19 +64,27 @@ trades at $190 is also +5%.
 
 ## Closing rule
 
-`pnl <= tracker.close_threshold_pct` (default **-80%**) closes the call as
-`CLOSED_WRONG` and removes it from active tracking; it stays in the statistics
-forever. **There is no other auto-close.** Winners are never taken off the books,
-and a -79% call stays open. The threshold is a configuration value, not a
-constant.
+A call is an option, so it closes when **its contract expires** — status
+`EXPIRED`, settled at the underlying's last known price. Nothing else closes it:
+a 90% drawdown keeps running, because the contract still has time to recover.
+
+`tracker.close_threshold_pct` is null by default; set a negative number to
+re-enable the old early stop-out (status `CLOSED_WRONG`) alongside expiry.
+Setting `close_on_expiry: false` with no threshold is rejected at load time —
+some close rule must exist.
+
+**PnL is measured on the underlying**, not on an option premium: the screened
+universe (low float, $1-20) has no listed options, so no premium can be quoted.
+The contract is recorded; the percentage is the stock's move, direction-corrected
+(a put gains when the underlying falls).
 
 ## Outcome labels
 
 | Label | Condition |
 |---|---|
-| `RIGHT` | current PnL > 0 |
-| `WRONG` | closed at the threshold |
-| `NEUTRAL` | still open, PnL at or below 0 |
+| `RIGHT` | expired above the entry, or open and currently up |
+| `WRONG` | expired at or below the entry (or stopped out, when a threshold is set) |
+| `NEUTRAL` | open and not up — the contract still has time |
 
 Hit rate = RIGHT / total calls.
 
@@ -83,7 +94,7 @@ Hit rate = RIGHT / total calls.
 |---|---|
 | Overall | total, TAKE, shadow, open, right, wrong, neutral, hit rate, average PnL, best and worst call |
 | Portfolio | equal-weight PnL across TAKE calls (open + closed), and across all calls |
-| By direction | long vs short |
+| By instrument | call vs put |
 | By asset type | stock vs ETF |
 | By screen variant | `squeeze`, `momentum_breakout`, `etf_momentum` |
 | TAKE vs SKIP | both blocks plus the Judge edge (average TAKE PnL − average shadow PnL) and a verdict line |

@@ -42,8 +42,11 @@ the tracker enforces this and will overturn a `TAKE` that fails the gate.
   with `objection_category: "dilution"` or `"pump_and_dump"` needs a specific,
   concrete answer (e.g. a recently closed raise that removes the overhang), not
   optimism.
-- **No plan means no call.** `direction: "none"` from the Risk Manager is always
-  `SKIP`.
+- **No plan means no call.** `instrument: "none"` (or `direction: "none"`) from
+  the Risk Manager is always `SKIP`.
+- **The horizon has to fit the thesis.** A catalyst that needs weeks to be
+  repriced, bought on a three-week contract, is a losing trade even when the
+  direction is right — say so rather than waving it through.
 - **Remember the Skeptic's polarity:** a high Skeptic score is a strong case
   *against* the trade.
 - **ETFs** are judged on theme durability and liquidity, never on the missing

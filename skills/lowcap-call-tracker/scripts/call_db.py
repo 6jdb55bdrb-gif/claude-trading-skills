@@ -25,7 +25,8 @@ from pathlib import Path
 from typing import Any
 
 STATUS_OPEN = "OPEN"
-STATUS_CLOSED_WRONG = "CLOSED_WRONG"
+STATUS_CLOSED_WRONG = "CLOSED_WRONG"  # legacy stop-out, only when a threshold is configured
+STATUS_EXPIRED = "EXPIRED"  # the contract reached its expiration date
 KIND_ACTIVE = "active"
 KIND_SHADOW = "shadow"
 
@@ -34,7 +35,12 @@ CREATE TABLE IF NOT EXISTS calls (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ticker TEXT NOT NULL,
     asset_type TEXT NOT NULL,
+    -- direction is the PnL convention (long/short) derived from the instrument;
+    -- instrument is what is actually traded: a call or a put.
     direction TEXT NOT NULL,
+    instrument TEXT,
+    expiry_date TEXT,
+    strike REAL,
     kind TEXT NOT NULL,
     call_date TEXT NOT NULL,
     entry_price REAL NOT NULL,
@@ -144,7 +150,24 @@ class CallDatabase:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.executescript(SCHEMA)
+        self._migrate()
         self.conn.commit()
+
+    def _migrate(self) -> None:
+        """Add columns introduced after a database was first created."""
+        existing = {row["name"] for row in self.conn.execute("PRAGMA table_info(calls)")}
+        for column, ddl in (
+            ("instrument", "ALTER TABLE calls ADD COLUMN instrument TEXT"),
+            ("expiry_date", "ALTER TABLE calls ADD COLUMN expiry_date TEXT"),
+            ("strike", "ALTER TABLE calls ADD COLUMN strike REAL"),
+        ):
+            if column not in existing:
+                self.conn.execute(ddl)
+        # Pre-options rows: a long was a call, a short was a put.
+        self.conn.execute(
+            "UPDATE calls SET instrument = CASE WHEN direction = 'short' THEN 'put' "
+            "ELSE 'call' END WHERE instrument IS NULL"
+        )
 
     def close(self) -> None:
         self.conn.close()
@@ -181,26 +204,31 @@ class CallDatabase:
         if not entry:
             return None
         decision = review.get("decision", "SKIP")
-        direction = risk.get("direction") or "long"
-        if direction == "none":
-            # Keep it as a shadow call so the SKIP is still measurable.
-            direction = "long"
+        instrument = (risk.get("instrument") or "").lower()
+        if instrument not in {"call", "put"}:
+            instrument = "put" if risk.get("direction") == "short" else "call"
+        # A put profits when the underlying falls, so it keeps short PnL maths.
+        direction = "short" if instrument == "put" else "long"
         stamp = now or utc_now()
 
         cursor = self.conn.execute(
             """
             INSERT INTO calls (
-                ticker, asset_type, direction, kind, call_date, entry_price,
+                ticker, asset_type, direction, instrument, expiry_date, strike,
+                kind, call_date, entry_price,
                 screen_variant, judge_decision, confidence, judge_reason,
                 researcher_score, technician_score, skeptic_score, risk_manager_score,
                 stop_price, target_price, shares, position_usd, risk_usd,
                 status, current_price, pnl_pct, last_price_at, run_id, backend, notes
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 ticker,
                 review.get("asset_type", "stock"),
                 direction,
+                instrument,
+                risk.get("expiry_date"),
+                risk.get("strike"),
                 KIND_ACTIVE if decision == "TAKE" else KIND_SHADOW,
                 stamp,
                 float(entry),
@@ -268,12 +296,41 @@ class CallDatabase:
         )
         return {row["role"]: json.loads(row["verdict_json"]) for row in rows}
 
+    def expire_call(self, call_id: int, *, now: str | None = None) -> dict[str, Any]:
+        """Settle a call whose contract has expired, at its last known price."""
+        row = self.call(call_id)
+        if row is None:
+            raise KeyError(f"unknown call id {call_id}")
+        stamp = now or utc_now()
+        self.conn.execute(
+            """
+            UPDATE calls SET status = ?, closed_at = ?, close_reason = ?
+             WHERE id = ? AND status = ?
+            """,
+            (
+                STATUS_EXPIRED,
+                stamp,
+                f"contract expired {row['expiry_date']}",
+                call_id,
+                STATUS_OPEN,
+            ),
+        )
+        self.conn.commit()
+        return {
+            "call_id": call_id,
+            "ticker": row["ticker"],
+            "instrument": row["instrument"],
+            "expiry_date": row["expiry_date"],
+            "pnl_pct": row["pnl_pct"],
+            "expired": True,
+        }
+
     def apply_price(
         self,
         call_id: int,
         price: float,
         *,
-        close_threshold_pct: float,
+        close_threshold_pct: float | None,
         now: str | None = None,
     ) -> dict[str, Any]:
         """Record a price observation, recompute PnL, and close at the threshold."""
@@ -283,7 +340,13 @@ class CallDatabase:
         stamp = now or utc_now()
         pnl = pnl_pct(row["entry_price"], price, row["direction"])
         closed = False
-        if pnl is not None and pnl <= close_threshold_pct and row["status"] == STATUS_OPEN:
+        stop_out = (
+            close_threshold_pct is not None
+            and pnl is not None
+            and pnl <= close_threshold_pct
+            and row["status"] == STATUS_OPEN
+        )
+        if stop_out:
             closed = True
             self.conn.execute(
                 """
@@ -297,7 +360,7 @@ class CallDatabase:
                     stamp,
                     STATUS_CLOSED_WRONG,
                     stamp,
-                    f"pnl {pnl:.2f}% <= {close_threshold_pct:.2f}% threshold",
+                    f"pnl {pnl:.2f}% <= {close_threshold_pct:.2f}% threshold",  # noqa: E501
                     call_id,
                 ),
             )

@@ -158,6 +158,7 @@ def _heuristic_verdict(role: str, hit: dict[str, Any], context: dict[str, Any]) 
             hit,
             technician_verdict=verdicts.get("technician"),
             skeptic_verdict=verdicts.get("skeptic"),
+            researcher_verdict=verdicts.get("researcher"),
             config=context["config"],
             sizing=context.get("position_sizer"),
         )
@@ -193,6 +194,14 @@ def _normalize_verdict(role: str, verdict: dict[str, Any]) -> dict[str, Any]:
     if role == "risk_manager":
         direction = str(verdict.get("direction", "none")).strip().lower()
         verdict["direction"] = direction if direction in {"long", "short", "none"} else "none"
+        instrument = str(verdict.get("instrument", "")).strip().lower()
+        if instrument not in {"call", "put", "none"}:
+            instrument = (
+                "none"
+                if verdict["direction"] == "none"
+                else ("put" if verdict["direction"] == "short" else "call")
+            )
+        verdict["instrument"] = instrument
     return verdict
 
 
@@ -330,6 +339,9 @@ def review_hit(
         "direction": context["verdicts"]["risk_manager"].get("direction"),
         "entry": context["verdicts"]["risk_manager"].get("entry") or hit.get("price"),
         "stop": context["verdicts"]["risk_manager"].get("stop"),
+        "instrument": context["verdicts"]["risk_manager"].get("instrument"),
+        "strike": context["verdicts"]["risk_manager"].get("strike"),
+        "expiry_date": context["verdicts"]["risk_manager"].get("expiry_date"),
         "backend": "llm"
         if use_llm and not backend_notes
         else ("heuristic" if not use_llm else "mixed"),
@@ -378,8 +390,10 @@ def format_review(review: dict[str, Any]) -> str:
         f"  SKEPTIC      {verdicts['skeptic']['score']:>4}  (severity) "
         f"{verdicts['skeptic'].get('objection_category')}: {verdicts['skeptic'].get('strongest_objection')}",
         f"  RISK MANAGER {verdicts['risk_manager']['score']:>4}  "
-        f"{verdicts['risk_manager'].get('direction')} entry={verdicts['risk_manager'].get('entry')} "
-        f"stop={verdicts['risk_manager'].get('stop')} shares={verdicts['risk_manager'].get('shares')}",
+        f"{str(verdicts['risk_manager'].get('instrument') or '-').upper()} "
+        f"{verdicts['risk_manager'].get('strike')} exp {verdicts['risk_manager'].get('expiry_date')} "
+        f"({verdicts['risk_manager'].get('dte')}d) entry={verdicts['risk_manager'].get('entry')} "
+        f"stop={verdicts['risk_manager'].get('stop')}",
         f"  JUDGE        {review['decision']} ({review['confidence']}) — {verdicts['judge'].get('reason')}",
         f"    skeptic answered: {verdicts['judge'].get('skeptic_objections_answered')} — "
         f"{verdicts['judge'].get('skeptic_answer')}",

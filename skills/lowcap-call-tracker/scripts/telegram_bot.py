@@ -45,7 +45,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-from call_db import KIND_ACTIVE, STATUS_OPEN, CallDatabase
+from call_db import KIND_ACTIVE, STATUS_EXPIRED, STATUS_OPEN, CallDatabase
+from option_contract import days_to_expiry
 
 from config import ConfigError, load_config, resolve_path
 
@@ -266,6 +267,29 @@ def _num(value: Any, spec: str = ".2f", suffix: str = "") -> str:
         return escape_html(value)
 
 
+def _contract(row: Any, *, with_expiry: bool = True) -> str:
+    """CALL/PUT with its strike and how long the contract still has to run."""
+    try:
+        instrument = row["instrument"] or row["direction"]
+        strike = row["strike"]
+        expiry = row["expiry_date"]
+    except (KeyError, IndexError, TypeError):
+        instrument, strike, expiry = (
+            row.get("instrument"),
+            row.get("strike"),
+            row.get("expiry_date"),
+        )
+    label = str(instrument or "—").upper()
+    if strike:
+        label += f" {_num(strike)}"
+    if with_expiry and expiry:
+        remaining = days_to_expiry(expiry)
+        label += f" exp {escape_html(str(expiry)[:10])}"
+        if remaining is not None:
+            label += f" ({remaining}d)" if remaining >= 0 else " (expired)"
+    return label
+
+
 def _stale_note(update: dict[str, Any]) -> str:
     """Flag an open call whose price could not be refreshed this run."""
     if update.get("priced", True):
@@ -304,9 +328,10 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
             marker = "✅" if call["decision"] == "TAKE" else "⏭"
             lines.append(
                 f"{marker} <b>{escape_html(call['ticker'])}</b> "
-                f"{escape_html(call.get('direction') or '-')} "
+                f"{_contract(call)} "
                 f"({escape_html(call['asset_type'])}, {escape_html(call['variant'])}) "
-                f"conf {call['confidence']} · entry {call.get('entry')} · stop {call.get('stop')}"
+                f"conf {call['confidence']} · entry {_num(call.get('entry'))} "
+                f"· stop {_num(call.get('stop'))}"
             )
             lines.append(f"    <i>{escape_html(call.get('reason') or '')}</i>")
             if telegram.get("include_role_detail"):
@@ -324,10 +349,15 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
             kind = "" if update.get("kind") == KIND_ACTIVE else " · shadow"
             age = update.get("age_days")
             age_note = f" · {age}d" if age else ""
+            remaining = update.get("days_to_expiry")
+            expiry_note = ""
+            if remaining is not None:
+                expiry_note = f" · {remaining}d to expiry" + (" ⏳" if remaining <= 7 else "")
             lines.append(
-                f"• <b>{escape_html(update['ticker'])}</b> {escape_html(update['direction'])} "
+                f"• <b>{escape_html(update['ticker'])}</b> "
+                f"{str(update.get('instrument') or update['direction']).upper()} "
                 f"{_num(update['entry_price'])} → {_num(update['price'])} "
-                f"<b>{_pnl_tag(update.get('pnl_pct'))}</b>{kind}{age_note}"
+                f"<b>{_pnl_tag(update.get('pnl_pct'))}</b>{kind}{expiry_note}{age_note}"
                 f"{_stale_note(update)}"
             )
         if len(open_updates) > 10:
@@ -341,10 +371,20 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
         lines.append("")
         lines.append("<b>Closed</b>")
         for update in closed:
-            lines.append(
-                f"❌ <b>{escape_html(update['ticker'])}</b> {_pnl_tag(update.get('pnl_pct'))} "
-                f"— stopped out at the {_num(price_update.get('threshold_pct'), '.0f')}% threshold"
-            )
+            if update.get("expired"):
+                verdict = "RIGHT" if (update.get("pnl_pct") or 0) > 0 else "WRONG"
+                lines.append(
+                    f"⌛ <b>{escape_html(update['ticker'])}</b> "
+                    f"{str(update.get('instrument') or '').upper()} "
+                    f"{_pnl_tag(update.get('pnl_pct'))} — contract expired "
+                    f"{escape_html(str(update.get('expiry_date') or '')[:10])} ({verdict})"
+                )
+            else:
+                lines.append(
+                    f"❌ <b>{escape_html(update['ticker'])}</b> {_pnl_tag(update.get('pnl_pct'))} "
+                    f"— stopped out at the "
+                    f"{_num(price_update.get('threshold_pct'), '.0f')}% threshold"
+                )
 
     if telegram.get("include_stats", True) and report.get("stats"):
         lines.append("")
@@ -459,10 +499,14 @@ def format_calls_message(rows: list[Any], *, title: str, limit: int = 20) -> str
     lines = [f"<b>{escape_html(title)}</b> ({len(rows)})"]
     for row in rows[:limit]:
         pnl = row["pnl_pct"]
-        status = "open" if row["status"] == STATUS_OPEN else "closed"
-        marker = "🟢" if (pnl or 0) > 0 else ("🔴" if status == "closed" else "⚪️")
+        status = (
+            "open"
+            if row["status"] == STATUS_OPEN
+            else ("expired" if row["status"] == STATUS_EXPIRED else "closed")
+        )
+        marker = "🟢" if (pnl or 0) > 0 else ("🔴" if status != "open" else "⚪️")
         lines.append(
-            f"{marker} <b>{escape_html(row['ticker'])}</b> {escape_html(row['direction'])} "
+            f"{marker} <b>{escape_html(row['ticker'])}</b> {_contract(row, with_expiry=False)} "
             f"{escape_html(row['kind'])} · {_num(row['entry_price'])} → "
             f"{_num(row['current_price'])} <b>{_pnl_tag(pnl)}</b> · "
             f"{escape_html(row['screen_variant'] or '—')} · conf "
@@ -540,7 +584,7 @@ def format_report_message(db: CallDatabase, config: dict[str, Any]) -> str:
         for row in sorted(open_rows, key=lambda item: item["pnl_pct"] or 0, reverse=True):
             tag = "" if row["kind"] == KIND_ACTIVE else " · shadow"
             lines.append(
-                f"• <b>{escape_html(row['ticker'])}</b> {escape_html(row['direction'])} "
+                f"• <b>{escape_html(row['ticker'])}</b> {_contract(row)} "
                 f"{_num(row['entry_price'])} → {_num(row['current_price'])} "
                 f"<b>{_pnl_tag(row['pnl_pct'])}</b>{tag} · "
                 f"{escape_html(row['screen_variant'] or '—')}"
@@ -597,6 +641,7 @@ def format_call_detail(db: CallDatabase, ticker: str) -> str:
         f"<i>{escape_html(row['screen_variant'] or '—')} · called "
         f"{escape_html(str(row['call_date'])[:16])}</i>",
         "",
+        f"<b>contract:</b> {_contract(row)}",
         f"entry {_num(row['entry_price'])} → {_num(row['current_price'])} "
         f"<b>{_pnl_tag(row['pnl_pct'])}</b> · stop {_num(row['stop_price'])} "
         f"· target {_num(row['target_price'])}",
@@ -611,9 +656,9 @@ def format_call_detail(db: CallDatabase, ticker: str) -> str:
         f"<b>Skeptic {_num(skeptic.get('score'), '.1f')}</b> (severity) — "
         f"{escape_html(skeptic.get('strongest_objection') or '—')}",
         f"<b>Risk {_num(risk.get('score'), '.1f')}</b> — "
-        f"{escape_html(risk.get('direction') or '—')}, "
-        f"{escape_html(risk.get('stop_basis') or '—')} stop, "
-        f"{row['shares'] if row['shares'] is not None else '—'} shares",
+        f"{escape_html(risk.get('instrument') or risk.get('direction') or '—')}, "
+        f"{escape_html(risk.get('expiry_setup') or '—')} horizon, "
+        f"{escape_html(risk.get('stop_basis') or '—')} stop",
         "",
         f"<b>Judge:</b> {escape_html(judge.get('reason') or row['judge_reason'] or '—')}",
     ]

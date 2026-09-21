@@ -219,6 +219,7 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - `skills/lowcap-call-tracker/scripts/learning_loop.py`
 - `skills/lowcap-call-tracker/scripts/llm_client.py`
 - `skills/lowcap-call-tracker/scripts/market_hours.py`
+- `skills/lowcap-call-tracker/scripts/option_contract.py`
 - `skills/lowcap-call-tracker/scripts/price_update.py`
 - `skills/lowcap-call-tracker/scripts/publish.py`
 - `skills/lowcap-call-tracker/scripts/role_review.py`

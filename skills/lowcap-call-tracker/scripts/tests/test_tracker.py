@@ -3,7 +3,14 @@
 from datetime import datetime, timezone
 
 import pytest
-from call_db import KIND_ACTIVE, KIND_SHADOW, STATUS_CLOSED_WRONG, STATUS_OPEN, pnl_pct
+from call_db import (
+    KIND_ACTIVE,
+    KIND_SHADOW,
+    STATUS_CLOSED_WRONG,
+    STATUS_EXPIRED,
+    STATUS_OPEN,
+    pnl_pct,
+)
 from learning_loop import analyse, is_due
 from learning_loop import render_markdown as render_improvements
 from price_update import update_open_calls
@@ -104,12 +111,6 @@ def test_threshold_is_taken_from_config(tmp_db, config):
     assert tmp_db.call(call_id)["status"] == STATUS_CLOSED_WRONG
 
 
-def test_short_call_closes_on_a_rally(tmp_db, config):
-    call_id = tmp_db.insert_call(review_payload("SHRT", entry=2.0, direction="short"), run_id="r1")
-    update_open_calls(tmp_db, config, prices={"SHRT": 3.7})  # -85% for a short
-    assert tmp_db.call(call_id)["status"] == STATUS_CLOSED_WRONG
-
-
 # ---------------------------------------------------------------- price update
 
 
@@ -157,16 +158,28 @@ def _seed(db, config):
             ),
             run_id="r1",
         )
-        db.apply_price(call_id, price, close_threshold_pct=config["tracker"]["close_threshold_pct"])
+        db.apply_price(call_id, price, close_threshold_pct=None)
+        if ticker == "LOSE":
+            db.expire_call(call_id)  # the contract ran out below the entry
 
 
 def test_outcome_classification(tmp_db, config):
     _seed(tmp_db, config)
     rows = {row["ticker"]: row for row in tmp_db.all_calls()}
-    assert outcome(rows["WIN1"]) == "RIGHT"
-    assert outcome(rows["LOSE"]) == "WRONG"  # closed at the threshold
-    assert outcome(rows["FLAT"]) == "NEUTRAL"  # open short, price above entry
-    assert rows["LOSE"]["status"] == STATUS_CLOSED_WRONG
+    assert outcome(rows["WIN1"]) == "RIGHT"  # open and up
+    assert outcome(rows["LOSE"]) == "WRONG"  # expired below the entry
+    assert outcome(rows["FLAT"]) == "NEUTRAL"  # open put, underlying above entry
+    assert rows["LOSE"]["status"] == STATUS_EXPIRED
+
+
+def test_an_expired_winner_is_right(tmp_db, config):
+    call_id = tmp_db.insert_call(review_payload("WON", entry=10.0), run_id="r1")
+    tmp_db.apply_price(call_id, 13.0, close_threshold_pct=None)
+    tmp_db.expire_call(call_id)
+    row = tmp_db.call(call_id)
+    assert row["status"] == STATUS_EXPIRED
+    assert outcome(row) == "RIGHT"
+    assert "expired" in row["close_reason"]
 
 
 def test_overall_statistics(tmp_db, config):
@@ -235,7 +248,7 @@ def test_renderers_produce_the_required_sections(tmp_db, config):
     markdown = render_markdown(stats)
     for heading in (
         "## Overall",
-        "### By direction",
+        "### By instrument (call / put)",
         "### By asset type",
         "### By screen variant",
         "### TAKE vs SKIP",
@@ -403,18 +416,37 @@ def test_dry_run_writes_nothing(config, tmp_path):
         assert db.all_calls() == []
 
 
-def test_cycle_closes_a_call_that_breaches_the_threshold(config, tmp_path):
+def test_cycle_settles_a_contract_at_expiry(config, tmp_path):
+    """A deep drawdown does NOT close a call; the expiration date does."""
     config["tracker"]["stats_file"] = str(tmp_path / "stats.md")
     kwargs = _cycle_kwargs(tmp_path)
     run_cycle(config, now=datetime(2026, 9, 18, 11, 0, tzinfo=timezone.utc), **kwargs)
-    report = run_cycle(
+
+    crashed = run_cycle(
         config,
         now=datetime(2026, 9, 21, 15, 0, tzinfo=timezone.utc),
         **_cycle_kwargs(tmp_path, prices={"SQZX": 0.4, "URAX": 19.0, "PMPX": 1.0}),
     )
-    assert report["price_update"]["closed"] == 1
-    closed = [update for update in report["price_update"]["updates"] if update["closed"]]
-    assert closed[0]["ticker"] == "SQZX"
+    assert crashed["price_update"]["closed"] == 0  # -89%, still open: it has time
+
+    from call_db import CallDatabase
+
+    with CallDatabase(tmp_path / "cycle.db") as db:
+        db.conn.execute("UPDATE calls SET expiry_date = '2026-09-20' WHERE ticker = 'SQZX'")
+        db.conn.commit()
+
+    settled = run_cycle(
+        config,
+        now=datetime(2026, 9, 21, 16, 0, tzinfo=timezone.utc),
+        **_cycle_kwargs(tmp_path, prices={"SQZX": 0.4, "URAX": 19.0, "PMPX": 1.0}),
+    )
+    assert settled["price_update"]["closed"] == 1
+    expired = [u for u in settled["price_update"]["updates"] if u.get("expired")]
+    assert expired[0]["ticker"] == "SQZX"
+    with CallDatabase(tmp_path / "cycle.db") as db:
+        row = [r for r in db.all_calls() if r["ticker"] == "SQZX"][0]
+        assert row["status"] == STATUS_EXPIRED
+        assert outcome(row) == "WRONG"
 
 
 def test_run_row_is_recorded(config, tmp_path):

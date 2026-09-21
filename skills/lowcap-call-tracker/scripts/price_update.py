@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from call_db import CallDatabase, pnl_pct
+from option_contract import days_to_expiry, is_expired
 
 from config import load_config, resolve_path
 
@@ -31,7 +32,7 @@ except ImportError:  # pragma: no cover - offline installs pass --prices-json
 
 
 def _age_days(stamp: Any, now: datetime) -> int | None:
-    """Whole days between an ISO timestamp and *now*; None when unparseable."""
+    """Whole days between an ISO timestamp and *now*; None when it cannot be parsed."""
     if not stamp:
         return None
     try:
@@ -89,7 +90,9 @@ def update_open_calls(
     prices: dict[str, float] | None = None,
 ) -> dict[str, Any]:
     """Price every open call, apply the close rule, and summarize the result."""
-    threshold = float(config["tracker"]["close_threshold_pct"])
+    raw_threshold = config["tracker"].get("close_threshold_pct")
+    threshold = None if raw_threshold is None else float(raw_threshold)
+    close_on_expiry = bool(config["tracker"].get("close_on_expiry", True))
     open_calls = db.open_calls()
     tickers = [row["ticker"] for row in open_calls]
     # An explicitly empty mapping means "offline, no prices" — not "go fetch".
@@ -102,6 +105,10 @@ def update_open_calls(
         price = resolved.get(row["ticker"])
         common = {
             "direction": row["direction"],
+            "instrument": row["instrument"],
+            "expiry_date": row["expiry_date"],
+            "strike": row["strike"],
+            "days_to_expiry": days_to_expiry(row["expiry_date"]),
             "kind": row["kind"],
             "entry_price": row["entry_price"],
             "variant": row["screen_variant"],
@@ -132,6 +139,14 @@ def update_open_calls(
         result.update({"priced": True, "stale_days": 0, **common})
         updates.append(result)
 
+    # Settle expired contracts last, so each one books its freshest price.
+    if close_on_expiry:
+        for update in updates:
+            if update.get("closed") or not is_expired(update.get("expiry_date")):
+                continue
+            settled = db.expire_call(update["call_id"])
+            update.update({"closed": True, "expired": True, "pnl_pct": settled["pnl_pct"]})
+
     return {
         "priced": sum(1 for update in updates if update["priced"]),
         "open": len(updates),
@@ -145,7 +160,10 @@ def update_open_calls(
 def format_updates(result: dict[str, Any]) -> str:
     lines = []
     for update in sorted(result["updates"], key=lambda item: item["pnl_pct"] or 0, reverse=True):
-        if update["closed"]:
+        if update.get("expired"):
+            verdict = "RIGHT" if (update.get("pnl_pct") or 0) > 0 else "WRONG"
+            tag = f"EXPIRED ({verdict})"
+        elif update["closed"]:
             tag = "CLOSED (WRONG)"
         elif not update.get("priced", True):
             stale = update.get("stale_days")
@@ -154,8 +172,11 @@ def format_updates(result: dict[str, Any]) -> str:
             tag = update["kind"].upper()
         price = update["price"]
         pnl = update["pnl_pct"]
+        contract = str(update.get("instrument") or update["direction"]).upper()
+        dte = update.get("days_to_expiry")
+        contract += f" {dte:>3}d" if dte is not None else ""
         lines.append(
-            f"  {update['ticker']:<6} {update['direction']:<5} "
+            f"  {update['ticker']:<6} {contract:<9} "
             f"entry={update['entry_price']:<8.2f} "
             f"now={'-' if price is None else format(price, '.2f'):<8} "
             f"pnl={'-' if pnl is None else format(pnl, '+.1f') + '%':<8} {tag}"

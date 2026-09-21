@@ -163,11 +163,20 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - **A SKIP is still tracked.** Every SKIP becomes a shadow call, priced and scored
   like a real one, so the Judge's selectivity is measurable.
 - **One open call per ticker.** Enforced by a partial unique index in SQLite.
-- **One auto-close rule.** PnL at or below `tracker.close_threshold_pct`
-  (default **-80%**) closes the call as WRONG. Nothing else auto-closes; winners
-  are never taken off the books.
-- **Outcome labels:** RIGHT = current PnL > 0, WRONG = closed at the threshold,
-  NEUTRAL = open and at or below 0.
+- **Calls are options.** An upside thesis is a **call**, a fade is a **put**; the
+  Risk Manager picks the instrument, the strike and the expiration date. The
+  horizon follows the setup: ~3 weeks to fade a climactic move, ~6 weeks for a
+  catalyst to be repriced, ~4-5 weeks otherwise, always snapped to a Friday.
+- **The contract's expiry is the only close.** A call runs to its expiration
+  date and settles at whatever the underlying is worth then — a 90% drawdown
+  does not close it, because the contract still has time.
+  `tracker.close_threshold_pct` re-enables an early stop-out if set.
+- **PnL is measured on the underlying**, not on an option premium: this universe
+  (low float, $1-20) has no listed options market, so a premium cannot be
+  quoted. The instrument and expiry are recorded; the percentage is the stock's.
+- **Outcome labels:** RIGHT = expired above the entry, or open and up; WRONG =
+  expired at or below the entry (or stopped out when a threshold is set);
+  NEUTRAL = open and not up, since the contract still has time.
 - **PnL is direction-corrected:** long `(now − entry) / entry`, short
   `(entry − now) / entry`.
 - **Weekends and holidays skip screening, never the price update.**
@@ -187,7 +196,10 @@ override document with `--config` and it is deep-merged over the default.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `tracker.close_threshold_pct` | -80.0 | the only auto-close rule |
+| `tracker.close_on_expiry` | true | contracts close at their expiration date |
+| `tracker.close_threshold_pct` | null | optional early stop-out on the underlying |
+| `tracker.options.default_dte` | 30 | horizon when the setup argues nothing else |
+| `tracker.options.fade_dte` / `catalyst_dte` | 21 / 45 | fade and catalyst horizons |
 | `tracker.account_size` / `risk_pct` | 10000 / 1.0 | inputs for the position sizer |
 | `tracker.max_new_calls_per_run` | 10 | safety valve per cycle |
 | `tracker.snapshot_file` | null | JSON state snapshot for throwaway checkouts |
@@ -223,6 +235,8 @@ Prices come from yfinance — free, no key.
   gaps, OTC exclusion, tuning notes
 - `references/role_review_protocol.md` — the five roles, JSON schemas, score
   polarity, the Judge gate, cost model
+- `scripts/option_contract.py` — instrument, strike and expiry selection, plus
+  the expiry arithmetic the close rule uses
 - `scripts/state_snapshot.py` — export/import the whole database as JSON, so a
   scheduled run on a fresh checkout keeps dedupe state and PnL history, and the
   move to another host carries every open call across

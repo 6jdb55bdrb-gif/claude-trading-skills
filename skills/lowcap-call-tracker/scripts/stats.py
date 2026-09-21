@@ -3,9 +3,10 @@
 
 Outcome classification (as configured by the closing rule):
 
-* ``RIGHT``   — current PnL > 0
-* ``WRONG``   — closed at the ``close_threshold_pct`` stop-out
-* ``NEUTRAL`` — still open with PnL <= 0
+* ``RIGHT``   — expired above the entry, or open and currently up
+* ``WRONG``   — expired at or below the entry (or stopped out, when a
+  ``close_threshold_pct`` is configured)
+* ``NEUTRAL`` — still open and not up: the contract still has time
 
 Shadow calls (Judge said SKIP) are tracked with the same machinery as active
 calls, so "is the Judge adding value?" is answerable from the same table.
@@ -26,7 +27,7 @@ from datetime import datetime, timezone
 from statistics import mean
 from typing import Any
 
-from call_db import KIND_ACTIVE, KIND_SHADOW, STATUS_OPEN, CallDatabase
+from call_db import KIND_ACTIVE, KIND_SHADOW, STATUS_EXPIRED, STATUS_OPEN, CallDatabase
 
 from config import load_config, resolve_path
 
@@ -40,8 +41,18 @@ ROLE_SCORE_COLUMN = {
 
 
 def outcome(row: sqlite3.Row | dict[str, Any]) -> str:
+    """RIGHT / WRONG / NEUTRAL for one call.
+
+    A call is an option that runs to expiry, so a closed call is judged on where
+    it finished: expired above the entry is RIGHT, at or below it is WRONG. An
+    open call is RIGHT while it is up and NEUTRAL otherwise — it still has time.
+    A legacy stop-out (only when a threshold is configured) stays WRONG.
+    """
     pnl = row["pnl_pct"]
-    if row["status"] != STATUS_OPEN:
+    status = row["status"]
+    if status == STATUS_EXPIRED:
+        return "RIGHT" if (pnl is not None and pnl > 0) else "WRONG"
+    if status != STATUS_OPEN:
         return "WRONG"
     if pnl is not None and pnl > 0:
         return "RIGHT"
@@ -182,7 +193,15 @@ def compute_stats(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "close_threshold_pct": config["tracker"]["close_threshold_pct"],
+        "close_threshold_pct": config["tracker"].get("close_threshold_pct"),
+        "close_rule": (
+            "contracts run to expiry"
+            + (
+                ""
+                if config["tracker"].get("close_threshold_pct") is None
+                else f", or an early stop-out at {config['tracker']['close_threshold_pct']}%"
+            )
+        ),
         "overall": overall,
         "portfolio": {
             "equal_weight_pnl_pct_take_only": round(mean(take_pnls), 2) if take_pnls else None,
@@ -191,6 +210,7 @@ def compute_stats(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
             ),
             "take_calls_counted": len(take_pnls),
         },
+        "by_instrument": _by(rows, "instrument"),
         "by_direction": _by(rows, "direction"),
         "by_asset_type": _by(rows, "asset_type"),
         "by_variant": _by(rows, "screen_variant"),
@@ -262,7 +282,7 @@ def render_markdown(stats: dict[str, Any]) -> str:
         "# Lowcap Call Tracker — Statistics",
         "",
         f"**Generated:** {stats['generated_at']}  ",
-        f"**Auto-close threshold:** {stats['close_threshold_pct']}% (PnL at or below closes as WRONG)",
+        f"**Close rule:** {stats['close_rule']}",
         "",
         "## Overall",
         "",
@@ -295,7 +315,7 @@ def render_markdown(stats: dict[str, Any]) -> str:
             )
     lines.append("")
 
-    lines += _group_table("By direction", stats["by_direction"])
+    lines += _group_table("By instrument (call / put)", stats["by_instrument"])
     lines += _group_table("By asset type", stats["by_asset_type"])
     lines += _group_table("By screen variant", stats["by_variant"])
     lines += _group_table(
@@ -388,7 +408,7 @@ def render_text(stats: dict[str, Any]) -> str:
         f"edge={take['judge_edge_avg_pnl_pct']} ({take['verdict']})"
     )
     for title, key in (
-        ("direction", "by_direction"),
+        ("instrument", "by_instrument"),
         ("asset type", "by_asset_type"),
         ("variant", "by_variant"),
         ("confidence", "confidence_buckets"),
