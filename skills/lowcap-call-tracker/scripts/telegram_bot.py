@@ -240,9 +240,14 @@ def build_client(
     """Build a client from configuration and environment credentials."""
     token, chat_id = credentials(config)
     telegram = config["telegram"]
+    # The HTTP read timeout must outlast the long poll itself: getUpdates holds
+    # the connection open for poll_timeout_seconds, so a shorter client timeout
+    # would abort every quiet round and re-open the connection for nothing.
+    poll_timeout = int(telegram.get("poll_timeout_seconds", 50))
     return TelegramClient(
         token=token,
         chat_id=chat_id,
+        timeout=max(30, poll_timeout + 10),
         max_message_chars=int(telegram.get("max_message_chars", 3900)),
         transport=transport,
     )

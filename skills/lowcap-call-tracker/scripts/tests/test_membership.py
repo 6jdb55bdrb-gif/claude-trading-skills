@@ -666,3 +666,16 @@ def test_a_cycle_keeps_members_out_of_the_committed_snapshot(tmp_path, config, m
     assert invite["code"] not in snapshot.read_text()
     assert "Robin" not in snapshot.read_text()
     assert invite["code"] in members.read_text()
+
+
+def test_the_http_timeout_outlasts_the_long_poll(monkeypatch, config):
+    """A client that gives up before getUpdates returns aborts every round."""
+    import telegram_bot as tb
+
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "4242")
+    client = tb.build_client(config)
+    assert client.timeout > int(config["telegram"]["poll_timeout_seconds"])
+
+    config = {**config, "telegram": {**config["telegram"], "poll_timeout_seconds": 5}}
+    assert tb.build_client(config).timeout >= 30
