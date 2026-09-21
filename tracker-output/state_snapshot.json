@@ -2,11 +2,11 @@
  "counts": {
   "calls": 2,
   "llm_usage": 0,
-  "price_history": 2,
+  "price_history": 4,
   "role_verdicts": 10,
-  "runs": 9
+  "runs": 10
  },
- "exported_at": "2026-09-21T15:22:46+00:00",
+ "exported_at": "2026-09-21T15:42:11+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -17,16 +17,16 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 43,
-    "current_price": 1.04,
+    "current_price": 1.0149999856948853,
     "direction": "long",
     "entry_price": 1.04,
     "id": 1,
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (dilution)",
     "kind": "shadow",
-    "last_price_at": "2026-09-20T19:04:44+00:00",
-    "notes": null,
-    "pnl_pct": 0.0,
+    "last_price_at": "2026-09-21T15:41:47+00:00",
+    "notes": " | ticker corrected from SSDEV (FinViz logo-span parse bug)",
+    "pnl_pct": -2.4038,
     "position_usd": 945.36,
     "researcher_score": 4.5,
     "risk_manager_score": 8.0,
@@ -39,7 +39,7 @@
     "stop_price": 0.93,
     "target_price": 1.26,
     "technician_score": 6.0,
-    "ticker": "SSDEV"
+    "ticker": "SDEV"
    },
    {
     "asset_type": "stock",
@@ -48,16 +48,16 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 26,
-    "current_price": 1.09,
+    "current_price": 1.100000023841858,
     "direction": "short",
     "entry_price": 1.09,
     "id": 2,
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (extension)",
     "kind": "shadow",
-    "last_price_at": "2026-09-21T15:22:46+00:00",
-    "notes": null,
-    "pnl_pct": 0.0,
+    "last_price_at": "2026-09-21T15:41:47+00:00",
+    "notes": " | ticker corrected from NNCPL (FinViz logo-span parse bug)",
+    "pnl_pct": -0.9174,
     "position_usd": 494.86,
     "researcher_score": 4.5,
     "risk_manager_score": 5.5,
@@ -70,7 +70,7 @@
     "stop_price": 1.31,
     "target_price": 0.65,
     "technician_score": 2.0,
-    "ticker": "NNCPL"
+    "ticker": "NCPL"
    }
   ],
   "llm_usage": [],
@@ -88,6 +88,20 @@
     "observed_at": "2026-09-21T15:22:46+00:00",
     "pnl_pct": 0.0,
     "price": 1.09
+   },
+   {
+    "call_id": 1,
+    "id": 3,
+    "observed_at": "2026-09-21T15:41:47+00:00",
+    "pnl_pct": -2.4038,
+    "price": 1.0149999856948853
+   },
+   {
+    "call_id": 2,
+    "id": 4,
+    "observed_at": "2026-09-21T15:41:47+00:00",
+    "pnl_pct": -0.9174,
+    "price": 1.100000023841858
    }
   ],
   "role_verdicts": [
@@ -335,6 +349,23 @@
     "screening_ran": 1,
     "session_reason": "regular trading hours",
     "started_at": "2026-09-21T15:22:17+00:00"
+   },
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-09-21T15:42:11+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 2,
+    "reviewed": 0,
+    "run_id": "run_20260921T154146Z",
+    "screening_ran": 1,
+    "session_reason": "regular trading hours",
+    "started_at": "2026-09-21T15:41:46+00:00"
    }
   ]
  }

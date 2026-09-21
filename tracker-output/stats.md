@@ -1,6 +1,6 @@
 # Lowcap Call Tracker — Statistics
 
-**Generated:** 2026-09-21T15:22:46+00:00  
+**Generated:** 2026-09-21T15:42:11+00:00  
 **Auto-close threshold:** -80.0% (PnL at or below closes as WRONG)
 
 ## Overall
@@ -15,37 +15,37 @@
 | Wrong | 0 |
 | Neutral | 2 |
 | Hit rate % | 0.0 |
-| Average PnL % per call | 0.0 |
+| Average PnL % per call | -1.66 |
 | Portfolio PnL % (equal weight, TAKE only) | — |
 
-**Best call:** SSDEV (long, squeeze, shadow) +0.00% — entry 1.04 → 1.04
-**Worst call:** SSDEV (long, squeeze, shadow) +0.00% — entry 1.04 → 1.04
+**Best call:** NCPL (short, squeeze, shadow) -0.92% — entry 1.09 → 1.100000023841858
+**Worst call:** SDEV (long, squeeze, shadow) -2.40% — entry 1.04 → 1.0149999856948853
 
 ### By direction
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| long | 1 | 1 | 0 | 0 | 1 | 0.0 | 0.0 |
-| short | 1 | 1 | 0 | 0 | 1 | 0.0 | 0.0 |
+| long | 1 | 1 | 0 | 0 | 1 | 0.0 | -2.4 |
+| short | 1 | 1 | 0 | 0 | 1 | 0.0 | -0.92 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| stock | 2 | 2 | 0 | 0 | 2 | 0.0 | 0.0 |
+| stock | 2 | 2 | 0 | 0 | 2 | 0.0 | -1.66 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| squeeze | 2 | 2 | 0 | 0 | 2 | 0.0 | 0.0 |
+| squeeze | 2 | 2 | 0 | 0 | 2 | 0.0 | -1.66 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | TAKE | 0 | 0 | 0 | 0 | 0 | — | — |
-| SKIP (shadow) | 2 | 2 | 0 | 0 | 2 | 0.0 | 0.0 |
+| SKIP (shadow) | 2 | 2 | 0 | 0 | 2 | 0.0 | -1.66 |
 
 **Judge edge (avg PnL TAKE − avg PnL shadow):** None → no comparison yet
 
@@ -63,17 +63,17 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| 0-40 | 1 | 1 | 0 | 0 | 1 | 0.0 | 0.0 |
-| 40-70 | 1 | 1 | 0 | 0 | 1 | 0.0 | 0.0 |
+| 0-40 | 1 | 1 | 0 | 0 | 1 | 0.0 | -0.92 |
+| 40-70 | 1 | 1 | 0 | 0 | 1 | 0.0 | -2.4 |
 | 70-100 | 0 | 0 | 0 | 0 | 0 | — | — |
 
 ### Recent runs
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20260921T152217Z | 2026-09-21T15:22:17+00:00 | yes | — | — | — |
+| run_20260921T154146Z | 2026-09-21T15:41:46+00:00 | yes | — | — | — |
+| run_20260921T152217Z | 2026-09-21T15:22:17+00:00 | yes | 1 | 0 | 0.0 |
 | run_20260921T103635Z | 2026-09-21T10:36:35+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260921T081220Z | 2026-09-21T08:12:20+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260921T043218Z | 2026-09-21T04:32:18+00:00 | yes | 0 | 0 | 0.0 |
-| run_20260920T193331Z | 2026-09-20T19:33:31+00:00 | no | 0 | 0 | 0.0 |
 
