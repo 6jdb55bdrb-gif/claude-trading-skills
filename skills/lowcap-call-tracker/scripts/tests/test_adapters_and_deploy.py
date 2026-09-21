@@ -373,12 +373,12 @@ def test_scheduled_runner_is_self_contained():
     """The schedule's prompt is one line; the script owns every step."""
     text = (DEPLOY / "scheduled_run.sh").read_text(encoding="utf-8")
     for needle in (
-        "git pull",                      # refresh
-        "--snapshot",                    # carry state across throwaway checkouts
-        "run_cycle.py",                  # the cycle itself
-        "git add tracker-output/",       # persist state
-        "git push",                      # ...back to the branch
-        "RESULT:",                       # machine-readable outcome line
+        "git pull",  # refresh
+        "--snapshot",  # carry state across throwaway checkouts
+        "run_cycle.py",  # the cycle itself
+        "git add tracker-output/",  # persist state
+        "git push",  # ...back to the branch
+        "RESULT:",  # machine-readable outcome line
     ):
         assert needle in text, needle
 
@@ -396,7 +396,7 @@ def test_scheduled_runner_never_prints_the_token():
     assert "telegram credentials: present" in text
     # The token is only ever tested for emptiness, never echoed.
     assert "echo $TELEGRAM_BOT_TOKEN" not in text
-    assert "echo \"$TELEGRAM_BOT_TOKEN\"" not in text
+    assert 'echo "$TELEGRAM_BOT_TOKEN"' not in text
 
 
 def test_scheduled_runner_survives_a_missing_token():

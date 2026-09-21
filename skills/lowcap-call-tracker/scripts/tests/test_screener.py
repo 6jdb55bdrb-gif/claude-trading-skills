@@ -313,7 +313,9 @@ def test_real_screener_markup_parses_to_one_correct_row():
     rows = parse_screener_html(REAL_MARKUP.read_text(encoding="utf-8"))
     assert len(rows) == 1
     row = rows[0]
-    assert row["ticker"] == "SSDEV"
+    # Not "SSDEV": the cell's logo link carries the first letter in its own
+    # <span>, so the rendered text doubles it. data-boxover-ticker is the truth.
+    assert row["ticker"] == "SDEV"
     assert row["company"] == "Stablecoin Development Corp"
     assert row["price"] == 1.04  # not the 52.64M market cap
     assert row["change_pct"] == 23.63  # header is "Change %", not "Change"
@@ -375,3 +377,46 @@ def test_row_numbers_are_not_treated_as_tickers():
 )
 def test_live_view_headers_map_to_canonical_fields(header, field, raw, expected):
     assert normalize_row({"Ticker": "AAA", header: raw})[field] == expected
+
+
+def test_ticker_comes_from_markup_not_rendered_text():
+    """Regression: FinViz's logo link duplicates the symbol's first letter.
+
+    The rendered text of the ticker cell is "NNCPL" for NCPL. Calls were being
+    opened against symbols that do not exist, so no price source could ever
+    quote them and their PnL sat at 0% forever.
+    """
+    html = """
+    <table class="screener_table">
+      <tr><th>No.</th><th>Ticker</th><th>Company</th><th>Price</th></tr>
+      <tr>
+        <td>1</td>
+        <td data-boxover-ticker="NCPL" data-boxover-company="Netcapital Inc">
+          <span><a class="company-ticker" href="stock?t=NCPL&amp;ty=c"><img alt="NCPL logo"/><span>N</span></a><a href="quote.ashx?t=NCPL">NCPL</a></span>
+        </td>
+        <td>Netcapital Inc</td>
+        <td>1.09</td>
+      </tr>
+    </table>
+    """
+    rows = parse_screener_html(html)
+    assert [row["ticker"] for row in rows] == ["NCPL"]
+    assert rows[0]["price"] == 1.09
+
+
+def test_ticker_falls_back_to_the_row_link_then_to_text():
+    from_link = """
+    <table class="screener_table">
+      <tr><th>Ticker</th><th>Price</th></tr>
+      <tr><td><a href="quote.ashx?t=ABCD">AABCD</a></td><td>2.00</td></tr>
+    </table>
+    """
+    assert [row["ticker"] for row in parse_screener_html(from_link)] == ["ABCD"]
+
+    plain = """
+    <table class="screener_table">
+      <tr><th>Ticker</th><th>Price</th></tr>
+      <tr><td>EFGH</td><td>2.00</td></tr>
+    </table>
+    """
+    assert [row["ticker"] for row in parse_screener_html(plain)] == ["EFGH"]

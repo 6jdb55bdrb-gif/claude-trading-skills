@@ -24,6 +24,7 @@ import csv
 import io
 import json
 import os
+import re
 import sys
 import time
 from typing import Any
@@ -133,6 +134,9 @@ MAGNITUDE_FIELDS = {"market_cap", "float_shares", "shares_outstanding", "volume"
 
 _MULTIPLIERS = {"K": 1e3, "M": 1e6, "B": 1e9, "T": 1e12}
 
+# The ?t=SYMBOL carried by the row's own links.
+_TICKER_HREF_RE = re.compile(r"[?&]t=([A-Za-z][A-Za-z0-9.\-]*)")
+
 
 class FetchError(RuntimeError):
     """Raised when screener data cannot be retrieved."""
@@ -222,6 +226,27 @@ def _looks_like_results_table(table: Any) -> bool:
     return bool(body_widths) and max(body_widths) >= len(headers) - 1
 
 
+def _canonical_ticker(row: Any) -> str | None:
+    """Read the row's real ticker from markup rather than its rendered text.
+
+    FinViz renders the ticker cell as a logo link containing the symbol's first
+    letter in its own <span>, followed by a second link with the full symbol —
+    so ``get_text()`` yields "NNCPL" for NCPL and "SSDEV" for SDEV. The symbol is
+    carried verbatim in ``data-boxover-ticker`` (and in the links' ``?t=``), so
+    take it from there and use the text only as a last resort.
+    """
+    for cell in row.find_all("td"):
+        value = (cell.get("data-boxover-ticker") or "").strip()
+        if value:
+            return value.upper()
+    link = row.find("a", href=_TICKER_HREF_RE)
+    if link:
+        match = _TICKER_HREF_RE.search(link.get("href", ""))
+        if match:
+            return match.group(1).upper()
+    return None
+
+
 def parse_screener_html(html: str) -> list[dict[str, Any]]:
     """Parse the public screener's result grid; returns [] when it is absent.
 
@@ -250,6 +275,9 @@ def parse_screener_html(html: str) -> list[dict[str, Any]]:
             if len(cells) < 2:
                 continue
             normalized = normalize_row(dict(zip(header_cells, cells)))
+            canonical = _canonical_ticker(tr)
+            if canonical:
+                normalized["ticker"] = canonical
             ticker = normalized.get("ticker")
             # FinViz numbers its rows; a value that is not a symbol is chrome.
             if ticker and ticker.replace(".", "").replace("-", "").isalpha():
