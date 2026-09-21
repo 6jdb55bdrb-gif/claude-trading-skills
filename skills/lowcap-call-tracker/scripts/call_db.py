@@ -31,6 +31,11 @@ STATUS_CLOSED_WRONG = "CLOSED_WRONG"  # legacy stop-out, only when a threshold i
 STATUS_EXPIRED = "EXPIRED"  # the contract reached its expiration date
 KIND_ACTIVE = "active"
 KIND_SHADOW = "shadow"
+# A hit the screener found while the role backend was down. It is tracked like
+# any other call so the screener's own edge stays measurable, but it carries no
+# opinion, so it is excluded from every statistic that judges the Judge.
+KIND_UNREVIEWED = "unreviewed"
+DECISION_UNREVIEWED = "UNREVIEWED"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS calls (
@@ -67,7 +72,14 @@ CREATE TABLE IF NOT EXISTS calls (
     close_reason TEXT,
     run_id TEXT,
     backend TEXT,
-    notes TEXT
+    notes TEXT,
+    -- When the roles actually spoke. Distinct from call_date on purpose: a call
+    -- entered while the backend was down keeps its original entry price and
+    -- date, and records separately when it was finally reviewed.
+    reviewed_at TEXT,
+    review_run_id TEXT,
+    -- The screener row, kept so an UNREVIEWED call can be reviewed later.
+    hit_json TEXT
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_calls_open_ticker
@@ -185,6 +197,9 @@ class CallDatabase:
             ("instrument", "ALTER TABLE calls ADD COLUMN instrument TEXT"),
             ("expiry_date", "ALTER TABLE calls ADD COLUMN expiry_date TEXT"),
             ("strike", "ALTER TABLE calls ADD COLUMN strike REAL"),
+            ("reviewed_at", "ALTER TABLE calls ADD COLUMN reviewed_at TEXT"),
+            ("review_run_id", "ALTER TABLE calls ADD COLUMN review_run_id TEXT"),
+            ("hit_json", "ALTER TABLE calls ADD COLUMN hit_json TEXT"),
         ):
             if column not in existing:
                 self.conn.execute(ddl)
@@ -229,6 +244,7 @@ class CallDatabase:
         if not entry:
             return None
         decision = review.get("decision", "SKIP")
+        unreviewed = decision == DECISION_UNREVIEWED
         instrument = (risk.get("instrument") or "").lower()
         if instrument not in {"call", "put"}:
             instrument = "put" if risk.get("direction") == "short" else "call"
@@ -244,8 +260,9 @@ class CallDatabase:
                 screen_variant, judge_decision, confidence, judge_reason,
                 researcher_score, technician_score, skeptic_score, risk_manager_score,
                 stop_price, target_price, shares, position_usd, risk_usd,
-                status, current_price, pnl_pct, last_price_at, run_id, backend, notes
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                status, current_price, pnl_pct, last_price_at, run_id, backend, notes,
+                reviewed_at, hit_json
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 ticker,
@@ -254,7 +271,9 @@ class CallDatabase:
                 instrument,
                 risk.get("expiry_date"),
                 risk.get("strike"),
-                KIND_ACTIVE if decision == "TAKE" else KIND_SHADOW,
+                KIND_UNREVIEWED
+                if unreviewed
+                else (KIND_ACTIVE if decision == "TAKE" else KIND_SHADOW),
                 stamp,
                 float(entry),
                 review.get("variant"),
@@ -277,6 +296,8 @@ class CallDatabase:
                 run_id,
                 review.get("backend"),
                 "; ".join(review.get("notes", []))[:500] or None,
+                None if unreviewed else stamp,
+                json.dumps(review.get("hit"), default=str) if review.get("hit") else None,
             ),
         )
         call_id = int(cursor.lastrowid)
@@ -301,6 +322,103 @@ class CallDatabase:
         )
         self.conn.commit()
         return call_id
+
+    def unreviewed_calls(self) -> list[sqlite3.Row]:
+        """Open calls still waiting for a role review, oldest first."""
+        return list(
+            self.conn.execute(
+                "SELECT * FROM calls WHERE status = ? AND judge_decision = ? "
+                "ORDER BY call_date, id",
+                (STATUS_OPEN, DECISION_UNREVIEWED),
+            )
+        )
+
+    def apply_review(
+        self,
+        call_id: int,
+        review: dict[str, Any],
+        *,
+        run_id: str,
+        now: str | None = None,
+    ) -> dict[str, Any]:
+        """Attach a late review to an existing call.
+
+        The entry price and call date are never touched: the call was taken when
+        the screener found it, and moving its entry to match a later opinion
+        would flatter every statistic that follows. ``reviewed_at`` records when
+        the roles actually spoke.
+        """
+        stamp = now or utc_now()
+        verdicts = review.get("verdicts", {})
+        risk = verdicts.get("risk_manager", {}) or {}
+        decision = review.get("decision", "SKIP")
+        instrument = (risk.get("instrument") or "").lower()
+        if instrument not in {"call", "put"}:
+            instrument = "put" if risk.get("direction") == "short" else "call"
+        direction = "short" if instrument == "put" else "long"
+
+        self.conn.execute(
+            """
+            UPDATE calls SET
+                direction = ?, instrument = ?, expiry_date = ?, strike = ?,
+                kind = ?, judge_decision = ?, confidence = ?, judge_reason = ?,
+                researcher_score = ?, technician_score = ?, skeptic_score = ?,
+                risk_manager_score = ?, stop_price = ?, target_price = ?,
+                shares = ?, position_usd = ?, risk_usd = ?, backend = ?,
+                reviewed_at = ?, review_run_id = ?
+            WHERE id = ?
+            """,
+            (
+                direction,
+                instrument,
+                risk.get("expiry_date"),
+                risk.get("strike"),
+                KIND_ACTIVE if decision == "TAKE" else KIND_SHADOW,
+                decision,
+                int(review.get("confidence") or 0),
+                (verdicts.get("judge", {}) or {}).get("reason"),
+                (verdicts.get("researcher", {}) or {}).get("score"),
+                (verdicts.get("technician", {}) or {}).get("score"),
+                (verdicts.get("skeptic", {}) or {}).get("score"),
+                risk.get("score"),
+                risk.get("stop"),
+                risk.get("target"),
+                risk.get("shares"),
+                risk.get("position_usd"),
+                risk.get("risk_usd"),
+                review.get("backend"),
+                stamp,
+                run_id,
+                call_id,
+            ),
+        )
+        for role, verdict in verdicts.items():
+            self.conn.execute(
+                """
+                INSERT INTO role_verdicts (call_id, role, score, backend, verdict_json, created_at)
+                VALUES (?,?,?,?,?,?)
+                """,
+                (
+                    call_id,
+                    role,
+                    verdict.get("score"),
+                    verdict.get("backend"),
+                    json.dumps(verdict, default=str),
+                    stamp,
+                ),
+            )
+        # A put reverses the PnL convention, so any prior marks must be redone.
+        self._recompute_pnl(call_id, direction)
+        self.conn.commit()
+        return dict(self.conn.execute("SELECT * FROM calls WHERE id = ?", (call_id,)).fetchone())
+
+    def _recompute_pnl(self, call_id: int, direction: str) -> None:
+        """Re-mark a call after its direction changed."""
+        row = self.conn.execute("SELECT * FROM calls WHERE id = ?", (call_id,)).fetchone()
+        if row is None or row["current_price"] is None:
+            return
+        fresh = pnl_pct(row["entry_price"], row["current_price"], direction)
+        self.conn.execute("UPDATE calls SET pnl_pct = ? WHERE id = ?", (fresh, call_id))
 
     def open_calls(self) -> list[sqlite3.Row]:
         return list(

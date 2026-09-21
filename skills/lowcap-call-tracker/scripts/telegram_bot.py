@@ -49,7 +49,7 @@ import membership as ms
 from call_db import KIND_ACTIVE, STATUS_EXPIRED, STATUS_OPEN, CallDatabase
 from option_contract import days_to_expiry
 
-from config import ConfigError, load_config, resolve_path
+from config import ConfigError, load_config, load_dotenv, resolve_path
 
 try:
     import requests
@@ -698,6 +698,18 @@ def format_call_detail(db: CallDatabase, ticker: str) -> str:
         f"{escape_html(risk.get('stop_basis') or '—')} stop",
         "",
         f"<b>Judge:</b> {escape_html(judge.get('reason') or row['judge_reason'] or '—')}",
+        *([f"<i>{escape_html(judge['reasoning'])}</i>"] if judge.get("reasoning") else []),
+        *(
+            [
+                "<i>catalyst penalty −{points} ({before} → {after})</i>".format(
+                    points=judge["catalyst_penalty"]["points"],
+                    before=judge["catalyst_penalty"]["confidence_before"],
+                    after=judge["catalyst_penalty"]["confidence_after"],
+                )
+            ]
+            if judge.get("catalyst_penalty")
+            else []
+        ),
     ]
     answer = judge.get("skeptic_answer")
     if answer:
@@ -1226,6 +1238,7 @@ def notify_run(
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_dotenv()  # credentials may live in .env; a real env var still wins
     parser = argparse.ArgumentParser(description="Telegram bot for the lowcap call tracker")
     parser.add_argument("--config")
     parser.add_argument("--db")

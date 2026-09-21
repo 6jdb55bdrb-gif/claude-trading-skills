@@ -28,6 +28,34 @@ class ConfigError(RuntimeError):
     """Raised when configuration cannot be loaded or is structurally invalid."""
 
 
+def load_dotenv(path: str | os.PathLike[str] | None = None, *, override: bool = False) -> list[str]:
+    """Load ``KEY=value`` lines from a ``.env`` file into the environment.
+
+    Deliberately tiny and dependency-free. A real environment variable always
+    wins unless *override* is set, so a deployment cannot be surprised by a
+    stale file. Returns the names loaded (never the values — these are secrets).
+    """
+    target = Path(path) if path else repo_root() / ".env"
+    if not target.is_file():
+        return []
+    loaded: list[str] = []
+    for line in target.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        if key.startswith("export "):
+            key = key[len("export ") :].strip()
+        if not key:
+            continue
+        value = value.strip().strip("'\"")
+        if override or key not in os.environ:
+            os.environ[key] = value
+            loaded.append(key)
+    return loaded
+
+
 def repo_root() -> Path:
     """Return the repository root (the directory holding ``skills/``).
 

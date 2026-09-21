@@ -117,11 +117,19 @@ def review_payload(
     }
 
 
+class FakeServerToolUse:
+    def __init__(self, web_search_requests=0):
+        self.web_search_requests = web_search_requests
+
+
 class FakeUsage:
-    def __init__(self, input_tokens=500, output_tokens=200):
+    def __init__(self, input_tokens=500, output_tokens=200, web_search_requests=0):
         self.input_tokens = input_tokens
         self.output_tokens = output_tokens
         self.cache_read_input_tokens = 0
+        self.server_tool_use = (
+            FakeServerToolUse(web_search_requests) if web_search_requests else None
+        )
 
 
 class FakeBlock:
@@ -134,24 +142,36 @@ class FakeBlock:
 class FakeResponse:
     stop_reason = "end_turn"
 
-    def __init__(self, text):
+    def __init__(self, text, web_search_requests=0):
         self.content = [FakeBlock(text)]
-        self.usage = FakeUsage()
+        self.usage = FakeUsage(web_search_requests=web_search_requests)
 
 
 class FakeMessages:
-    def __init__(self, replies):
+    def __init__(self, replies, web_search_requests=0):
         self._replies = replies
         self.calls = []
+        self._web_search_requests = web_search_requests
 
     def create(self, **kwargs):
         self.calls.append(kwargs)
         reply = self._replies.pop(0) if self._replies else "{}"
-        return FakeResponse(reply)
+        return FakeResponse(reply, web_search_requests=self._web_search_requests)
 
 
 class FakeAnthropic:
     """Stand-in for anthropic.Anthropic with scripted JSON replies."""
 
-    def __init__(self, replies):
-        self.messages = FakeMessages(list(replies))
+    def __init__(self, replies, web_search_requests=0):
+        self.messages = FakeMessages(list(replies), web_search_requests)
+
+    @property
+    def calls(self):
+        """Every kwargs dict passed to messages.create, in order."""
+        return self.messages.calls
+
+
+@pytest.fixture()
+def review_fn():
+    """``review_payload`` as a fixture, for tests that build several calls."""
+    return review_payload

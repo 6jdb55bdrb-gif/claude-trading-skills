@@ -24,15 +24,42 @@ import sys
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from call_db import CallDatabase
+from call_db import KIND_UNREVIEWED, CallDatabase
 from stats import ROLES, compute_stats
 from telegram_bot import notify
 
-from config import load_config, resolve_path
+from config import load_config, load_dotenv, resolve_path
 
 
 def _fmt(value: Any, suffix: str = "") -> str:
     return "—" if value is None else f"{value}{suffix}"
+
+
+def judge_strictness(
+    db: CallDatabase,
+    config: dict[str, Any],
+    *,
+    sample_size: int = 20,
+    threshold_pct: float = 90.0,
+) -> dict[str, Any]:
+    """Is the Judge skipping nearly everything it is shown?
+
+    Only reviewed calls count: an UNREVIEWED call carries no verdict, so
+    counting it as a SKIP would blame the Judge for the backend being down.
+    """
+    reviewed = [row for row in db.all_calls() if row["kind"] != KIND_UNREVIEWED]
+    recent = reviewed[-sample_size:]
+    skips = sum(1 for row in recent if row["judge_decision"] != "TAKE")
+    skip_pct = round(skips / len(recent) * 100, 1) if recent else None
+    return {
+        "sample": len(recent),
+        "sample_size": sample_size,
+        "skips": skips,
+        "takes": len(recent) - skips,
+        "skip_pct": skip_pct,
+        "threshold_pct": threshold_pct,
+        "flagged": bool(recent and len(recent) >= 5 and skip_pct > threshold_pct),
+    }
 
 
 def analyse(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
@@ -148,6 +175,35 @@ def analyse(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
                     ),
                 }
             )
+
+    # --- Judge selectivity -------------------------------------------------
+    # A Judge that skips almost everything is indistinguishable from no Judge at
+    # all: there is no TAKE sample to measure, so its value can never be proven.
+    strictness = judge_strictness(db, config)
+    if strictness["flagged"]:
+        proposals.append(
+            {
+                "target": "agents/lowcap-judge.md",
+                "lever": "judge policy",
+                "severity": "high",
+                "finding": (
+                    f"Judge too strict? {strictness['skips']} of the last "
+                    f"{strictness['sample']} reviewed calls were SKIP "
+                    f"({strictness['skip_pct']}%), above the "
+                    f"{strictness['threshold_pct']}% alarm line."
+                ),
+                "proposal": (
+                    "Read the stored judge_reason of the recent SKIPs and find which rule "
+                    "is doing the skipping. If it is the confidence floor, consider lowering "
+                    f"roles.judge.min_confidence_to_take (now "
+                    f"{config['roles'].get('judge', {}).get('min_confidence_to_take', 55)}). "
+                    "If it is the Skeptic gate, tighten the Skeptic prompt so a generic "
+                    "'low float stocks are risky' is not scored as disqualifying. If it is "
+                    "the catalyst penalty, review roles.judge.no_catalyst_penalty. Nothing "
+                    "here is applied automatically."
+                ),
+            }
+        )
 
     if not resolved:
         proposals.append(
@@ -289,6 +345,7 @@ def is_due(config: dict[str, Any], *, days: int = 7) -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_dotenv()  # credentials may live in .env; a real env var still wins
     parser = argparse.ArgumentParser(description="Weekly learning loop (proposals only)")
     parser.add_argument("--config")
     parser.add_argument("--db")

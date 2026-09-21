@@ -145,11 +145,35 @@ roles:
   max_tokens:
     worker: 1200
     judge: 1200
+  # Roles that must NOT be faked. If the LLM backend cannot answer for one of
+  # these, the hit is recorded UNREVIEWED and reviewed on the next healthy run;
+  # a deterministic guess about a catalyst, an objection or a verdict is worse
+  # than an honest gap in the record. TECHNICIAN and RISK MANAGER are arithmetic
+  # on the screener row, so they keep their offline implementation.
+  llm_only: [researcher, skeptic, judge]
+  # Fail the whole run's review when one tiny API call cannot be made, instead
+  # of discovering it role by role.
+  health_check: true
+  # The RESEARCHER searches the web: a catalyst lives in news, filings and press
+  # releases, never in screener fields.
+  web_search:
+    enabled: true
+    max_uses: 5
+    tool_version: web_search_20250305
+    # Leave empty to search the whole web. Narrow it only if results get noisy.
+    allowed_domains: []
   judge:
     # A TAKE needs at least this confidence; below it the call becomes a shadow call.
     min_confidence_to_take: 55
     # A TAKE is impossible unless the Judge explicitly answers the Skeptic.
     require_skeptic_answer: true
+    # "No catalyst found" is a MINUS, never a veto: it costs this much
+    # confidence and then the Judge weighs what is left (structure, risk, the
+    # Skeptic's other points). A thin tape with a clean setup may still be worth
+    # taking; a missing press release should not decide that by itself.
+    no_catalyst_penalty: 15
+    # Below this researcher score, a hit counts as having no catalyst.
+    catalyst_score_floor: 4.0
   # Heuristic-backend and learning-loop weighting. skeptic is subtracted:
   # its score is OBJECTION SEVERITY (0 = no objection, 10 = disqualifying).
   weights:
@@ -164,9 +188,11 @@ roles:
     position_sizer: true            # RISK MANAGER sizing
 
 llm:
-  # Hard monthly ceiling. Once month-to-date spend reaches it, role review
-  # falls back to the heuristic backend instead of calling the API.
+  # Hard monthly ceiling. Once month-to-date spend reaches it, the backend
+  # reports itself down and hits are recorded UNREVIEWED rather than guessed at.
   monthly_spend_cap_usd: 10.0
+  # Server-side web search is billed per search, not per token.
+  web_search_per_1k_searches: 10.0
   # USD per 1M tokens. Update when Anthropic pricing changes.
   prices_per_mtok:
     claude-haiku-4-5:

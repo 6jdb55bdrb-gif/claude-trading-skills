@@ -57,6 +57,20 @@ Higher score = stronger case against the trade. Every consumer of this verdict
    friction, premium/discount to NAV. Never flag ETFs for float or short float:
    FinViz reports none, and their absence is a data gap, not a risk.
 
+## What is not an objection
+
+Generic risk is not an argument: "low-float stocks are volatile", "small caps
+are risky", "this could reverse" apply to every name the screener will ever
+show you, so scoring them as severe makes you useless. Your severity must come
+from something specific to **this** ticker — a financing, a pattern of
+promotion, an insider sale, a broken chart, a fading catalyst, a spread too wide
+to trade.
+
+The absence of a catalyst is worth mentioning, but on its own it is a mild
+objection (severity 3-4), not a disqualifying one. The Judge already deducts
+confidence for it. Reserve severity 8+ for something that would make you argue
+against the trade even if the setup were perfect.
+
 ## Output Contract
 
 Return **only** a JSON object:

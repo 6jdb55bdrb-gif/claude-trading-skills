@@ -25,12 +25,18 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-from call_db import KIND_ACTIVE, CallDatabase
+from call_db import DECISION_UNREVIEWED, KIND_ACTIVE, KIND_UNREVIEWED, CallDatabase
 from fetch_screener import FetchError, screen_all
 from llm_client import LLMClient, current_month
 from market_hours import session_state
 from price_update import format_updates, update_open_calls
-from role_review import format_review, review_hits
+from role_review import (
+    ReviewUnavailable,
+    format_review,
+    load_role_prompts,
+    review_hit,
+    review_hits,
+)
 from state_snapshot import (
     export_members,
     export_snapshot,
@@ -42,11 +48,109 @@ from state_snapshot import (
 from stats import compute_stats, render_text, write_stats_file
 from telegram_bot import notify_run
 
-from config import load_config, resolve_path
+from config import load_config, load_dotenv, resolve_path
 
 
 def make_run_id(now: datetime | None = None) -> str:
     return (now or datetime.now(timezone.utc)).strftime("run_%Y%m%dT%H%M%SZ")
+
+
+def _check_backend(llm: Any, config: dict[str, Any], backend: str) -> dict[str, Any]:
+    """Prove the role backend before the run depends on it."""
+    if backend == "heuristic":
+        return {"ok": True, "reason": "heuristic backend requested", "checked": False}
+    if llm is None:
+        return {"ok": False, "reason": "no LLM client", "checked": False}
+    if not config["roles"].get("health_check", True):
+        availability = llm.availability()
+        return {
+            "ok": bool(availability["available"]),
+            "reason": availability["reason"],
+            "checked": False,
+        }
+    result = llm.health_check()
+    result["checked"] = True
+    return result
+
+
+def unreviewed_review(hit: dict[str, Any], reason: str) -> dict[str, Any]:
+    """A call the screener found while the roles could not be run.
+
+    It carries no scores and no direction: an UNREVIEWED call is a record that
+    the screener fired, nothing more. The next healthy run reviews it.
+    """
+    return {
+        "ticker": hit["ticker"],
+        "asset_type": hit.get("asset_type", "stock"),
+        "variant": hit.get("variant"),
+        "price": hit.get("price"),
+        "hit": hit,
+        "verdicts": {},
+        "decision": DECISION_UNREVIEWED,
+        "confidence": None,
+        "direction": None,
+        "entry": hit.get("price"),
+        "stop": None,
+        "instrument": None,
+        "strike": None,
+        "expiry_date": None,
+        "backend": "none",
+        "notes": [f"backend down at call time: {reason}"],
+    }
+
+
+def review_backlog(
+    db: CallDatabase,
+    config: dict[str, Any],
+    *,
+    run_id: str,
+    backend: str,
+    llm: Any,
+    agents_dir: str | None,
+    offline: bool,
+    dry_run: bool,
+) -> dict[str, Any]:
+    """Review the calls left UNREVIEWED by an earlier run with a dead backend.
+
+    Their entry price and call date stand: the position was recorded when the
+    screener fired, and only the opinion arrives late.
+    """
+    pending = db.unreviewed_calls()
+    result: dict[str, Any] = {"pending": len(pending), "reviewed": [], "failed": []}
+    if not pending:
+        return result
+
+    prompts = load_role_prompts(agents_dir, backend=backend)
+    for row in pending:
+        try:
+            hit = json.loads(row["hit_json"]) if row["hit_json"] else None
+        except (TypeError, json.JSONDecodeError):
+            hit = None
+        if not hit:
+            result["failed"].append(
+                {"ticker": row["ticker"], "reason": "the screener row was not kept"}
+            )
+            continue
+        try:
+            review = review_hit(
+                hit, config, backend=backend, llm=llm, prompts=prompts, offline=offline
+            )
+        except ReviewUnavailable as exc:
+            result["failed"].append({"ticker": row["ticker"], "reason": str(exc)})
+            continue
+        if not dry_run:
+            db.apply_review(row["id"], review, run_id=run_id)
+        result["reviewed"].append(
+            {
+                "ticker": row["ticker"],
+                "call_id": row["id"],
+                "decision": review["decision"],
+                "confidence": review["confidence"],
+                "entry_price": row["entry_price"],
+                "called_on": row["call_date"],
+            }
+        )
+    return result
 
 
 def _select_hits(
@@ -126,10 +230,34 @@ def run_cycle(
             llm.availability() if llm else {"available": False, "reason": "heuristic backend"}
         )
 
+        # One tiny call proves the backend before the run commits to it: a key
+        # that expired, a spent balance or a blocked network is found here, once,
+        # instead of five times per hit halfway through a review.
+        health = _check_backend(llm, config, backend)
+        report["backend_health"] = health
+        if not health["ok"]:
+            message = f"ERROR: role backend DOWN — {health['reason']}"
+            print(message, file=sys.stderr)
+            report["errors"].append(message)
+
         # 1. Price the calls that already exist (always, weekends included).
         report["price_update"] = update_open_calls(db, config, prices=prices)
 
-        # 2. Screen + review.
+        # 2. Catch up on anything a dead backend left unjudged. This runs before
+        #    screening so a recovered backend settles the backlog first.
+        if health["ok"]:
+            report["backlog"] = review_backlog(
+                db,
+                config,
+                run_id=run_id,
+                backend=backend,
+                llm=llm,
+                agents_dir=agents_dir,
+                offline=offline,
+                dry_run=dry_run,
+            )
+
+        # 3. Screen + review.
         if screening_allowed:
             try:
                 hits = screen_all(config, mode=screen_mode, fixture=fixture, variants=variants)
@@ -141,14 +269,19 @@ def run_cycle(
                 db, hits, int(config["tracker"].get("max_new_calls_per_run", 10))
             )
             report["duplicates_skipped"] = duplicates
-            reviews = review_hits(
-                selected,
-                config,
-                backend=backend,
-                llm=llm,
-                agents_path=agents_dir,
-                offline=offline,
-            )
+            if health["ok"]:
+                reviews = review_hits(
+                    selected,
+                    config,
+                    backend=backend,
+                    llm=llm,
+                    agents_path=agents_dir,
+                    offline=offline,
+                )
+            else:
+                # Track what the screener found, claim nothing about it.
+                reviews = [unreviewed_review(hit, health["reason"]) for hit in selected]
+                report["unreviewed"] = len(reviews)
             report["reviews"] = reviews
             report["screening_ran"] = True
             for review in reviews:
@@ -163,7 +296,7 @@ def run_cycle(
         else:
             report["hits"] = 0
 
-        # 3. Cost accounting, statistics.
+        # 4. Cost accounting, statistics.
         cost = (
             llm.persist_run_cost(run_id)
             if (llm and not dry_run)
@@ -173,7 +306,7 @@ def run_cycle(
         report["llm_month_to_date_usd"] = llm.month_to_date_spend(current_month()) if llm else 0.0
         report["llm_cap_usd"] = llm.cap_usd() if llm else 0.0
 
-        stats = compute_stats(db, config)
+        stats = compute_stats(db, config, backend_health=health)
         report["stats"] = stats
         if not dry_run:
             takes = sum(1 for call in report["new_calls"] if call["decision"] == "TAKE")
@@ -209,6 +342,21 @@ def run_cycle(
     return report
 
 
+def _backend_line(report: dict[str, Any]) -> str:
+    """Say plainly which backend spoke, and what it cost when it did not."""
+    health = report.get("backend_health") or {}
+    if health.get("ok"):
+        latency = health.get("latency_ms")
+        suffix = f", {latency}ms" if latency else ""
+        return f"Role backend: LLM UP ({health.get('model')}{suffix})"
+    if not health.get("checked") and report.get("llm", {}).get("reason") == "heuristic backend":
+        return "Role backend: heuristic (requested)"
+    return (
+        f"Role backend: DOWN — {health.get('reason', 'unknown')}  "
+        "→ hits recorded UNREVIEWED, judged on the next healthy run"
+    )
+
+
 def _call_line(review: dict[str, Any]) -> dict[str, Any]:
     return {
         "ticker": review["ticker"],
@@ -219,8 +367,11 @@ def _call_line(review: dict[str, Any]) -> dict[str, Any]:
         "confidence": review["confidence"],
         "entry": review.get("entry"),
         "stop": review.get("stop"),
-        "reason": (review["verdicts"].get("judge") or {}).get("reason"),
-        "kind": KIND_ACTIVE if review["decision"] == "TAKE" else "shadow",
+        "reason": (review["verdicts"].get("judge") or {}).get("reason")
+        or (review.get("notes") or [None])[0],
+        "kind": KIND_UNREVIEWED
+        if review["decision"] == DECISION_UNREVIEWED
+        else (KIND_ACTIVE if review["decision"] == "TAKE" else "shadow"),
     }
 
 
@@ -233,19 +384,21 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
         "=" * 72,
         f"Session: {session['as_of']} — {session['reason']}"
         + ("" if report["screening_ran"] else "  → screening skipped, price update only"),
-        f"Role backend: {'LLM' if report['llm'].get('available') else 'heuristic'} "
-        f"({report['llm'].get('reason')})",
+        _backend_line(report),
         "",
         "NEW CALLS",
     ]
     if report["new_calls"]:
         for call in report["new_calls"]:
+            confidence = call["confidence"]
             lines.append(
-                f"  {call['decision']:<4} {call['ticker']:<6} {call['asset_type']:<5} "
-                f"{call['direction'] or '-':<5} conf={call['confidence']:<3} "
-                f"entry={call['entry']} stop={call['stop']} [{call['variant']}]"
+                f"  {call['decision']:<10} {call['ticker']:<6} {call['asset_type']:<5} "
+                f"{call['direction'] or '-':<5} "
+                f"conf={'—' if confidence is None else confidence:<3} "
+                f"entry={call['entry']} stop={call['stop'] or '—'} [{call['variant']}]"
             )
-            lines.append(f"       {call['reason']}")
+            if call["reason"]:
+                lines.append(f"       {call['reason']}")
     else:
         lines.append("  (none)")
     if report["duplicates_skipped"]:
@@ -295,6 +448,7 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_dotenv()  # credentials may live in .env; a real env var still wins
     parser = argparse.ArgumentParser(description="Run one lowcap tracker cycle")
     parser.add_argument("--config")
     parser.add_argument("--db")
@@ -318,11 +472,32 @@ def main(argv: list[str] | None = None) -> int:
         "--snapshot",
         help="JSON state snapshot: imported into an empty database, rewritten after the run",
     )
+    parser.add_argument(
+        "--health-check",
+        action="store_true",
+        help="Test the role backend with one tiny API call and exit",
+    )
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--verbose", action="store_true", help="Also print every role verdict")
     args = parser.parse_args(argv)
 
     config = load_config(args.config)
+
+    if args.health_check:
+        with CallDatabase(args.db or resolve_path(config, "db_path")) as db:
+            health = _check_backend(LLMClient(config, spend_store=db), config, args.backend)
+        if args.json:
+            print(json.dumps(health, indent=2, default=str))
+        elif health["ok"]:
+            print(
+                f"BACKEND UP — {health.get('model')} answered in "
+                f"{health.get('latency_ms', '?')}ms, "
+                f"${health.get('cost_usd', 0):.6f}, "
+                f"${health.get('cap_remaining_usd', 0):.2f} left this month"
+            )
+        else:
+            print(f"BACKEND DOWN — {health['reason']}", file=sys.stderr)
+        return 0 if health["ok"] else 1
     report = run_cycle(
         config,
         backend=args.backend,

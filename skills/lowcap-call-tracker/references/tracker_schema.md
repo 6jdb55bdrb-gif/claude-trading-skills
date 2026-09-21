@@ -30,6 +30,23 @@ can never hold two open calls; the de-duplication rule is enforced by the
 database, not by application logic. Once a call closes, the ticker is eligible
 again.
 
+### Call decisions
+
+| `judge_decision` | `kind` | Meaning |
+|---|---|---|
+| `TAKE` | `active` | the Judge wanted the position |
+| `SKIP` | `shadow` | the Judge declined it; tracked identically so its selectivity is measurable |
+| `UNREVIEWED` | `unreviewed` | the screener fired while the role backend was down |
+
+An UNREVIEWED call has no scores, no confidence and no direction. It keeps
+`hit_json` (the screener row) so the next healthy run can review it, and gets
+`reviewed_at` / `review_run_id` when that happens — its `entry_price` and
+`call_date` never move, because the position was recorded when the screener
+fired, not when the opinion arrived.
+
+UNREVIEWED rows are counted in the totals and priced like everything else, and
+excluded from TAKE-vs-SKIP, per-role accuracy and the confidence buckets.
+
 ### `role_verdicts`
 
 The full JSON verdict of all five roles per call (`call_id`, `role`, `score`,

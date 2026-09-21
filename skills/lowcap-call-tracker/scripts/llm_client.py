@@ -8,12 +8,17 @@ Two model tiers, both configurable under ``roles.models``:
 
 Spend is priced from ``llm.prices_per_mtok`` and persisted by the caller-supplied
 *spend store* (``call_db.CallDatabase`` implements it). Once month-to-date spend
-reaches ``llm.monthly_spend_cap_usd`` the client reports itself unavailable, and
-role review falls back to the deterministic heuristic backend instead of
-silently spending more.
+reaches ``llm.monthly_spend_cap_usd`` the client reports itself unavailable
+instead of silently spending more.
 
-The ``anthropic`` package is an optional dependency: without it (or without
-``ANTHROPIC_API_KEY``) the tracker still runs, on the heuristic backend.
+``health_check()`` proves the backend works with one tiny call before a run
+commits to it. Nothing here falls back: a caller that cannot reach the API is
+told so, loudly, and decides what to do — the tracker records the screener hits
+as UNREVIEWED rather than inventing an opinion about them.
+
+The RESEARCHER is given Anthropic's server-side ``web_search`` tool, because a
+catalyst cannot be found in screener fields — it lives in news, filings and
+press releases.
 """
 
 from __future__ import annotations
@@ -34,6 +39,14 @@ except ImportError:  # pragma: no cover - offline installs take the heuristic pa
 
 # Models that reject `thinking` / `output_config.effort`.
 _NO_THINKING_PREFIXES = ("claude-haiku",)
+
+# Anthropic's server-side web search tool. The model issues the searches and the
+# API runs them, so no search API key of our own is involved.
+WEB_SEARCH_TOOL_VERSION = "web_search_20250305"
+
+# The smallest call that still exercises auth, network, model access and quota.
+HEALTH_CHECK_PROMPT = "Reply with the single word: ok"
+HEALTH_CHECK_MAX_TOKENS = 16
 
 
 class LLMUnavailable(RuntimeError):
@@ -56,6 +69,7 @@ class UsageRecord:
     output_tokens: int
     cache_read_tokens: int
     cost_usd: float
+    web_searches: int = 0
 
 
 @dataclass
@@ -84,6 +98,7 @@ class RunCost:
             "calls": len(self.records),
             "input_tokens": self.total_input_tokens,
             "output_tokens": self.total_output_tokens,
+            "web_searches": sum(record.web_searches for record in self.records),
             "cost_usd": self.total_usd,
             "cost_by_model": per_model,
         }
@@ -204,6 +219,78 @@ class LLMClient:
             self._client = anthropic.Anthropic()
         return self._client
 
+    def web_search_tool(self) -> dict[str, Any]:
+        """The server-side web search tool definition, from configuration."""
+        search = self.config["roles"].get("web_search", {}) or {}
+        tool: dict[str, Any] = {
+            "type": str(search.get("tool_version", WEB_SEARCH_TOOL_VERSION)),
+            "name": "web_search",
+            "max_uses": int(search.get("max_uses", 5)),
+        }
+        allowed = search.get("allowed_domains")
+        if allowed:
+            tool["allowed_domains"] = list(allowed)
+        return tool
+
+    def search_price_usd(self, searches: int) -> float:
+        """Server-side web searches are billed per search, not per token."""
+        per_thousand = float(self.config["llm"].get("web_search_per_1k_searches") or 0.0)
+        return round(searches * per_thousand / 1000.0, 8)
+
+    def health_check(self, *, model_kind: str = "worker") -> dict[str, Any]:
+        """Prove the backend answers, with the smallest call that can fail.
+
+        Returns ``{"ok": bool, "reason": str, ...}``. Never raises: the caller
+        decides what a dead backend means for the run.
+        """
+        started = datetime.now(timezone.utc)
+        availability = self.availability()
+        if not availability["available"]:
+            return {
+                "ok": False,
+                "reason": availability["reason"],
+                "stage": "availability",
+                "model": self.model_for(model_kind),
+            }
+        model = self.model_for(model_kind)
+        try:
+            response = self._sdk_client().messages.create(
+                model=model,
+                max_tokens=HEALTH_CHECK_MAX_TOKENS,
+                messages=[{"role": "user", "content": HEALTH_CHECK_PROMPT}],
+            )
+        except Exception as exc:
+            return {
+                "ok": False,
+                "reason": f"{type(exc).__name__}: {exc}",
+                "stage": "request",
+                "model": model,
+            }
+
+        usage = getattr(response, "usage", None)
+        record = UsageRecord(
+            role="health_check",
+            model=model,
+            input_tokens=int(getattr(usage, "input_tokens", 0) or 0),
+            output_tokens=int(getattr(usage, "output_tokens", 0) or 0),
+            cache_read_tokens=int(getattr(usage, "cache_read_input_tokens", 0) or 0),
+            cost_usd=0.0,
+        )
+        record.cost_usd = self.price_usd(
+            model, record.input_tokens, record.output_tokens, record.cache_read_tokens
+        )
+        self.run_cost.records.append(record)
+        elapsed_ms = int((datetime.now(timezone.utc) - started).total_seconds() * 1000)
+        return {
+            "ok": True,
+            "reason": "ok",
+            "stage": "complete",
+            "model": model,
+            "latency_ms": elapsed_ms,
+            "cost_usd": record.cost_usd,
+            "cap_remaining_usd": self.cap_remaining(),
+        }
+
     def _extra_params(self, model: str, kind: str) -> dict[str, Any]:
         """Thinking / effort parameters the model actually accepts."""
         if model.startswith(_NO_THINKING_PREFIXES):
@@ -218,8 +305,15 @@ class LLMClient:
         kind: str,
         system: str,
         user: str,
+        web_search: bool = False,
     ) -> tuple[dict[str, Any], UsageRecord]:
-        """Run one role prompt and return its parsed JSON verdict plus usage."""
+        """Run one role prompt and return its parsed JSON verdict plus usage.
+
+        With *web_search*, the model is given Anthropic's server-side search
+        tool: it issues the searches, the API runs them, and the final text
+        block carries the verdict. Searches are billed per search and added to
+        this call's cost.
+        """
         availability = self.availability()
         if not availability["available"]:
             raise LLMUnavailable(availability["reason"])
@@ -228,18 +322,26 @@ class LLMClient:
         max_tokens = int(self.config["roles"].get("max_tokens", {}).get(kind, 1200))
         client = self._sdk_client()
 
+        params: dict[str, Any] = {
+            "model": model,
+            "max_tokens": max_tokens,
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+            **self._extra_params(model, kind),
+        }
+        if web_search:
+            params["tools"] = [self.web_search_tool()]
+
         try:
-            response = client.messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                system=system,
-                messages=[{"role": "user", "content": user}],
-                **self._extra_params(model, kind),
-            )
+            response = client.messages.create(**params)
         except Exception as exc:  # SDK-specific errors surface as one failure mode
             raise LLMUnavailable(f"{type(exc).__name__}: {exc}") from exc
 
         usage = getattr(response, "usage", None)
+        searches = 0
+        server_use = getattr(usage, "server_tool_use", None)
+        if server_use is not None:
+            searches = int(getattr(server_use, "web_search_requests", 0) or 0)
         record = UsageRecord(
             role=role,
             model=model,
@@ -247,10 +349,11 @@ class LLMClient:
             output_tokens=int(getattr(usage, "output_tokens", 0) or 0),
             cache_read_tokens=int(getattr(usage, "cache_read_input_tokens", 0) or 0),
             cost_usd=0.0,
+            web_searches=searches,
         )
         record.cost_usd = self.price_usd(
             model, record.input_tokens, record.output_tokens, record.cache_read_tokens
-        )
+        ) + self.search_price_usd(searches)
         self.run_cost.records.append(record)
 
         if getattr(response, "stop_reason", None) == "refusal":

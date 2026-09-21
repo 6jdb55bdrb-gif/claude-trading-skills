@@ -33,7 +33,7 @@ from llm_client import LLMClient, LLMUnavailable
 from skill_adapters import fetch_daily_bars, run_episodic_pivot, run_position_sizer
 from skill_adapters import run_weekly_price_action as weekly_adapter
 
-from config import load_config, repo_root
+from config import load_config, load_dotenv, repo_root
 
 ROLE_FILES = {
     "researcher": "lowcap-researcher.md",
@@ -205,6 +205,39 @@ def _normalize_verdict(role: str, verdict: dict[str, Any]) -> dict[str, Any]:
     return verdict
 
 
+def apply_catalyst_penalty(
+    judge_verdict: dict[str, Any],
+    verdicts: dict[str, Any],
+    config: dict[str, Any],
+) -> dict[str, Any]:
+    """Charge a missing catalyst confidence, and let the Judge weigh the rest.
+
+    A thin news tape is a reason to want more, not a veto: a clean structure
+    with a tight stop can still deserve a position. So "no catalyst" costs
+    ``roles.judge.no_catalyst_penalty`` points and the remaining confidence
+    faces the same threshold as everything else.
+    """
+    policy = config["roles"].get("judge", {})
+    penalty = float(policy.get("no_catalyst_penalty", 0) or 0)
+    floor = float(policy.get("catalyst_score_floor", 4.0))
+    if penalty <= 0:
+        return judge_verdict
+    researcher_score = (verdicts.get("researcher") or {}).get("score")
+    if researcher_score is None or float(researcher_score) >= floor:
+        return judge_verdict
+
+    before = int(judge_verdict.get("confidence") or 0)
+    judge_verdict["confidence"] = max(0, before - int(penalty))
+    judge_verdict["catalyst_penalty"] = {
+        "researcher_score": float(researcher_score),
+        "floor": floor,
+        "points": int(penalty),
+        "confidence_before": before,
+        "confidence_after": judge_verdict["confidence"],
+    }
+    return judge_verdict
+
+
 def enforce_judge_gate(
     judge_verdict: dict[str, Any],
     verdicts: dict[str, Any],
@@ -231,6 +264,10 @@ def enforce_judge_gate(
 
     if overrides:
         judge_verdict["gate_overrides"] = overrides
+        # Keep what the Judge actually argued: the gate says which rule fired,
+        # the Judge's own reasoning says why it wanted what it wanted, and both
+        # belong in the record.
+        judge_verdict.setdefault("judge_reason", judge_verdict.get("reason"))
         judge_verdict["reason"] = f"SKIP — {overrides[0]}"[:140]
     return judge_verdict
 
@@ -273,6 +310,28 @@ def gather_context(
     return context
 
 
+class ReviewUnavailable(RuntimeError):
+    """Raised when a role that may not be faked could not be run.
+
+    The caller records the hit as UNREVIEWED. A deterministic guess about a
+    catalyst, an objection or a verdict would read exactly like a real opinion
+    in the statistics, which is the one thing the tracker must never publish.
+    """
+
+
+def llm_only_roles(config: dict[str, Any]) -> set[str]:
+    """Roles whose verdict must come from the LLM or not at all."""
+    configured = config["roles"].get("llm_only", ["researcher", "skeptic", "judge"])
+    return {str(role).lower() for role in configured}
+
+
+def web_search_enabled(config: dict[str, Any], role: str) -> bool:
+    """Only the RESEARCHER searches: the others reason about what it found."""
+    if role != "researcher":
+        return False
+    return bool((config["roles"].get("web_search") or {}).get("enabled", True))
+
+
 def review_hit(
     hit: dict[str, Any],
     config: dict[str, Any],
@@ -282,10 +341,15 @@ def review_hit(
     prompts: dict[str, str] | None = None,
     offline: bool = False,
 ) -> dict[str, Any]:
-    """Run all five roles for one hit and return the assembled review."""
+    """Run all five roles for one hit and return the assembled review.
+
+    Raises :class:`ReviewUnavailable` when a role in ``roles.llm_only`` cannot
+    be answered by the LLM backend.
+    """
     context = gather_context(hit, config, offline=offline)
     prompts = prompts or {}
     use_llm = backend == "llm" or (backend == "auto" and llm is not None and llm.available())
+    strict = llm_only_roles(config) if backend != "heuristic" else set()
     backend_notes: list[str] = []
 
     def run_role(role: str) -> dict[str, Any]:
@@ -296,12 +360,18 @@ def review_hit(
                     kind=ROLE_KIND[role],
                     system=prompts[role],
                     user=build_user_message(role, hit, context),
+                    web_search=web_search_enabled(config, role),
                 )
                 verdict = _normalize_verdict(role, verdict)
                 verdict["backend"] = "llm"
                 return verdict
             except (LLMUnavailable, ValueError) as exc:
+                if role in strict:
+                    raise ReviewUnavailable(f"{role}: {exc}") from exc
                 backend_notes.append(f"{role}: LLM unavailable ({exc}); used heuristic")
+        elif role in strict:
+            reason = "no prompt file" if not prompts.get(role) else "LLM backend unavailable"
+            raise ReviewUnavailable(f"{role}: {reason}")
         verdict = _heuristic_verdict(role, hit, context)
         return _normalize_verdict(role, verdict)
 
@@ -324,6 +394,7 @@ def review_hit(
 
     context["verdicts"]["risk_manager"] = run_role("risk_manager")
     judge_verdict = run_role("judge")
+    judge_verdict = apply_catalyst_penalty(judge_verdict, context["verdicts"], config)
     judge_verdict = enforce_judge_gate(judge_verdict, context["verdicts"], config)
     context["verdicts"]["judge"] = judge_verdict
 
@@ -351,6 +422,20 @@ def review_hit(
     }
 
 
+def load_role_prompts(agents_path: str | None = None, *, backend: str = "auto") -> dict[str, str]:
+    """Load every role prompt once. Empty when the heuristic backend is asked for."""
+    if backend not in {"auto", "llm"}:
+        return {}
+    try:
+        directory = agents_dir(agents_path)
+        return {role: load_role_prompt(role, directory) for role in ROLE_FILES}
+    except (RolePromptError, OSError) as exc:
+        if backend == "llm":
+            raise
+        print(f"WARNING: {exc}", file=sys.stderr)
+        return {}
+
+
 def review_hits(
     hits: list[dict[str, Any]],
     config: dict[str, Any],
@@ -361,15 +446,7 @@ def review_hits(
     offline: bool = False,
 ) -> list[dict[str, Any]]:
     """Review every hit, loading the role prompts once."""
-    prompts: dict[str, str] = {}
-    if backend in {"auto", "llm"}:
-        try:
-            directory = agents_dir(agents_path)
-            prompts = {role: load_role_prompt(role, directory) for role in ROLE_FILES}
-        except (RolePromptError, OSError) as exc:
-            if backend == "llm":
-                raise
-            print(f"WARNING: {exc}", file=sys.stderr)
+    prompts = load_role_prompts(agents_path, backend=backend)
     return [
         review_hit(hit, config, backend=backend, llm=llm, prompts=prompts, offline=offline)
         for hit in hits
@@ -398,12 +475,26 @@ def format_review(review: dict[str, Any]) -> str:
         f"    skeptic answered: {verdicts['judge'].get('skeptic_objections_answered')} — "
         f"{verdicts['judge'].get('skeptic_answer')}",
     ]
+    judge = verdicts["judge"]
+    if judge.get("reasoning"):
+        lines.append(f"    reasoning: {judge['reasoning']}")
+    if judge.get("catalyst_penalty"):
+        penalty = judge["catalyst_penalty"]
+        lines.append(
+            f"    catalyst penalty: -{penalty['points']} "
+            f"({penalty['confidence_before']} -> {penalty['confidence_after']}, "
+            f"researcher {penalty['researcher_score']} below {penalty['floor']})"
+        )
+    if judge.get("gate_overrides"):
+        for override in judge["gate_overrides"]:
+            lines.append(f"    gate: {override}")
     for note in review.get("notes", []):
         lines.append(f"    note: {note}")
     return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:
+    load_dotenv()  # credentials may live in .env; a real env var still wins
     parser = argparse.ArgumentParser(description="Run the lowcap five-role review")
     parser.add_argument("--config")
     parser.add_argument("--fixture", help="JSON file of screener hits to review")

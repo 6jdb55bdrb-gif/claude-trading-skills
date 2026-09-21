@@ -27,7 +27,14 @@ from datetime import datetime, timezone
 from statistics import mean
 from typing import Any
 
-from call_db import KIND_ACTIVE, KIND_SHADOW, STATUS_EXPIRED, STATUS_OPEN, CallDatabase
+from call_db import (
+    KIND_ACTIVE,
+    KIND_SHADOW,
+    KIND_UNREVIEWED,
+    STATUS_EXPIRED,
+    STATUS_OPEN,
+    CallDatabase,
+)
 
 from config import load_config, resolve_path
 
@@ -170,10 +177,44 @@ def _confidence_blocks(rows: Sequence[Any], buckets: Iterable[Sequence[int]]) ->
     return out
 
 
-def compute_stats(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
+def _backend_block(
+    health: dict[str, Any] | None,
+    reviewed: list[Any],
+    unreviewed: list[Any],
+    active: list[Any],
+    shadow: list[Any],
+) -> dict[str, Any]:
+    """The one-line health summary that leads stats.md."""
+    judged = len(active) + len(shadow)
+    ratio = f"{len(active)}/{len(shadow)}" if judged else "0/0"
+    take_pct = round(len(active) / judged * 100, 1) if judged else None
+    status = "UNKNOWN"
+    if health is not None:
+        status = "UP" if health.get("ok") else "DOWN"
+    return {
+        "status": status,
+        "reason": (health or {}).get("reason"),
+        "model": (health or {}).get("model"),
+        "latency_ms": (health or {}).get("latency_ms"),
+        "reviewed_calls": len(reviewed),
+        "unreviewed_calls": len(unreviewed),
+        "take_skip_ratio": ratio,
+        "take_pct_of_reviewed": take_pct,
+    }
+
+
+def compute_stats(
+    db: CallDatabase, config: dict[str, Any], *, backend_health: dict[str, Any] | None = None
+) -> dict[str, Any]:
     rows = db.all_calls()
     active = [row for row in rows if row["kind"] == KIND_ACTIVE]
     shadow = [row for row in rows if row["kind"] == KIND_SHADOW]
+    # An UNREVIEWED call is a screener record with no opinion attached. It counts
+    # toward what the screener found and how those names moved, and it is kept
+    # out of every statistic that judges the Judge — otherwise a stretch of
+    # backend downtime would read as a stretch of terrible decisions.
+    unreviewed = [row for row in rows if row["kind"] == KIND_UNREVIEWED]
+    reviewed = [row for row in rows if row["kind"] != KIND_UNREVIEWED]
     take_pnls = _pnls(active)
     shadow_pnls = _pnls(shadow)
 
@@ -182,6 +223,8 @@ def compute_stats(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
         {
             "take_calls": len(active),
             "shadow_calls": len(shadow),
+            "unreviewed_calls": len(unreviewed),
+            "reviewed_calls": len(reviewed),
             "best_call": _extreme(rows),
             "worst_call": _extreme(rows, worst=True),
         }
@@ -228,10 +271,12 @@ def compute_stats(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
                 else "Judge is not adding value"
             ),
         },
-        "role_accuracy": _role_block(rows),
+        # Reviewed rows only: an unjudged call has no scores and no confidence.
+        "role_accuracy": _role_block(reviewed),
         "confidence_buckets": _confidence_blocks(
-            rows, config["learning"].get("confidence_buckets", [[0, 40], [40, 70], [70, 100]])
+            reviewed, config["learning"].get("confidence_buckets", [[0, 40], [40, 70], [70, 100]])
         ),
+        "backend": _backend_block(backend_health, reviewed, unreviewed, active, shadow),
         "recent_runs": [
             {
                 "run_id": run["run_id"],
@@ -276,10 +321,37 @@ def _group_table(title: str, groups: dict[str, dict[str, Any]]) -> list[str]:
     return lines
 
 
+def format_backend_line(backend: dict[str, Any]) -> str:
+    """The status line that leads every statistics file."""
+    ratio = backend.get("take_skip_ratio", "0/0")
+    reviewed = backend.get("reviewed_calls", 0)
+    unreviewed = backend.get("unreviewed_calls", 0)
+    share = backend.get("take_pct_of_reviewed")
+    share_text = f" ({share}% TAKE)" if share is not None else ""
+    return (
+        f"**Backend:** {backend.get('status', 'UNKNOWN')} · "
+        f"reviewed {reviewed} / unreviewed {unreviewed} · "
+        f"TAKE/SKIP {ratio}{share_text}"
+    )
+
+
 def render_markdown(stats: dict[str, Any]) -> str:
     overall = stats["overall"]
-    lines = [
-        "# Lowcap Call Tracker — Statistics",
+    backend = stats.get("backend") or {}
+    lines = ["# Lowcap Call Tracker — Statistics", ""]
+    if backend.get("status") == "DOWN":
+        # Loud and first: every number below was produced without a working
+        # role backend, and new hits are being recorded UNREVIEWED.
+        lines += [
+            "> ## ⛔ BACKEND DOWN",
+            ">",
+            f"> The role review could not run: {backend.get('reason', 'unknown reason')}.",
+            "> New screener hits are recorded UNREVIEWED and will be judged on the",
+            "> next healthy run. No decision below was made while the backend was down.",
+            "",
+        ]
+    lines += [
+        format_backend_line(backend),
         "",
         f"**Generated:** {stats['generated_at']}  ",
         f"**Close rule:** {stats['close_rule']}",
@@ -289,6 +361,8 @@ def render_markdown(stats: dict[str, Any]) -> str:
         _row(["Metric", "Value"]),
         "|---|---|",
         _row(["Total calls", overall["total"]]),
+        _row(["Reviewed calls", overall.get("reviewed_calls")]),
+        _row(["UNREVIEWED calls", overall.get("unreviewed_calls")]),
         _row(["TAKE calls", overall["take_calls"]]),
         _row(["Shadow (SKIP) calls", overall["shadow_calls"]]),
         _row(["Open", overall["open"]]),
@@ -385,27 +459,43 @@ def render_markdown(stats: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _dash(value: Any) -> str:
+    """Any value, with an em dash for nothing."""
+    return "—" if value is None else str(value)
+
+
+def _pct(value: Any) -> str:
+    """A percentage, or an em dash. 'None%' is not a statistic."""
+    return "—" if value is None else f"{value}%"
+
+
 def render_text(stats: dict[str, Any]) -> str:
     overall = stats["overall"]
     take = stats["take_vs_skip"]
+    backend = stats.get("backend") or {}
     lines = [
         "=" * 72,
         "CALL STATISTICS",
         "=" * 72,
+        f"  backend={backend.get('status', 'UNKNOWN')}  "
+        f"reviewed={backend.get('reviewed_calls', 0)}  "
+        f"unreviewed={backend.get('unreviewed_calls', 0)}  "
+        f"TAKE/SKIP={backend.get('take_skip_ratio', '0/0')}",
         f"  total={overall['total']}  open={overall['open']}  right={overall['right']}  "
         f"wrong={overall['wrong']}  neutral={overall['neutral']}  "
-        f"hit_rate={overall['hit_rate_pct']}%",
-        f"  avg PnL/call={overall['avg_pnl_pct']}%   "
-        f"portfolio (equal weight, TAKE only)={stats['portfolio']['equal_weight_pnl_pct_take_only']}%",
+        f"hit_rate={_pct(overall['hit_rate_pct'])}",
+        f"  avg PnL/call={_pct(overall['avg_pnl_pct'])}   "
+        "portfolio (equal weight, TAKE only)="
+        f"{_pct(stats['portfolio']['equal_weight_pnl_pct_take_only'])}",
     ]
     for label, key in (("best", "best_call"), ("worst", "worst_call")):
         call = overall.get(key)
         if call:
             lines.append(f"  {label}: {call['ticker']} {call['pnl_pct']:+.2f}% ({call['variant']})")
     lines.append(
-        f"  TAKE n={take['take']['total']} avg={take['take']['avg_pnl_pct']}%  "
-        f"SKIP n={take['skip_shadow']['total']} avg={take['skip_shadow']['avg_pnl_pct']}%  "
-        f"edge={take['judge_edge_avg_pnl_pct']} ({take['verdict']})"
+        f"  TAKE n={take['take']['total']} avg={_pct(take['take']['avg_pnl_pct'])}  "
+        f"SKIP n={take['skip_shadow']['total']} avg={_pct(take['skip_shadow']['avg_pnl_pct'])}  "
+        f"edge={_dash(take['judge_edge_avg_pnl_pct'])} ({take['verdict']})"
     )
     for title, key in (
         ("instrument", "by_instrument"),
@@ -414,15 +504,17 @@ def render_text(stats: dict[str, Any]) -> str:
         ("confidence", "confidence_buckets"),
     ):
         parts = [
-            f"{name}: n={block['total']} hit={block['hit_rate_pct']}% avg={block['avg_pnl_pct']}%"
+            f"{name}: n={block['total']} hit={_pct(block['hit_rate_pct'])} "
+            f"avg={_pct(block['avg_pnl_pct'])}"
             for name, block in stats[key].items()
         ]
         lines.append(f"  by {title}: " + " | ".join(parts) if parts else f"  by {title}: —")
     for role in ROLES:
         block = stats["role_accuracy"][role]
         lines.append(
-            f"  role {role:<13} winners={block['avg_score_winners']} others={block['avg_score_others']} "
-            f"edge={block['edge']} corr={block['corr_score_vs_pnl']} (n={block['samples']})"
+            f"  role {role:<13} winners={_dash(block['avg_score_winners'])} "
+            f"others={_dash(block['avg_score_others'])} edge={_dash(block['edge'])} "
+            f"corr={_dash(block['corr_score_vs_pnl'])} (n={block['samples']})"
         )
     return "\n".join(lines)
 

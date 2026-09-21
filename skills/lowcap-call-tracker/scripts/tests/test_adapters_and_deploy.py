@@ -272,11 +272,16 @@ def test_env_files_are_not_committed():
     assert not [path for path in tracked if path.endswith("/.env")]
 
 
-def test_requirements_declare_optional_dependencies():
+def test_requirements_declare_every_runtime_dependency():
     text = (SKILL_ROOT / "requirements.txt").read_text(encoding="utf-8")
     assert "pyyaml" in text and "requests" in text and "yfinance" in text
+    # anthropic is REQUIRED: the role review has no offline substitute for the
+    # Researcher, Skeptic or Judge, so a missing SDK is a dead backend, not a
+    # degraded mode.
+    anthropic_line = next(line for line in text.splitlines() if line.startswith("anthropic"))
+    assert "# optional:" not in anthropic_line
     for line in text.splitlines():
-        if line.startswith(("anthropic", "beautifulsoup4")):
+        if line.startswith("beautifulsoup4"):
             assert "# optional:" in line
 
 

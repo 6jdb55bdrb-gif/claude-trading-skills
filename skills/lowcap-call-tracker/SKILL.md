@@ -152,6 +152,42 @@ every run notification is then broadcast to everyone. Admins hold `/invite`,
 read commands and `/stop`. Read `references/telegram_bot.md` for the access
 rules, the message contract and the polling model.
 
+### Backend health and UNREVIEWED calls
+
+The RESEARCHER, SKEPTIC and JUDGE are never simulated. Before a run trusts the
+backend it makes one tiny API call:
+
+```bash
+python3 skills/lowcap-call-tracker/scripts/run_cycle.py --health-check
+# BACKEND UP — claude-haiku-4-5 answered in 412ms, $0.000003, $9.87 left this month
+# BACKEND DOWN — ANTHROPIC_API_KEY is not set          (exit code 1)
+```
+
+When that check fails the run logs an ERROR, writes a **BACKEND DOWN** banner at
+the top of `stats.md`, and skips the role review. It still screens, and records
+each hit with the decision `UNREVIEWED`:
+
+- an UNREVIEWED call counts toward the screener's own statistics and is priced
+  like any other call;
+- it is excluded from TAKE-vs-SKIP, per-role accuracy and the confidence
+  buckets, because it carries no verdict to judge;
+- the next healthy run reviews the backlog first, keeping the original entry
+  price and call date and recording `reviewed_at` separately.
+
+This is the point of the design: a stretch of downtime must read as a gap in the
+record, never as a stretch of bad decisions, and a deterministic guess about a
+catalyst would be indistinguishable from a real opinion in the statistics.
+
+The RESEARCHER is given Anthropic's server-side `web_search` tool — a catalyst
+lives in news, filings and press releases, never in screener fields. Searches
+are billed per search (`llm.web_search_per_1k_searches`) on top of tokens, and
+counted in the run's cost line.
+
+A missing catalyst costs `roles.judge.no_catalyst_penalty` confidence points and
+nothing more: the Judge then weighs the structure, the stop and the Skeptic's
+other points, and may still TAKE. Its full `reasoning` is stored with every
+verdict and shown by `/call TICKER`.
+
 ### Step 8: Deploy (optional)
 
 `deploy/VPS_SETUP.md` is a step-by-step guide for a non-coder: create an Ubuntu
@@ -219,7 +255,11 @@ override document with `--config` and it is deep-merged over the default.
 | `roles.models.worker` | claude-haiku-4-5 | Researcher / Technician / Skeptic / Risk Manager |
 | `roles.models.judge` | claude-sonnet-5 | Judge |
 | `roles.judge.min_confidence_to_take` | 55 | below this a TAKE becomes a shadow call |
-| `llm.monthly_spend_cap_usd` | 10.0 | hard ceiling, then heuristic backend |
+| `llm.monthly_spend_cap_usd` | 10.0 | hard ceiling; past it the backend reports DOWN |
+| `roles.llm_only` | researcher, skeptic, judge | roles that are never faked |
+| `roles.health_check` | true | one tiny API call before the run trusts the backend |
+| `roles.web_search.enabled` | true | the Researcher searches for catalysts |
+| `roles.judge.no_catalyst_penalty` | 15 | confidence cost of `none_found`, not a veto |
 | `telegram.enabled` | true | master switch (still needs a token) |
 | `telegram.notify_when` | changes | `changes` or `always` |
 | `telegram.allow_run_command` | false | `/run` from the phone (admins only) |
@@ -234,7 +274,7 @@ override document with `--config` and it is deep-merged over the default.
 
 | Variable | Needed for |
 |---|---|
-| `ANTHROPIC_API_KEY` | the LLM role review (without it: deterministic heuristic backend) |
+| `ANTHROPIC_API_KEY` | **required** for the role review; without it hits are recorded UNREVIEWED |
 | `FINVIZ_API_KEY` | FinViz Elite CSV export (without it: public HTML, page-limited) |
 | `TELEGRAM_BOT_TOKEN` | Telegram notifications and the command bot (without it: no Telegram) |
 | `TELEGRAM_CHAT_ID` | the one chat allowed to receive pushes and issue commands (a group id is negative; every group member is then authorized) |

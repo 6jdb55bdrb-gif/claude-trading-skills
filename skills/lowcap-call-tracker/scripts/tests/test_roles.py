@@ -8,6 +8,7 @@ from fetch_screener import load_fixture
 from llm_client import LLMClient, LLMUnavailable, extract_json
 from role_review import (
     ROLE_FILES,
+    ReviewUnavailable,
     agents_dir,
     build_user_message,
     enforce_judge_gate,
@@ -435,7 +436,9 @@ def test_llm_backend_parses_verdicts_and_records_cost(config, stock_hit, tmp_db)
     assert models[4] == config["roles"]["models"]["judge"]
 
 
-def test_llm_failure_falls_back_to_the_heuristic_role(config, stock_hit, tmp_db):
+def test_a_dead_backend_refuses_to_invent_a_verdict(config, stock_hit, tmp_db):
+    """The Researcher, Skeptic and Judge are never faked — the hit goes UNREVIEWED."""
+
     class Boom:
         class messages:  # noqa: N801 - mimics the SDK namespace
             @staticmethod
@@ -443,6 +446,36 @@ def test_llm_failure_falls_back_to_the_heuristic_role(config, stock_hit, tmp_db)
                 raise RuntimeError("503 overloaded")
 
     client = LLMClient(config, spend_store=tmp_db, client=Boom())
+    with pytest.raises(ReviewUnavailable, match="researcher"):
+        review_hit(
+            stock_hit,
+            config,
+            backend="llm",
+            llm=client,
+            prompts={role: "prompt" for role in ROLE_FILES},
+            offline=True,
+        )
+
+
+def test_a_non_strict_role_may_still_fall_back(config, stock_hit, tmp_db):
+    """The Technician is arithmetic on the screener row, so offline is honest."""
+    config = {**config, "roles": {**config["roles"], "llm_only": ["judge"]}}
+    replies = [
+        json.dumps({"score": 7, "catalyst": "FDA approval", "reasons": ["a", "b"]}),  # researcher
+        "not json at all",  # technician — allowed to fall back
+        json.dumps({"score": 3, "strongest_objection": "thin float", "reasons": ["c"]}),  # skeptic
+        json.dumps({"score": 6, "direction": "long", "instrument": "call"}),  # risk manager
+        json.dumps(
+            {
+                "decision": "SKIP",
+                "confidence": 40,
+                "reason": "not enough",
+                "skeptic_answer": "x" * 30,
+                "skeptic_objections_answered": True,
+            }
+        ),
+    ]
+    client = LLMClient(config, spend_store=tmp_db, client=FakeAnthropic(replies))
     review = review_hit(
         stock_hit,
         config,
@@ -451,17 +484,29 @@ def test_llm_failure_falls_back_to_the_heuristic_role(config, stock_hit, tmp_db)
         prompts={role: "prompt" for role in ROLE_FILES},
         offline=True,
     )
-    assert review["verdicts"]["researcher"]["backend"] == "heuristic"
+    assert review["verdicts"]["technician"]["backend"] == "heuristic"
+    assert review["verdicts"]["researcher"]["backend"] == "llm"
     assert any("LLM unavailable" in note for note in review["notes"])
-    assert review["decision"] in {"TAKE", "SKIP"}
+
+
+def test_a_strict_role_returning_junk_is_not_papered_over(config, stock_hit, tmp_db):
+    replies = [json.dumps({"score": 7, "reasons": ["a"]}), "not json", "also not json"]
+    client = LLMClient(config, spend_store=tmp_db, client=FakeAnthropic(replies))
+    with pytest.raises(ReviewUnavailable, match="skeptic"):
+        review_hit(
+            stock_hit,
+            config,
+            backend="llm",
+            llm=client,
+            prompts={role: "prompt" for role in ROLE_FILES},
+            offline=True,
+        )
 
 
 def test_malformed_llm_output_is_normalized(config, stock_hit, tmp_db):
-    replies = (
-        ["not json at all"]
-        + [json.dumps({"score": "8.7", "direction": "LONG", "reasons": "single string"})] * 3
-        + [json.dumps({"decision": "take", "confidence": "1000", "skeptic_answer": "x"})]
-    )
+    replies = [
+        json.dumps({"score": "8.7", "direction": "LONG", "reasons": "single string"})
+    ] * 4 + [json.dumps({"decision": "take", "confidence": "1000", "skeptic_answer": "x"})]
     client = LLMClient(config, spend_store=tmp_db, client=FakeAnthropic(replies))
     review = review_hit(
         stock_hit,

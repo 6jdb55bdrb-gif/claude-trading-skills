@@ -114,3 +114,37 @@ back to the screener fields. Nothing in the adapter layer can abort a run.
 | `run_weekly_price_action` | `technical-analyst` | weekly verdict, confidence, swing levels |
 | `run_position_sizer` | `position-sizer` | shares, position value, risk dollars, binding constraint |
 | `fetch_daily_bars` | yfinance | daily OHLCV for the two adapters above |
+
+## Backends, and what is never faked
+
+`roles.llm_only` (default: RESEARCHER, SKEPTIC, JUDGE) lists the roles that must
+come from the LLM or not at all. If one of them cannot be answered,
+`review_hit` raises `ReviewUnavailable` and the caller records the hit as
+UNREVIEWED rather than substituting a deterministic verdict.
+
+TECHNICIAN and RISK MANAGER keep their offline implementations on purpose: they
+are arithmetic on the screener row (extension from the moving averages, a stop,
+a position size, a strike and an expiry). Computing those offline is honest;
+inventing a catalyst, an objection or a verdict is not.
+
+| Failure | What happens |
+|---|---|
+| `anthropic` not installed | health check fails at the `availability` stage |
+| `ANTHROPIC_API_KEY` unset | health check fails at the `availability` stage |
+| bad key, no credit, network blocked | health check fails at the `request` stage |
+| monthly cap reached | health check fails at the `availability` stage |
+| one role returns JSON that cannot be parsed | `ReviewUnavailable` for that hit only |
+
+## The catalyst penalty
+
+`none_found` is a minus, not a veto. When the Researcher scores below
+`roles.judge.catalyst_score_floor`, `apply_catalyst_penalty` deducts
+`roles.judge.no_catalyst_penalty` confidence points and records what it did in
+`judge_verdict["catalyst_penalty"]`. The usual confidence threshold then applies
+to what is left, so a strong enough setup survives a thin news tape and a
+mediocre one does not.
+
+The Skeptic gate is unchanged: an objection must still be answered explicitly.
+But "the Researcher found no catalyst" is not an unanswerable objection — it is
+answered with the structure, the stop and the risk actually being relied on.
+
