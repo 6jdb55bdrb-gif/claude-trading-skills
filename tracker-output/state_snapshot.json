@@ -2,11 +2,11 @@
  "counts": {
   "calls": 3,
   "llm_usage": 0,
-  "price_history": 7,
+  "price_history": 10,
   "role_verdicts": 15,
-  "runs": 11
+  "runs": 12
  },
- "exported_at": "2026-09-21T18:12:46+00:00",
+ "exported_at": "2026-09-21T19:13:20+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -17,16 +17,18 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 43,
-    "current_price": 0.9775000214576721,
+    "current_price": 0.9771999716758728,
     "direction": "long",
     "entry_price": 1.04,
+    "expiry_date": "2026-10-23",
     "id": 1,
+    "instrument": "call",
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (dilution)",
     "kind": "shadow",
-    "last_price_at": "2026-09-21T18:12:20+00:00",
+    "last_price_at": "2026-09-21T19:12:57+00:00",
     "notes": " | ticker corrected from SSDEV (FinViz logo-span parse bug)",
-    "pnl_pct": -6.0096,
+    "pnl_pct": -6.0385,
     "position_usd": 945.36,
     "researcher_score": 4.5,
     "risk_manager_score": 8.0,
@@ -37,6 +39,7 @@
     "skeptic_score": 9.0,
     "status": "OPEN",
     "stop_price": 0.93,
+    "strike": 1.5,
     "target_price": 1.26,
     "technician_score": 6.0,
     "ticker": "SDEV"
@@ -51,11 +54,13 @@
     "current_price": 1.1200000047683716,
     "direction": "short",
     "entry_price": 1.09,
+    "expiry_date": "2026-10-23",
     "id": 2,
+    "instrument": "put",
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (extension)",
     "kind": "shadow",
-    "last_price_at": "2026-09-21T18:12:20+00:00",
+    "last_price_at": "2026-09-21T19:12:57+00:00",
     "notes": " | ticker corrected from NNCPL (FinViz logo-span parse bug)",
     "pnl_pct": -2.7523,
     "position_usd": 494.86,
@@ -68,6 +73,7 @@
     "skeptic_score": 10.0,
     "status": "OPEN",
     "stop_price": 1.31,
+    "strike": 1.0,
     "target_price": 0.65,
     "technician_score": 2.0,
     "ticker": "NCPL"
@@ -79,16 +85,18 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 53,
-    "current_price": 1.76,
+    "current_price": 1.4802000522613525,
     "direction": "long",
     "entry_price": 1.76,
+    "expiry_date": "2026-10-23",
     "id": 3,
+    "instrument": "call",
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (extension)",
     "kind": "shadow",
-    "last_price_at": "2026-09-21T18:12:46+00:00",
+    "last_price_at": "2026-09-21T19:12:57+00:00",
     "notes": null,
-    "pnl_pct": 0.0,
+    "pnl_pct": -15.8977,
     "position_usd": 549.12,
     "researcher_score": 4.5,
     "risk_manager_score": 5.0,
@@ -99,6 +107,7 @@
     "skeptic_score": 4.5,
     "status": "OPEN",
     "stop_price": 1.44,
+    "strike": 2.0,
     "target_price": 2.4,
     "technician_score": 6.0,
     "ticker": "GDC"
@@ -154,6 +163,27 @@
     "observed_at": "2026-09-21T18:12:46+00:00",
     "pnl_pct": 0.0,
     "price": 1.76
+   },
+   {
+    "call_id": 1,
+    "id": 8,
+    "observed_at": "2026-09-21T19:12:57+00:00",
+    "pnl_pct": -6.0385,
+    "price": 0.9771999716758728
+   },
+   {
+    "call_id": 2,
+    "id": 9,
+    "observed_at": "2026-09-21T19:12:57+00:00",
+    "pnl_pct": -2.7523,
+    "price": 1.1200000047683716
+   },
+   {
+    "call_id": 3,
+    "id": 10,
+    "observed_at": "2026-09-21T19:12:57+00:00",
+    "pnl_pct": -15.8977,
+    "price": 1.4802000522613525
    }
   ],
   "role_verdicts": [
@@ -480,6 +510,23 @@
     "screening_ran": 1,
     "session_reason": "regular trading hours",
     "started_at": "2026-09-21T18:12:19+00:00"
+   },
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-09-21T19:13:20+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 3,
+    "reviewed": 0,
+    "run_id": "run_20260921T191256Z",
+    "screening_ran": 1,
+    "session_reason": "regular trading hours",
+    "started_at": "2026-09-21T19:12:56+00:00"
    }
   ]
  }
