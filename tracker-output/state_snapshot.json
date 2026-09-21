@@ -2,11 +2,11 @@
  "counts": {
   "calls": 3,
   "llm_usage": 0,
-  "price_history": 10,
+  "price_history": 13,
   "role_verdicts": 15,
-  "runs": 12
+  "runs": 13
  },
- "exported_at": "2026-09-21T19:13:20+00:00",
+ "exported_at": "2026-09-21T19:46:20+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -17,7 +17,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 43,
-    "current_price": 0.9771999716758728,
+    "current_price": 0.9725000262260437,
     "direction": "long",
     "entry_price": 1.04,
     "expiry_date": "2026-10-23",
@@ -26,9 +26,9 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (dilution)",
     "kind": "shadow",
-    "last_price_at": "2026-09-21T19:12:57+00:00",
+    "last_price_at": "2026-09-21T19:45:42+00:00",
     "notes": " | ticker corrected from SSDEV (FinViz logo-span parse bug)",
-    "pnl_pct": -6.0385,
+    "pnl_pct": -6.4904,
     "position_usd": 945.36,
     "researcher_score": 4.5,
     "risk_manager_score": 8.0,
@@ -51,7 +51,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 26,
-    "current_price": 1.1200000047683716,
+    "current_price": 1.080199956893921,
     "direction": "short",
     "entry_price": 1.09,
     "expiry_date": "2026-10-23",
@@ -60,9 +60,9 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (extension)",
     "kind": "shadow",
-    "last_price_at": "2026-09-21T19:12:57+00:00",
+    "last_price_at": "2026-09-21T19:45:42+00:00",
     "notes": " | ticker corrected from NNCPL (FinViz logo-span parse bug)",
-    "pnl_pct": -2.7523,
+    "pnl_pct": 0.8991,
     "position_usd": 494.86,
     "researcher_score": 4.5,
     "risk_manager_score": 5.5,
@@ -85,7 +85,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 53,
-    "current_price": 1.4802000522613525,
+    "current_price": 1.440000057220459,
     "direction": "long",
     "entry_price": 1.76,
     "expiry_date": "2026-10-23",
@@ -94,9 +94,9 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (extension)",
     "kind": "shadow",
-    "last_price_at": "2026-09-21T19:12:57+00:00",
+    "last_price_at": "2026-09-21T19:45:42+00:00",
     "notes": null,
-    "pnl_pct": -15.8977,
+    "pnl_pct": -18.1818,
     "position_usd": 549.12,
     "researcher_score": 4.5,
     "risk_manager_score": 5.0,
@@ -184,6 +184,27 @@
     "observed_at": "2026-09-21T19:12:57+00:00",
     "pnl_pct": -15.8977,
     "price": 1.4802000522613525
+   },
+   {
+    "call_id": 1,
+    "id": 11,
+    "observed_at": "2026-09-21T19:45:42+00:00",
+    "pnl_pct": -6.4904,
+    "price": 0.9725000262260437
+   },
+   {
+    "call_id": 2,
+    "id": 12,
+    "observed_at": "2026-09-21T19:45:42+00:00",
+    "pnl_pct": 0.8991,
+    "price": 1.080199956893921
+   },
+   {
+    "call_id": 3,
+    "id": 13,
+    "observed_at": "2026-09-21T19:45:42+00:00",
+    "pnl_pct": -18.1818,
+    "price": 1.440000057220459
    }
   ],
   "role_verdicts": [
@@ -527,6 +548,23 @@
     "screening_ran": 1,
     "session_reason": "regular trading hours",
     "started_at": "2026-09-21T19:12:56+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-21T19:46:05+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 3,
+    "reviewed": 0,
+    "run_id": "run_20260921T194541Z",
+    "screening_ran": 1,
+    "session_reason": "regular trading hours",
+    "started_at": "2026-09-21T19:45:41+00:00"
    }
   ]
  }
