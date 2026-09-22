@@ -2,11 +2,11 @@
  "counts": {
   "calls": 4,
   "llm_usage": 0,
-  "price_history": 17,
+  "price_history": 21,
   "role_verdicts": 15,
-  "runs": 14
+  "runs": 15
  },
- "exported_at": "2026-09-22T08:50:55+00:00",
+ "exported_at": "2026-09-22T15:09:53+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -17,7 +17,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 43,
-    "current_price": 1.0,
+    "current_price": 1.0700000524520874,
     "direction": "long",
     "entry_price": 1.04,
     "expiry_date": "2026-10-23",
@@ -27,9 +27,9 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (dilution)",
     "kind": "shadow",
-    "last_price_at": "2026-09-22T08:50:25+00:00",
+    "last_price_at": "2026-09-22T15:09:08+00:00",
     "notes": " | ticker corrected from SSDEV (FinViz logo-span parse bug)",
-    "pnl_pct": -3.8462,
+    "pnl_pct": 2.8846,
     "position_usd": 945.36,
     "researcher_score": 4.5,
     "review_run_id": null,
@@ -54,7 +54,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 26,
-    "current_price": 1.0099999904632568,
+    "current_price": 0.9682000279426575,
     "direction": "short",
     "entry_price": 1.09,
     "expiry_date": "2026-10-23",
@@ -64,9 +64,9 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (extension)",
     "kind": "shadow",
-    "last_price_at": "2026-09-22T08:50:25+00:00",
+    "last_price_at": "2026-09-22T15:09:08+00:00",
     "notes": " | ticker corrected from NNCPL (FinViz logo-span parse bug)",
-    "pnl_pct": 7.3395,
+    "pnl_pct": 11.1743,
     "position_usd": 494.86,
     "researcher_score": 4.5,
     "review_run_id": null,
@@ -91,7 +91,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 53,
-    "current_price": 1.4600000381469727,
+    "current_price": 1.9500000476837158,
     "direction": "long",
     "entry_price": 1.76,
     "expiry_date": "2026-10-23",
@@ -101,9 +101,9 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (extension)",
     "kind": "shadow",
-    "last_price_at": "2026-09-22T08:50:25+00:00",
+    "last_price_at": "2026-09-22T15:09:08+00:00",
     "notes": null,
-    "pnl_pct": -17.0455,
+    "pnl_pct": 10.7955,
     "position_usd": 549.12,
     "researcher_score": 4.5,
     "review_run_id": null,
@@ -128,7 +128,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 0,
-    "current_price": 10.67,
+    "current_price": 15.76099967956543,
     "direction": "long",
     "entry_price": 10.67,
     "expiry_date": null,
@@ -138,9 +138,9 @@
     "judge_decision": "UNREVIEWED",
     "judge_reason": null,
     "kind": "unreviewed",
-    "last_price_at": "2026-09-22T08:50:48+00:00",
+    "last_price_at": "2026-09-22T15:09:08+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
-    "pnl_pct": 0.0,
+    "pnl_pct": 47.7132,
     "position_usd": null,
     "researcher_score": null,
     "review_run_id": null,
@@ -279,6 +279,34 @@
     "observed_at": "2026-09-22T08:50:48+00:00",
     "pnl_pct": 0.0,
     "price": 10.67
+   },
+   {
+    "call_id": 1,
+    "id": 18,
+    "observed_at": "2026-09-22T15:09:08+00:00",
+    "pnl_pct": 2.8846,
+    "price": 1.0700000524520874
+   },
+   {
+    "call_id": 2,
+    "id": 19,
+    "observed_at": "2026-09-22T15:09:08+00:00",
+    "pnl_pct": 11.1743,
+    "price": 0.9682000279426575
+   },
+   {
+    "call_id": 3,
+    "id": 20,
+    "observed_at": "2026-09-22T15:09:08+00:00",
+    "pnl_pct": 10.7955,
+    "price": 1.9500000476837158
+   },
+   {
+    "call_id": 4,
+    "id": 21,
+    "observed_at": "2026-09-22T15:09:08+00:00",
+    "pnl_pct": 47.7132,
+    "price": 15.76099967956543
    }
   ],
   "role_verdicts": [
@@ -656,6 +684,23 @@
     "screening_ran": 1,
     "session_reason": "trading day, extended hours",
     "started_at": "2026-09-22T08:50:25+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-22T15:09:33+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 4,
+    "reviewed": 0,
+    "run_id": "run_20260922T150906Z",
+    "screening_ran": 1,
+    "session_reason": "regular trading hours",
+    "started_at": "2026-09-22T15:09:06+00:00"
    }
   ]
  }
