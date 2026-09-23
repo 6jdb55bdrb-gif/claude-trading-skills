@@ -78,6 +78,9 @@ CREATE TABLE IF NOT EXISTS calls (
     -- date, and records separately when it was finally reviewed.
     reviewed_at TEXT,
     review_run_id TEXT,
+    -- The trading session the current mark belongs to, so a later run can tell
+    -- a fresh close from the previous one and refuse to mark backwards.
+    price_as_of TEXT,
     -- The screener row, kept so an UNREVIEWED call can be reviewed later.
     hit_json TEXT
 );
@@ -200,6 +203,7 @@ class CallDatabase:
             ("reviewed_at", "ALTER TABLE calls ADD COLUMN reviewed_at TEXT"),
             ("review_run_id", "ALTER TABLE calls ADD COLUMN review_run_id TEXT"),
             ("hit_json", "ALTER TABLE calls ADD COLUMN hit_json TEXT"),
+            ("price_as_of", "ALTER TABLE calls ADD COLUMN price_as_of TEXT"),
         ):
             if column not in existing:
                 self.conn.execute(ddl)
@@ -475,6 +479,7 @@ class CallDatabase:
         *,
         close_threshold_pct: float | None,
         now: str | None = None,
+        as_of: str | None = None,
     ) -> dict[str, Any]:
         """Record a price observation, recompute PnL, and close at the threshold."""
         row = self.call(call_id)
@@ -494,6 +499,7 @@ class CallDatabase:
             self.conn.execute(
                 """
                 UPDATE calls SET current_price = ?, pnl_pct = ?, last_price_at = ?,
+                       price_as_of = COALESCE(?, price_as_of),
                        status = ?, closed_at = ?, close_reason = ?
                  WHERE id = ?
                 """,
@@ -501,6 +507,7 @@ class CallDatabase:
                     price,
                     pnl,
                     stamp,
+                    as_of,
                     STATUS_CLOSED_WRONG,
                     stamp,
                     f"pnl {pnl:.2f}% <= {close_threshold_pct:.2f}% threshold",  # noqa: E501
@@ -509,8 +516,9 @@ class CallDatabase:
             )
         else:
             self.conn.execute(
-                "UPDATE calls SET current_price = ?, pnl_pct = ?, last_price_at = ? WHERE id = ?",
-                (price, pnl, stamp, call_id),
+                "UPDATE calls SET current_price = ?, pnl_pct = ?, last_price_at = ?, "
+                "price_as_of = COALESCE(?, price_as_of) WHERE id = ?",
+                (price, pnl, stamp, as_of, call_id),
             )
         self.conn.execute(
             "INSERT INTO price_history (call_id, observed_at, price, pnl_pct) VALUES (?,?,?,?)",
@@ -523,6 +531,7 @@ class CallDatabase:
             "price": price,
             "pnl_pct": pnl,
             "closed": closed,
+            "price_as_of": as_of or row["price_as_of"],
         }
 
     # ------------------------------------------------------------------ runs

@@ -300,6 +300,8 @@ def _stale_note(update: dict[str, Any]) -> str:
     """Flag an open call whose price could not be refreshed this run."""
     if update.get("priced", True):
         return ""
+    if update.get("stale_source"):
+        return " ⏸ <i>held: source behind</i>"
     days = update.get("stale_days")
     if days:
         return f" ⏸ <i>no price for {days}d</i>"

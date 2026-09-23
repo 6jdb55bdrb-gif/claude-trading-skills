@@ -4,9 +4,9 @@
   "llm_usage": 0,
   "price_history": 25,
   "role_verdicts": 15,
-  "runs": 16
+  "runs": 18
  },
- "exported_at": "2026-09-22T18:25:53+00:00",
+ "exported_at": "2026-09-23T05:18:02+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -31,6 +31,7 @@
     "notes": " | ticker corrected from SSDEV (FinViz logo-span parse bug)",
     "pnl_pct": 16.3462,
     "position_usd": 945.36,
+    "price_as_of": "2026-09-22",
     "researcher_score": 4.5,
     "review_run_id": null,
     "reviewed_at": null,
@@ -68,6 +69,7 @@
     "notes": " | ticker corrected from NNCPL (FinViz logo-span parse bug)",
     "pnl_pct": 13.9174,
     "position_usd": 494.86,
+    "price_as_of": "2026-09-22",
     "researcher_score": 4.5,
     "review_run_id": null,
     "reviewed_at": null,
@@ -105,6 +107,7 @@
     "notes": null,
     "pnl_pct": -6.8182,
     "position_usd": 549.12,
+    "price_as_of": "2026-09-22",
     "researcher_score": 4.5,
     "review_run_id": null,
     "reviewed_at": null,
@@ -142,6 +145,7 @@
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
     "pnl_pct": 33.0834,
     "position_usd": null,
+    "price_as_of": "2026-09-22",
     "researcher_score": null,
     "review_run_id": null,
     "reviewed_at": null,
@@ -746,6 +750,40 @@
     "screening_ran": 1,
     "session_reason": "regular trading hours",
     "started_at": "2026-09-22T18:25:19+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-23T05:13:57+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 4,
+    "reviewed": 0,
+    "run_id": "run_20260923T051333Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-09-23T05:13:33+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-23T05:17:53+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 0,
+    "reviewed": 0,
+    "run_id": "run_20260923T051728Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-09-23T05:17:28+00:00"
    }
   ]
  }

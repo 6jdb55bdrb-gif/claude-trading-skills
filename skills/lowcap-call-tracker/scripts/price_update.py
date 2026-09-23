@@ -44,14 +44,19 @@ def _age_days(stamp: Any, now: datetime) -> int | None:
     return max(0, (now - moment).days)
 
 
-def fetch_prices(tickers: list[str]) -> dict[str, float]:
-    """Return {ticker: last price}; missing tickers are simply absent."""
+def _download_closes(tickers: list[str]) -> dict[str, list[tuple[str, float]]]:
+    """Daily closes per ticker as ``[(YYYY-MM-DD, close), ...]``, oldest first.
+
+    NaN closes are kept: a forming session publishes a bar with volume and no
+    close yet, and the caller has to know that bar exists.
+    """
     if not tickers or not HAS_YFINANCE:
         return {}
-    prices: dict[str, float] = {}
+    series: dict[str, list[tuple[str, float]]] = {}
+    unique = sorted(set(tickers))
     try:
         data = yfinance.download(
-            tickers=" ".join(sorted(set(tickers))),
+            tickers=" ".join(unique),
             period="5d",
             interval="1d",
             progress=False,
@@ -63,24 +68,60 @@ def fetch_prices(tickers: list[str]) -> dict[str, float]:
         data = None
 
     if data is not None and not getattr(data, "empty", True):
-        for ticker in set(tickers):
+        for ticker in unique:
             try:
-                column = data[ticker]["Close"] if len(set(tickers)) > 1 else data["Close"]
-                series = column.dropna()
-                if len(series):
-                    prices[ticker] = float(series.iloc[-1])
+                column = data[ticker]["Close"] if len(unique) > 1 else data["Close"]
+                series[ticker] = [
+                    (str(index.date()), float(value)) for index, value in column.items()
+                ]
             except (KeyError, IndexError, TypeError, AttributeError):
                 continue
 
-    missing = [ticker for ticker in set(tickers) if ticker not in prices]
-    for ticker in missing:  # pragma: no cover - per-ticker fallback
+    for ticker in [name for name in unique if name not in series]:  # pragma: no cover
         try:
-            series = yfinance.Ticker(ticker).history(period="5d")["Close"].dropna()
-            if len(series):
-                prices[ticker] = float(series.iloc[-1])
+            column = yfinance.Ticker(ticker).history(period="5d")["Close"]
+            series[ticker] = [(str(index.date()), float(value)) for index, value in column.items()]
         except Exception:
             continue
-    return prices
+    return series
+
+
+def fetch_price_points(tickers: list[str]) -> dict[str, dict[str, Any]]:
+    """Return ``{ticker: {"price": float, "as_of": "YYYY-MM-DD"}}``.
+
+    The session the close belongs to travels with the price. Without it an
+    overnight run cannot tell a fresh close from the previous one, and silently
+    marks every position back to a stale session — which is exactly what it did
+    before this returned a date.
+    """
+    points: dict[str, dict[str, Any]] = {}
+    for ticker, rows in _download_closes(tickers).items():
+        for as_of, close in reversed(rows):
+            if close is None or close != close:  # NaN: the bar has not closed
+                continue
+            points[ticker] = {"price": float(close), "as_of": as_of}
+            break
+    return points
+
+
+def fetch_prices(tickers: list[str]) -> dict[str, float]:
+    """Return {ticker: last price}; missing tickers are simply absent."""
+    return {ticker: point["price"] for ticker, point in fetch_price_points(tickers).items()}
+
+
+def _as_points(prices: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Accept either ``{ticker: price}`` or ``{ticker: {price, as_of}}``.
+
+    A bare number carries no session, so it is always applied — that is what a
+    caller passing ``--prices-json`` or a fixture means.
+    """
+    points: dict[str, dict[str, Any]] = {}
+    for ticker, value in (prices or {}).items():
+        if isinstance(value, dict):
+            points[ticker] = {"price": float(value["price"]), "as_of": value.get("as_of")}
+        else:
+            points[ticker] = {"price": float(value), "as_of": None}
+    return points
 
 
 def update_open_calls(
@@ -96,13 +137,23 @@ def update_open_calls(
     open_calls = db.open_calls()
     tickers = [row["ticker"] for row in open_calls]
     # An explicitly empty mapping means "offline, no prices" — not "go fetch".
-    resolved = dict(prices) if prices is not None else fetch_prices(tickers)
+    resolved = _as_points(prices) if prices is not None else fetch_price_points(tickers)
+    stale_sources: list[str] = []
 
     updates: list[dict[str, Any]] = []
     missing: list[str] = []
     now = datetime.now(timezone.utc)
     for row in open_calls:
-        price = resolved.get(row["ticker"])
+        point = resolved.get(row["ticker"])
+        price = point["price"] if point else None
+        as_of = (point or {}).get("as_of")
+        # A price from an earlier session than the one already recorded is a
+        # regression, not an update: the provider is offering yesterday's close
+        # because today's bar has not settled. Keep the newer mark.
+        regressed = bool(as_of and row["price_as_of"] and as_of < row["price_as_of"])
+        if regressed:
+            stale_sources.append(row["ticker"])
+            price = None
         common = {
             "direction": row["direction"],
             "instrument": row["instrument"],
@@ -120,7 +171,8 @@ def update_open_calls(
             # An open call that cannot be priced must still be REPORTED, with its
             # last known figures and how stale they are — dropping it from the
             # report is how a position quietly disappears.
-            missing.append(row["ticker"])
+            if not regressed:
+                missing.append(row["ticker"])
             updates.append(
                 {
                     "call_id": row["id"],
@@ -129,13 +181,15 @@ def update_open_calls(
                     "pnl_pct": row["pnl_pct"],
                     "closed": False,
                     "priced": False,
+                    "stale_source": regressed,
                     "last_price_at": row["last_price_at"],
                     "stale_days": _age_days(row["last_price_at"], now),
                     **common,
                 }
             )
             continue
-        result = db.apply_price(row["id"], float(price), close_threshold_pct=threshold)
+        result = db.apply_price(row["id"], float(price), close_threshold_pct=threshold, as_of=as_of)
+        result["stale_source"] = False
         result.update({"priced": True, "stale_days": 0, **common})
         updates.append(result)
 
@@ -152,6 +206,7 @@ def update_open_calls(
         "open": len(updates),
         "closed": sum(1 for update in updates if update["closed"]),
         "missing_prices": missing,
+        "stale_sources": stale_sources,
         "updates": updates,
         "threshold_pct": threshold,
     }
@@ -165,6 +220,10 @@ def format_updates(result: dict[str, Any]) -> str:
             tag = f"EXPIRED ({verdict})"
         elif update["closed"]:
             tag = "CLOSED (WRONG)"
+        elif update.get("stale_source"):
+            # The provider offered an older session than the mark we already
+            # hold. Keeping the newer mark is the correct answer, not a gap.
+            tag = f"{update['kind'].upper()} · HELD (source behind)"
         elif not update.get("priced", True):
             stale = update.get("stale_days")
             tag = f"{update['kind'].upper()} · NO PRICE" + (f" ({stale}d stale)" if stale else "")
