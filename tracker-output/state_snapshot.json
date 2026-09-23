@@ -4,9 +4,9 @@
   "llm_usage": 0,
   "price_history": 25,
   "role_verdicts": 15,
-  "runs": 20
+  "runs": 21
  },
- "exported_at": "2026-09-23T05:24:16+00:00",
+ "exported_at": "2026-09-23T10:22:13+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -818,6 +818,23 @@
     "screening_ran": 0,
     "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
     "started_at": "2026-09-23T05:24:07+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-23T10:21:46+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 0,
+    "reviewed": 0,
+    "run_id": "run_20260923T102122Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-09-23T10:21:22+00:00"
    }
   ]
  }
