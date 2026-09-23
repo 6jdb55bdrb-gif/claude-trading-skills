@@ -96,7 +96,7 @@ def test_fetch_price_points_carries_the_bar_date(monkeypatch):
 
 
 def test_a_held_mark_reads_differently_from_a_missing_one(tmp_db, config):
-    """"Held" and "no price" are different facts and must not look the same."""
+    """ "Held" and "no price" are different facts and must not look the same."""
     import telegram_bot as tb
     from price_update import format_updates
 

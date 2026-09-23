@@ -207,10 +207,14 @@ class CallDatabase:
         ):
             if column not in existing:
                 self.conn.execute(ddl)
-        # Pre-options rows: a long was a call, a short was a put.
+        # Pre-options rows: a long was a call, a short was a put. An UNREVIEWED
+        # call is excluded — its NULL instrument is deliberate (nobody chose a
+        # contract), and backfilling one here would re-invent the very claim the
+        # unjudged state exists to avoid.
         self.conn.execute(
             "UPDATE calls SET instrument = CASE WHEN direction = 'short' THEN 'put' "
-            "ELSE 'call' END WHERE instrument IS NULL"
+            "ELSE 'call' END WHERE instrument IS NULL AND kind != ?",
+            (KIND_UNREVIEWED,),
         )
 
     def close(self) -> None:
@@ -251,9 +255,21 @@ class CallDatabase:
         unreviewed = decision == DECISION_UNREVIEWED
         instrument = (risk.get("instrument") or "").lower()
         if instrument not in {"call", "put"}:
-            instrument = "put" if risk.get("direction") == "short" else "call"
-        # A put profits when the underlying falls, so it keeps short PnL maths.
-        direction = "short" if instrument == "put" else "long"
+            # A reviewed call without an explicit instrument still has a
+            # direction to derive one from; an unjudged one has neither.
+            instrument = (
+                None if unreviewed else ("put" if risk.get("direction") == "short" else "call")
+            )
+        if unreviewed:
+            # Nobody chose a contract, so none is claimed. PnL still needs a
+            # sign convention: "long" here means the raw move of the underlying,
+            # which is what an unjudged screener hit is worth measuring. The
+            # real instrument arrives with the review, and apply_review re-marks
+            # the call if the Risk Manager picks a put.
+            direction = "long"
+        else:
+            # A put profits when the underlying falls, so it keeps short PnL maths.
+            direction = "short" if instrument == "put" else "long"
         stamp = now or utc_now()
 
         cursor = self.conn.execute(
@@ -273,8 +289,8 @@ class CallDatabase:
                 review.get("asset_type", "stock"),
                 direction,
                 instrument,
-                risk.get("expiry_date"),
-                risk.get("strike"),
+                None if unreviewed else risk.get("expiry_date"),
+                None if unreviewed else risk.get("strike"),
                 KIND_UNREVIEWED
                 if unreviewed
                 else (KIND_ACTIVE if decision == "TAKE" else KIND_SHADOW),

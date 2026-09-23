@@ -2,13 +2,13 @@
 
 > ## ⛔ BACKEND DOWN
 >
-> The role review could not run: ANTHROPIC_API_KEY is not set.
+> The role review could not run: the 'anthropic' package is not installed.
 > New screener hits are recorded UNREVIEWED and will be judged on the
 > next healthy run. No decision below was made while the backend was down.
 
 **Backend:** DOWN · reviewed 3 / unreviewed 1 · TAKE/SKIP 0/3 (0.0% TAKE)
 
-**Generated:** 2026-09-23T05:17:53+00:00  
+**Generated:** 2026-09-23T05:24:07+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -35,7 +35,7 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 3 | 3 | 2 | 0 | 1 | 66.7 | 14.2 |
+| call | 2 | 2 | 1 | 0 | 1 | 50.0 | 4.76 |
 | put | 1 | 1 | 1 | 0 | 0 | 100.0 | 13.92 |
 
 ### By asset type
@@ -81,9 +81,9 @@
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20260923T051728Z | 2026-09-23T05:17:28+00:00 | yes | — | — | — |
+| run_20260923T052407Z | 2026-09-23T05:24:07+00:00 | no | — | — | — |
+| run_20260923T052313Z | 2026-09-23T05:23:13+00:00 | no | 0 | 0 | 0.0 |
+| run_20260923T051728Z | 2026-09-23T05:17:28+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260923T051333Z | 2026-09-23T05:13:33+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260922T182519Z | 2026-09-22T18:25:19+00:00 | yes | 0 | 0 | 0.0 |
-| run_20260922T150906Z | 2026-09-22T15:09:06+00:00 | yes | 0 | 0 | 0.0 |
-| run_20260922T085025Z | 2026-09-22T08:50:25+00:00 | yes | 1 | 0 | 0.0 |
 

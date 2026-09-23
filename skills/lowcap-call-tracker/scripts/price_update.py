@@ -231,7 +231,10 @@ def format_updates(result: dict[str, Any]) -> str:
             tag = update["kind"].upper()
         price = update["price"]
         pnl = update["pnl_pct"]
-        contract = str(update.get("instrument") or update["direction"]).upper()
+        # An unjudged call has no contract to name: printing one would state a
+        # decision nobody made.
+        instrument = update.get("instrument")
+        contract = str(instrument).upper() if instrument else "—"
         dte = update.get("days_to_expiry")
         contract += f" {dte:>3}d" if dte is not None else ""
         lines.append(

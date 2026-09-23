@@ -66,7 +66,13 @@ def session_state(config: dict[str, Any], moment: datetime | None = None) -> dic
     trading_day = is_trading_day(config, moment.date())
     open_at = _parse_clock(market.get("regular_open", "09:30"), time(9, 30))
     close_at = _parse_clock(market.get("regular_close", "16:00"), time(16, 0))
+    # Extended hours are bounded. Outside them the tape is dead: relative volume
+    # and today's change are stale, so screening at 03:00 reads yesterday and
+    # calls it today.
+    ext_open = _parse_clock(market.get("extended_open", "04:00"), time(4, 0))
+    ext_close = _parse_clock(market.get("extended_close", "20:00"), time(20, 0))
     regular = trading_day and open_at <= moment.time() <= close_at
+    extended = trading_day and ext_open <= moment.time() <= ext_close
 
     if not market.get("skip_screening_when_closed", True):
         allowed, reason = True, "screening forced on by configuration"
@@ -79,6 +85,12 @@ def session_state(config: dict[str, Any], moment: datetime | None = None) -> dic
         )
     elif regular:
         allowed, reason = True, "regular trading hours"
+    elif not extended:
+        allowed = False
+        reason = (
+            f"overnight — outside {ext_open.strftime('%H:%M')}-"
+            f"{ext_close.strftime('%H:%M')} ET, no live tape to screen"
+        )
     elif market.get("allow_extended_hours", True):
         allowed, reason = True, "trading day, extended hours"
     else:
@@ -88,6 +100,7 @@ def session_state(config: dict[str, Any], moment: datetime | None = None) -> dic
         "as_of": moment.isoformat(timespec="seconds"),
         "trading_day": trading_day,
         "regular_hours": regular,
+        "extended_hours": extended and not regular,
         "screening_allowed": allowed,
         "reason": reason,
     }

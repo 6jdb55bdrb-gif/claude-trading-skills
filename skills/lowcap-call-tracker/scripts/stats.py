@@ -253,7 +253,8 @@ def compute_stats(
             ),
             "take_calls_counted": len(take_pnls),
         },
-        "by_instrument": _by(rows, "instrument"),
+        # An unjudged call chose no instrument, so it belongs in no bucket.
+        "by_instrument": _by([row for row in rows if row["instrument"]], "instrument"),
         "by_direction": _by(rows, "direction"),
         "by_asset_type": _by(rows, "asset_type"),
         "by_variant": _by(rows, "screen_variant"),

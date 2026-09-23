@@ -214,6 +214,11 @@ market:
   skip_screening_when_closed: true
   regular_open: "09:30"
   regular_close: "16:00"
+  # US extended trading. Outside these bounds there is no live tape: relative
+  # volume and today's change are yesterday's numbers, so screening overnight
+  # would call stale data a signal. The price update still runs.
+  extended_open: "04:00"
+  extended_close: "20:00"
   # Screening also runs outside regular hours on a trading day (pre/post market),
   # because RelVol and change are still published. Set false to require RTH.
   allow_extended_hours: true

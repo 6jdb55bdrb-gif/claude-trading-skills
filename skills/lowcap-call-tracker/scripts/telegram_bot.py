@@ -276,7 +276,9 @@ def _num(value: Any, spec: str = ".2f", suffix: str = "") -> str:
 def _contract(row: Any, *, with_expiry: bool = True) -> str:
     """CALL/PUT with its strike and how long the contract still has to run."""
     try:
-        instrument = row["instrument"] or row["direction"]
+        # Never fall back to the direction: an unjudged call's direction is a
+        # PnL convention, not a contract someone chose.
+        instrument = row["instrument"]
         strike = row["strike"]
         expiry = row["expiry_date"]
     except (KeyError, IndexError, TypeError):

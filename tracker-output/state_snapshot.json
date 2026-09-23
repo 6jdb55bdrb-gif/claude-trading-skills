@@ -4,9 +4,9 @@
   "llm_usage": 0,
   "price_history": 25,
   "role_verdicts": 15,
-  "runs": 18
+  "runs": 20
  },
- "exported_at": "2026-09-23T05:18:02+00:00",
+ "exported_at": "2026-09-23T05:24:16+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -137,7 +137,7 @@
     "expiry_date": null,
     "hit_json": "{\"ticker\": \"GRML\", \"company\": \"Greenland Mines Ltd\", \"sector\": \"Basic Materials\", \"industry\": \"Other Precious Metals & Mining\", \"country\": \"USA\", \"market_cap\": 33900000.0, \"price\": 10.67, \"change_pct\": 13.27, \"volume\": 3167620.0, \"shares_outstanding\": 3180000.0, \"float_shares\": 2870000.0, \"inst_own_pct\": 24.0, \"short_float_pct\": 22.43, \"short_ratio\": 0.17, \"avg_volume\": 3830000.0, \"perf_week_pct\": 243.09, \"perf_month_pct\": 5.28, \"perf_quarter_pct\": -16.67, \"perf_half_pct\": -49.01, \"perf_ytd_pct\": -26.16, \"perf_year_pct\": -61.2, \"volatility_week_pct\": 21.17, \"volatility_month_pct\": 17.98, \"rel_volume\": 16.53, \"beta\": 2.46, \"atr\": 1.52, \"sma20_pct\": 114.92, \"sma50_pct\": 35.7, \"sma200_pct\": -30.11, \"high52w_pct\": -71.15, \"low52w_pct\": 278.37, \"rsi\": 68.17, \"from_open_pct\": 10.0, \"gap_pct\": 2.97, \"asset_type\": \"stock\", \"variant\": \"squeeze\", \"screen_mode\": \"public\", \"filters\": \"cap_smallunder,sh_price_1to20,sh_avgvol_o500,sh_relvol_o2,ta_perf_dup,ta_sma20_pa,ta_sma50_pa,ind_stocksonly,geo_usa,sh_float_u20,sh_short_o15\"}",
     "id": 4,
-    "instrument": "call",
+    "instrument": null,
     "judge_decision": "UNREVIEWED",
     "judge_reason": null,
     "kind": "unreviewed",
@@ -784,6 +784,40 @@
     "screening_ran": 1,
     "session_reason": "trading day, extended hours",
     "started_at": "2026-09-23T05:17:28+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-23T05:23:15+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 0,
+    "reviewed": 0,
+    "run_id": "run_20260923T052313Z",
+    "screening_ran": 0,
+    "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
+    "started_at": "2026-09-23T05:23:13+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-23T05:24:07+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 the 'anthropic' package is not installed",
+    "priced": 0,
+    "reviewed": 0,
+    "run_id": "run_20260923T052407Z",
+    "screening_ran": 0,
+    "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
+    "started_at": "2026-09-23T05:24:07+00:00"
    }
   ]
  }
