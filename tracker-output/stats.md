@@ -8,7 +8,9 @@
 
 **Backend:** DOWN · reviewed 3 / unreviewed 2 · TAKE/SKIP 0/3 (0.0% TAKE)
 
-**Generated:** 2026-09-24T10:35:17+00:00  
+**Total PnL:** +3.03% — equal weight across all 5 priced call(s)
+
+**Generated:** 2026-09-24T12:31:36+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -25,6 +27,7 @@
 | Wrong | 0 |
 | Neutral | 1 |
 | Hit rate % | 80.0 |
+| **Total PnL % (equal weight, all calls)** | +3.03% |
 | Average PnL % per call | 3.03 |
 | Portfolio PnL % (equal weight, TAKE only) | — |
 
@@ -81,9 +84,9 @@
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20260924T103453Z | 2026-09-24T10:34:53+00:00 | yes | — | — | — |
+| run_20260924T123112Z | 2026-09-24T12:31:12+00:00 | yes | — | — | — |
+| run_20260924T103453Z | 2026-09-24T10:34:53+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260924T080257Z | 2026-09-24T08:02:57+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260923T142356Z | 2026-09-23T14:23:56+00:00 | yes | 1 | 0 | 0.0 |
 | run_20260923T102122Z | 2026-09-23T10:21:22+00:00 | yes | 0 | 0 | 0.0 |
-| run_20260923T052407Z | 2026-09-23T05:24:07+00:00 | no | 0 | 0 | 0.0 |
 

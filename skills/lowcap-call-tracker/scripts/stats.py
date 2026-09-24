@@ -217,6 +217,7 @@ def compute_stats(
     reviewed = [row for row in rows if row["kind"] != KIND_UNREVIEWED]
     take_pnls = _pnls(active)
     shadow_pnls = _pnls(shadow)
+    all_pnls = _pnls(rows)
 
     overall = _group_block(rows)
     overall.update(
@@ -247,10 +248,14 @@ def compute_stats(
         ),
         "overall": overall,
         "portfolio": {
+            # The headline: equal money into every call the tracker has made,
+            # judged or not, long or short. This is "where would I be if I had
+            # taken all of them", which is the only number that needs no
+            # explanation before it can be acted on.
+            "total_pnl_pct": round(mean(all_pnls), 2) if all_pnls else None,
+            "calls_counted": len(all_pnls),
             "equal_weight_pnl_pct_take_only": round(mean(take_pnls), 2) if take_pnls else None,
-            "equal_weight_pnl_pct_all_calls": (
-                round(mean(_pnls(rows)), 2) if _pnls(rows) else None
-            ),
+            "equal_weight_pnl_pct_all_calls": round(mean(all_pnls), 2) if all_pnls else None,
             "take_calls_counted": len(take_pnls),
         },
         # An unjudged call chose no instrument, so it belongs in no bucket.
@@ -354,6 +359,9 @@ def render_markdown(stats: dict[str, Any]) -> str:
     lines += [
         format_backend_line(backend),
         "",
+        f"**Total PnL:** {_signed(stats['portfolio']['total_pnl_pct'])} "
+        f"— equal weight across all {stats['portfolio']['calls_counted']} priced call(s)",
+        "",
         f"**Generated:** {stats['generated_at']}  ",
         f"**Close rule:** {stats['close_rule']}",
         "",
@@ -371,6 +379,12 @@ def render_markdown(stats: dict[str, Any]) -> str:
         _row(["Wrong", overall["wrong"]]),
         _row(["Neutral", overall["neutral"]]),
         _row(["Hit rate %", overall["hit_rate_pct"]]),
+        _row(
+            [
+                "**Total PnL % (equal weight, all calls)**",
+                _signed(stats["portfolio"]["total_pnl_pct"]),
+            ]
+        ),
         _row(["Average PnL % per call", overall["avg_pnl_pct"]]),
         _row(
             [
@@ -460,6 +474,11 @@ def render_markdown(stats: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _signed(value: Any) -> str:
+    """A percentage with an explicit sign: +3.03%, -10.80%, or an em dash."""
+    return "—" if value is None else f"{value:+.2f}%"
+
+
 def _dash(value: Any) -> str:
     """Any value, with an em dash for nothing."""
     return "—" if value is None else str(value)
@@ -485,6 +504,8 @@ def render_text(stats: dict[str, Any]) -> str:
         f"  total={overall['total']}  open={overall['open']}  right={overall['right']}  "
         f"wrong={overall['wrong']}  neutral={overall['neutral']}  "
         f"hit_rate={_pct(overall['hit_rate_pct'])}",
+        f"  TOTAL PnL (equal weight, all {stats['portfolio']['calls_counted']} calls)="
+        f"{_signed(stats['portfolio']['total_pnl_pct'])}",
         f"  avg PnL/call={_pct(overall['avg_pnl_pct'])}   "
         "portfolio (equal weight, TAKE only)="
         f"{_pct(stats['portfolio']['equal_weight_pnl_pct_take_only'])}",

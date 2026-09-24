@@ -430,6 +430,16 @@ def _role_detail_lines(report: dict[str, Any], ticker: str) -> list[str]:
     return []
 
 
+def _signed(value: Any) -> str:
+    """A percentage with an explicit sign; an em dash when there is none."""
+    if value is None:
+        return "—"
+    try:
+        return f"{float(value):+.2f}%"
+    except (TypeError, ValueError):
+        return "—"
+
+
 def format_stats_message(stats: dict[str, Any], *, compact: bool = False) -> str:
     """Render the statistics block (compact for run pushes, full for /stats)."""
     overall = stats.get("overall", {})
@@ -448,6 +458,8 @@ def format_stats_message(stats: dict[str, Any], *, compact: bool = False) -> str
         f"right {overall.get('right')} · wrong {overall.get('wrong')} · "
         f"neutral {overall.get('neutral')} · hit rate "
         f"{_num(overall.get('hit_rate_pct'), '.1f', '%')}",
+        f"<b>Total PnL {_signed(portfolio.get('total_pnl_pct'))}</b> "
+        f"<i>(equal weight, all {portfolio.get('calls_counted', 0)} calls)</i>",
         f"avg PnL {_num(overall.get('avg_pnl_pct'), '.2f', '%')} · portfolio "
         f"(equal weight, TAKE) "
         f"{_num(portfolio.get('equal_weight_pnl_pct_take_only'), '.2f', '%')}",
