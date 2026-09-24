@@ -6,29 +6,29 @@
 > New screener hits are recorded UNREVIEWED and will be judged on the
 > next healthy run. No decision below was made while the backend was down.
 
-**Backend:** DOWN · reviewed 3 / unreviewed 2 · TAKE/SKIP 0/3 (0.0% TAKE)
+**Backend:** DOWN · reviewed 3 / unreviewed 3 · TAKE/SKIP 0/3 (0.0% TAKE)
 
-**Total PnL:** +1.09% — equal weight across all 5 priced call(s)
+**Total PnL:** +1.13% — equal weight across all 6 priced call(s)
 
-**Generated:** 2026-09-24T19:30:57+00:00  
+**Generated:** 2026-09-24T20:27:58+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
 
 | Metric | Value |
 |---|---|
-| Total calls | 5 |
+| Total calls | 6 |
 | Reviewed calls | 3 |
-| UNREVIEWED calls | 2 |
+| UNREVIEWED calls | 3 |
 | TAKE calls | 0 |
 | Shadow (SKIP) calls | 3 |
 | Open | 5 |
 | Right | 2 |
-| Wrong | 0 |
+| Wrong | 1 |
 | Neutral | 3 |
-| Hit rate % | 40.0 |
-| **Total PnL % (equal weight, all calls)** | +1.09% |
-| Average PnL % per call | 1.09 |
+| Hit rate % | 33.3 |
+| **Total PnL % (equal weight, all calls)** | +1.13% |
+| Average PnL % per call | 1.13 |
 | Portfolio PnL % (equal weight, TAKE only) | — |
 
 **Best call:** GRML (long, squeeze, unreviewed) +38.85% — entry 10.67 → 14.8149995803833
@@ -38,27 +38,27 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 2 | 2 | 1 | 0 | 1 | 50.0 | 2.25 |
-| put | 1 | 1 | 0 | 0 | 1 | 0.0 | -27.06 |
+| call | 2 | 2 | 1 | 0 | 1 | 50.0 | 2.93 |
+| put | 1 | 0 | 0 | 1 | 0 | 0.0 | -27.06 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| stock | 5 | 5 | 2 | 0 | 3 | 40.0 | 1.09 |
+| stock | 6 | 5 | 2 | 1 | 3 | 33.3 | 1.13 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| squeeze | 5 | 5 | 2 | 0 | 3 | 40.0 | 1.09 |
+| squeeze | 6 | 5 | 2 | 1 | 3 | 33.3 | 1.13 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | TAKE | 0 | 0 | 0 | 0 | 0 | — | — |
-| SKIP (shadow) | 3 | 3 | 1 | 0 | 2 | 33.3 | -7.52 |
+| SKIP (shadow) | 3 | 2 | 1 | 1 | 1 | 33.3 | -7.07 |
 
 **Judge edge (avg PnL TAKE − avg PnL shadow):** None → no comparison yet
 
@@ -67,26 +67,26 @@
 | Role | Avg score (winners) | Avg score (others) | Edge | Corr(score, PnL) | n | Polarity |
 |---|---|---|---|---|---|---|
 | researcher | 4.5 | 4.5 | 0.0 | — | 3 | quality (higher is better) |
-| technician | 6.0 | 4.0 | 2.0 | 0.649 | 3 | quality (higher is better) |
-| skeptic | 9.0 | 7.25 | 1.75 | 0.169 | 3 | severity (lower is better) |
-| risk_manager | 8.0 | 5.25 | 2.75 | 0.943 | 3 | quality (higher is better) |
+| technician | 6.0 | 4.0 | 2.0 | 0.634 | 3 | quality (higher is better) |
+| skeptic | 9.0 | 7.25 | 1.75 | 0.188 | 3 | severity (lower is better) |
+| risk_manager | 8.0 | 5.25 | 2.75 | 0.949 | 3 | quality (higher is better) |
 
 ### Confidence buckets
 
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| 0-40 | 1 | 1 | 0 | 0 | 1 | 0.0 | -27.06 |
-| 40-70 | 2 | 2 | 1 | 0 | 1 | 50.0 | 2.25 |
+| 0-40 | 1 | 0 | 0 | 1 | 0 | 0.0 | -27.06 |
+| 40-70 | 2 | 2 | 1 | 0 | 1 | 50.0 | 2.93 |
 | 70-100 | 0 | 0 | 0 | 0 | 0 | — | — |
 
 ### Recent runs
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20260924T193032Z | 2026-09-24T19:30:32+00:00 | yes | — | — | — |
+| run_20260924T202735Z | 2026-09-24T20:27:35+00:00 | yes | — | — | — |
+| run_20260924T193032Z | 2026-09-24T19:30:32+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260924T165842Z | 2026-09-24T16:58:42+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260924T152058Z | 2026-09-24T15:20:58+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260924T123112Z | 2026-09-24T12:31:12+00:00 | yes | 0 | 0 | 0.0 |
-| run_20260924T103453Z | 2026-09-24T10:34:53+00:00 | yes | 0 | 0 | 0.0 |
 

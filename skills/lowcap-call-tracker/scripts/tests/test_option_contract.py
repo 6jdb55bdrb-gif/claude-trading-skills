@@ -241,11 +241,18 @@ def test_a_full_cycle_records_contracts(config, tmp_path):
     assert len(report["new_calls"]) == 3
     with CallDatabase(tmp_path / "cycle.db") as db:
         rows = {row["ticker"]: row for row in db.all_calls()}
-        assert {row["instrument"] for row in rows.values()} <= {"call", "put"}
-        assert all(row["expiry_date"] for row in rows.values())
-        # The climactic PMPX fade gets a shorter contract than the FDA catalyst.
-        assert rows["PMPX"]["instrument"] == "put"
-        assert rows["PMPX"]["expiry_date"] < rows["SQZX"]["expiry_date"]
+        # Long only: no put ever reaches the record.
+        assert "put" not in {row["instrument"] for row in rows.values()}
+        taken = [row for row in rows.values() if row["judge_decision"] == "TAKE"]
+        assert taken and all(row["instrument"] == "call" for row in taken)
+        assert all(row["expiry_date"] for row in taken)
+        # PMPX is the climactic fade: bearish, so there is nothing to take.
+        assert rows["PMPX"]["judge_decision"] == "SKIP"
+    suppressed = next(review for review in report["reviews"] if review["ticker"] == "PMPX")[
+        "verdicts"
+    ]["risk_manager"]
+    assert suppressed["short_suppressed"] is True
+    assert suppressed["instrument"] == "none"
 
 
 def test_reports_name_the_contract(config, tmp_db):

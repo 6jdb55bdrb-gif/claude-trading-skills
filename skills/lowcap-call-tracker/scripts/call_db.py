@@ -235,7 +235,12 @@ class CallDatabase:
         ).fetchone()
 
     def insert_call(
-        self, review: dict[str, Any], *, run_id: str, now: str | None = None
+        self,
+        review: dict[str, Any],
+        *,
+        run_id: str,
+        now: str | None = None,
+        allow_short: bool = True,
     ) -> int | None:
         """Insert a call from a review. Returns the id, or None when a duplicate.
 
@@ -270,6 +275,12 @@ class CallDatabase:
         else:
             # A put profits when the underlying falls, so it keeps short PnL maths.
             direction = "short" if instrument == "put" else "long"
+        if not allow_short and (instrument == "put" or direction == "short"):
+            # Last line of defence. Whatever produced this review, a position
+            # that cannot be executed must not reach the record.
+            raise ValueError(
+                f"{ticker}: a short/put call cannot be stored while roles.allow_short is false"
+            )
         stamp = now or utc_now()
 
         cursor = self.conn.execute(
@@ -458,6 +469,32 @@ class CallDatabase:
             "SELECT role, verdict_json FROM role_verdicts WHERE call_id = ?", (call_id,)
         )
         return {row["role"]: json.loads(row["verdict_json"]) for row in rows}
+
+    def close_call(self, call_id: int, *, reason: str, now: str | None = None) -> dict[str, Any]:
+        """Settle an open call early, at its last known price, for a stated reason.
+
+        Used when a policy change makes a position untrackable rather than when
+        the market decided something — the PnL still books, because the call was
+        made and was either right or wrong regardless of why it is ending.
+        """
+        row = self.call(call_id)
+        if row is None:
+            raise KeyError(f"unknown call id {call_id}")
+        stamp = now or utc_now()
+        self.conn.execute(
+            "UPDATE calls SET status = ?, closed_at = ?, close_reason = ? "
+            "WHERE id = ? AND status = ?",
+            (STATUS_EXPIRED, stamp, reason, call_id, STATUS_OPEN),
+        )
+        self.conn.commit()
+        return {
+            "call_id": call_id,
+            "ticker": row["ticker"],
+            "instrument": row["instrument"],
+            "pnl_pct": row["pnl_pct"],
+            "closed": True,
+            "close_reason": reason,
+        }
 
     def expire_call(self, call_id: int, *, now: str | None = None) -> dict[str, Any]:
         """Settle a call whose contract has expired, at its last known price."""

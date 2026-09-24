@@ -148,3 +148,23 @@ The Skeptic gate is unchanged: an objection must still be answered explicitly.
 But "the Researcher found no catalyst" is not an unanswerable objection — it is
 answered with the structure, the stop and the risk actually being relied on.
 
+## Long only
+
+`roles.allow_short` is false. These low-float names have no listed options and
+no reliable borrow, so a bearish call could never have been taken — and an
+inexecutable position in the record collects PnL nobody could have had.
+
+Enforcement is layered, so no backend can route around it:
+
+1. The RISK MANAGER prompt tells the model to return `instrument: "none"` for a
+   bearish setup rather than a put.
+2. `_normalize_verdict` neutralizes any `put` / `short` that arrives anyway,
+   setting `short_suppressed: true` and recording why in `reasons`. It does
+   **not** flip the plan to a long: the setup was bearish, and inventing a
+   bullish thesis nobody argued would be worse than skipping.
+3. The Judge gate turns a plan with no direction into a SKIP.
+4. `insert_call(allow_short=False)` raises rather than storing a put.
+
+A put already on the book keeps its own PnL convention — history is not
+rewritten. Set `roles.allow_short: true` only if the universe moves to
+optionable, borrowable names.

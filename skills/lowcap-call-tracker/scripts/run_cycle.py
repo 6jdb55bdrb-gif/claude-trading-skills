@@ -36,6 +36,7 @@ from role_review import (
     load_role_prompts,
     review_hit,
     review_hits,
+    short_allowed,
 )
 from state_snapshot import (
     export_members,
@@ -288,7 +289,7 @@ def run_cycle(
                 if dry_run:
                     report["new_calls"].append({**_call_line(review), "call_id": None})
                     continue
-                call_id = db.insert_call(review, run_id=run_id)
+                call_id = db.insert_call(review, run_id=run_id, allow_short=short_allowed(config))
                 if call_id is None:
                     report["duplicates_skipped"].append(review["ticker"])
                     continue

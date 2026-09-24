@@ -150,6 +150,12 @@ roles:
   # a deterministic guess about a catalyst, an objection or a verdict is worse
   # than an honest gap in the record. TECHNICIAN and RISK MANAGER are arithmetic
   # on the screener row, so they keep their offline implementation.
+  # Long only. These low-float names have no listed options and are hard to
+  # borrow, so a bearish call could never actually be taken — and an
+  # inexecutable position in the record collects PnL nobody could have had.
+  # A bearish setup becomes instrument "none", which the Judge gate turns into
+  # a SKIP. Set true only if the universe changes to optionable names.
+  allow_short: false
   llm_only: [researcher, skeptic, judge]
   # Fail the whole run's review when one tiny API call cannot be made, instead
   # of discovering it role by role.

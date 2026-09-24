@@ -165,7 +165,19 @@ def _heuristic_verdict(role: str, hit: dict[str, Any], context: dict[str, Any]) 
     return heuristic.judge(verdicts, config=context["config"])
 
 
-def _normalize_verdict(role: str, verdict: dict[str, Any]) -> dict[str, Any]:
+def short_allowed(config: dict[str, Any] | None) -> bool:
+    """Whether a bearish plan may be proposed at all.
+
+    Off by default. These names have no listed options and are hard to borrow,
+    so a short thesis cannot be executed — and an inexecutable call in the
+    record is worse than no call, because it collects PnL nobody could have had.
+    """
+    return bool(((config or {}).get("roles") or {}).get("allow_short", False))
+
+
+def _normalize_verdict(
+    role: str, verdict: dict[str, Any], *, config: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Coerce an LLM verdict into the stored contract (types, bounds, defaults)."""
     verdict = dict(verdict)
     verdict["role"] = role
@@ -201,6 +213,19 @@ def _normalize_verdict(role: str, verdict: dict[str, Any]) -> dict[str, Any]:
                 if verdict["direction"] == "none"
                 else ("put" if verdict["direction"] == "short" else "call")
             )
+        if instrument == "put" or verdict["direction"] == "short":
+            if not short_allowed(config):
+                # Neutralized, not silently flipped to a long: the setup the
+                # Risk Manager saw was bearish, and pretending otherwise would
+                # invent a thesis nobody argued. "none" makes it a SKIP.
+                verdict["instrument"] = "none"
+                verdict["direction"] = "none"
+                verdict["reasons"] = (
+                    verdict["reasons"]
+                    + ["bearish setup, but a short is not executable on this name"]
+                )[:3]
+                verdict["short_suppressed"] = True
+                return verdict
         verdict["instrument"] = instrument
     return verdict
 
@@ -362,7 +387,7 @@ def review_hit(
                     user=build_user_message(role, hit, context),
                     web_search=web_search_enabled(config, role),
                 )
-                verdict = _normalize_verdict(role, verdict)
+                verdict = _normalize_verdict(role, verdict, config=config)
                 verdict["backend"] = "llm"
                 return verdict
             except (LLMUnavailable, ValueError) as exc:
@@ -373,7 +398,7 @@ def review_hit(
             reason = "no prompt file" if not prompts.get(role) else "LLM backend unavailable"
             raise ReviewUnavailable(f"{role}: {reason}")
         verdict = _heuristic_verdict(role, hit, context)
-        return _normalize_verdict(role, verdict)
+        return _normalize_verdict(role, verdict, config=config)
 
     for role in ("researcher", "technician", "skeptic"):
         context["verdicts"][role] = run_role(role)

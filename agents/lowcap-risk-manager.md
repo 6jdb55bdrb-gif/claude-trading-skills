@@ -72,6 +72,20 @@ Score the **risk/reward of the executable plan**: reward-to-risk ratio, stop
 quality (structure vs. arbitrary), and whether the size is liquid enough to exit.
 9-10 is a tight structural stop with a clean 3R path; 0-2 is no viable plan.
 
+## Long only
+
+This universe has **no listed options and no reliable borrow**. A bearish
+thesis therefore cannot be executed, so you never return `put` or
+`direction: "short"`.
+
+When the setup is bearish — a climactic blow-off, a broken chart, a fading
+catalyst — say so plainly and return `instrument: "none"` with
+`direction: "none"`. That is a complete, correct answer: "this is a short, and
+we cannot take shorts here." The Judge turns it into a SKIP.
+
+Never invent a long to fill the field. A bad long is worse than no position,
+and the record only means something if the calls in it could have been taken.
+
 ## Output Contract
 
 Return **only** a JSON object:
