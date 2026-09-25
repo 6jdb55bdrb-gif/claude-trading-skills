@@ -33,6 +33,7 @@ from call_db import (
     KIND_UNREVIEWED,
     STATUS_EXPIRED,
     STATUS_OPEN,
+    STATUS_VOID,
     CallDatabase,
 )
 
@@ -206,7 +207,11 @@ def _backend_block(
 def compute_stats(
     db: CallDatabase, config: dict[str, Any], *, backend_health: dict[str, Any] | None = None
 ) -> dict[str, Any]:
-    rows = db.all_calls()
+    every_row = db.all_calls()
+    # A voided call could never have been executed, so it moves no performance
+    # number. It stays visible in the file with its reason, never silently gone.
+    voided = [row for row in every_row if row["status"] == STATUS_VOID]
+    rows = [row for row in every_row if row["status"] != STATUS_VOID]
     active = [row for row in rows if row["kind"] == KIND_ACTIVE]
     shadow = [row for row in rows if row["kind"] == KIND_SHADOW]
     # An UNREVIEWED call is a screener record with no opinion attached. It counts
@@ -226,6 +231,7 @@ def compute_stats(
             "shadow_calls": len(shadow),
             "unreviewed_calls": len(unreviewed),
             "reviewed_calls": len(reviewed),
+            "voided_calls": len(voided),
             "best_call": _extreme(rows),
             "worst_call": _extreme(rows, worst=True),
         }
@@ -260,6 +266,15 @@ def compute_stats(
         },
         # An unjudged call chose no instrument, so it belongs in no bucket.
         "by_instrument": _by([row for row in rows if row["instrument"]], "instrument"),
+        "voided": [
+            {
+                "ticker": row["ticker"],
+                "instrument": row["instrument"],
+                "pnl_pct": row["pnl_pct"],
+                "reason": row["close_reason"],
+            }
+            for row in voided
+        ],
         "by_direction": _by(rows, "direction"),
         "by_asset_type": _by(rows, "asset_type"),
         "by_variant": _by(rows, "screen_variant"),
@@ -372,6 +387,7 @@ def render_markdown(stats: dict[str, Any]) -> str:
         _row(["Total calls", overall["total"]]),
         _row(["Reviewed calls", overall.get("reviewed_calls")]),
         _row(["UNREVIEWED calls", overall.get("unreviewed_calls")]),
+        _row(["Voided (not executable)", overall.get("voided_calls")]),
         _row(["TAKE calls", overall["take_calls"]]),
         _row(["Shadow (SKIP) calls", overall["shadow_calls"]]),
         _row(["Open", overall["open"]]),
@@ -452,6 +468,33 @@ def render_markdown(stats: dict[str, Any]) -> str:
     lines += _group_table("Judge confidence", stats["confidence_buckets"])[1:]
     if stats["recent_runs"]:
         lines += [
+            *(
+                [
+                    "",
+                    "### Voided calls",
+                    "",
+                    "Kept for the record, excluded from every figure above: these",
+                    "could not have been executed, so they cannot have made or lost",
+                    "anything.",
+                    "",
+                    _row(["Ticker", "Instrument", "PnL %", "Reason"]),
+                    "|---|---|---|---|",
+                    *(
+                        _row(
+                            [
+                                call["ticker"],
+                                call["instrument"] or "—",
+                                _signed(call["pnl_pct"]),
+                                call["reason"] or "—",
+                            ]
+                        )
+                        for call in stats.get("voided", [])
+                    ),
+                ]
+                if stats.get("voided")
+                else []
+            ),
+            "",
             "### Recent runs",
             "",
             _row(["Run", "Started", "Screened", "New calls", "Closed", "LLM $"]),
@@ -505,7 +548,12 @@ def render_text(stats: dict[str, Any]) -> str:
         f"wrong={overall['wrong']}  neutral={overall['neutral']}  "
         f"hit_rate={_pct(overall['hit_rate_pct'])}",
         f"  TOTAL PnL (equal weight, all {stats['portfolio']['calls_counted']} calls)="
-        f"{_signed(stats['portfolio']['total_pnl_pct'])}",
+        f"{_signed(stats['portfolio']['total_pnl_pct'])}"
+        + (
+            f"   [{overall['voided_calls']} voided, not counted]"
+            if overall.get("voided_calls")
+            else ""
+        ),
         f"  avg PnL/call={_pct(overall['avg_pnl_pct'])}   "
         "portfolio (equal weight, TAKE only)="
         f"{_pct(stats['portfolio']['equal_weight_pnl_pct_take_only'])}",

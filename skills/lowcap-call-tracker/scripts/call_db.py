@@ -29,6 +29,12 @@ from typing import Any
 STATUS_OPEN = "OPEN"
 STATUS_CLOSED_WRONG = "CLOSED_WRONG"  # legacy stop-out, only when a threshold is configured
 STATUS_EXPIRED = "EXPIRED"  # the contract reached its expiration date
+# A call that could never have been executed — no listed options, no borrow, or
+# some other reason it was never takeable. The row is kept in full, because the
+# call WAS made and hiding it would rewrite history, but it is excluded from
+# every performance figure: a position nobody could have held must not move a
+# number that claims to say how the tracker did.
+STATUS_VOID = "VOID"
 KIND_ACTIVE = "active"
 KIND_SHADOW = "shadow"
 # A hit the screener found while the role backend was down. It is tracked like
@@ -469,6 +475,34 @@ class CallDatabase:
             "SELECT role, verdict_json FROM role_verdicts WHERE call_id = ?", (call_id,)
         )
         return {row["role"]: json.loads(row["verdict_json"]) for row in rows}
+
+    def void_call(
+        self, call_id: int, *, reason: str, now: str | None = None
+    ) -> dict[str, Any]:
+        """Mark a call as never-executable and drop it from the statistics.
+
+        Distinct from closing: a closed call counts as a result, a voided one
+        never happened. The stored PnL is left exactly as it was so the record
+        still shows what the call did — the statistics simply stop counting it.
+        """
+        row = self.call(call_id)
+        if row is None:
+            raise KeyError(f"unknown call id {call_id}")
+        stamp = now or utc_now()
+        self.conn.execute(
+            "UPDATE calls SET status = ?, closed_at = COALESCE(closed_at, ?), "
+            "close_reason = ? WHERE id = ?",
+            (STATUS_VOID, stamp, reason, call_id),
+        )
+        self.conn.commit()
+        return {
+            "call_id": call_id,
+            "ticker": row["ticker"],
+            "instrument": row["instrument"],
+            "pnl_pct": row["pnl_pct"],
+            "voided": True,
+            "reason": reason,
+        }
 
     def close_call(self, call_id: int, *, reason: str, now: str | None = None) -> dict[str, Any]:
         """Settle an open call early, at its last known price, for a stated reason.
