@@ -2,11 +2,11 @@
  "counts": {
   "calls": 6,
   "llm_usage": 0,
-  "price_history": 78,
+  "price_history": 82,
   "role_verdicts": 15,
-  "runs": 32
+  "runs": 33
  },
- "exported_at": "2026-09-25T10:41:57+00:00",
+ "exported_at": "2026-09-25T13:05:07+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -27,7 +27,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (dilution)",
     "kind": "shadow",
-    "last_price_at": "2026-09-25T10:27:02+00:00",
+    "last_price_at": "2026-09-25T13:04:27+00:00",
     "notes": " | ticker corrected from SSDEV (FinViz logo-span parse bug)",
     "pnl_pct": 24.0385,
     "position_usd": 945.36,
@@ -103,7 +103,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (extension)",
     "kind": "shadow",
-    "last_price_at": "2026-09-25T10:41:26+00:00",
+    "last_price_at": "2026-09-25T13:04:27+00:00",
     "notes": null,
     "pnl_pct": -18.1818,
     "position_usd": 549.12,
@@ -141,7 +141,7 @@
     "judge_decision": "UNREVIEWED",
     "judge_reason": null,
     "kind": "unreviewed",
-    "last_price_at": "2026-09-25T10:41:26+00:00",
+    "last_price_at": "2026-09-25T13:04:27+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
     "pnl_pct": 39.5501,
     "position_usd": null,
@@ -217,7 +217,7 @@
     "judge_decision": "UNREVIEWED",
     "judge_reason": null,
     "kind": "unreviewed",
-    "last_price_at": "2026-09-25T10:41:26+00:00",
+    "last_price_at": "2026-09-25T13:04:27+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
     "pnl_pct": 0.0,
     "position_usd": null,
@@ -784,6 +784,34 @@
     "call_id": 6,
     "id": 82,
     "observed_at": "2026-09-25T10:41:26+00:00",
+    "pnl_pct": 0.0,
+    "price": 1.2699999809265137
+   },
+   {
+    "call_id": 1,
+    "id": 83,
+    "observed_at": "2026-09-25T13:04:27+00:00",
+    "pnl_pct": 24.0385,
+    "price": 1.2899999618530273
+   },
+   {
+    "call_id": 3,
+    "id": 84,
+    "observed_at": "2026-09-25T13:04:27+00:00",
+    "pnl_pct": -18.1818,
+    "price": 1.440000057220459
+   },
+   {
+    "call_id": 4,
+    "id": 85,
+    "observed_at": "2026-09-25T13:04:27+00:00",
+    "pnl_pct": 39.5501,
+    "price": 14.890000343322754
+   },
+   {
+    "call_id": 6,
+    "id": 86,
+    "observed_at": "2026-09-25T13:04:27+00:00",
     "pnl_pct": 0.0,
     "price": 1.2699999809265137
    }
@@ -1469,6 +1497,23 @@
     "screening_ran": 1,
     "session_reason": "trading day, extended hours",
     "started_at": "2026-09-25T10:41:25+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-25T13:04:50+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 4,
+    "reviewed": 0,
+    "run_id": "run_20260925T130426Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-09-25T13:04:26+00:00"
    }
   ]
  }
