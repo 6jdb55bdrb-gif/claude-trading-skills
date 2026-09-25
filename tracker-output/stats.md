@@ -8,9 +8,9 @@
 
 **Backend:** DOWN · reviewed 3 / unreviewed 3 · TAKE/SKIP 0/3 (0.0% TAKE)
 
-**Total PnL:** +1.13% — equal weight across all 6 priced call(s)
+**Total PnL:** +1.24% — equal weight across all 6 priced call(s)
 
-**Generated:** 2026-09-24T20:27:58+00:00  
+**Generated:** 2026-09-25T07:11:44+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -27,11 +27,11 @@
 | Wrong | 1 |
 | Neutral | 3 |
 | Hit rate % | 33.3 |
-| **Total PnL % (equal weight, all calls)** | +1.13% |
-| Average PnL % per call | 1.13 |
+| **Total PnL % (equal weight, all calls)** | +1.24% |
+| Average PnL % per call | 1.24 |
 | Portfolio PnL % (equal weight, TAKE only) | — |
 
-**Best call:** GRML (long, squeeze, unreviewed) +38.85% — entry 10.67 → 14.8149995803833
+**Best call:** GRML (long, squeeze, unreviewed) +39.55% — entry 10.67 → 14.890000343322754
 **Worst call:** NCPL (short, squeeze, shadow) -27.06% — entry 1.09 → 1.3849999904632568
 
 ### By instrument (call / put)
@@ -45,13 +45,13 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| stock | 6 | 5 | 2 | 1 | 3 | 33.3 | 1.13 |
+| stock | 6 | 5 | 2 | 1 | 3 | 33.3 | 1.24 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| squeeze | 6 | 5 | 2 | 1 | 3 | 33.3 | 1.13 |
+| squeeze | 6 | 5 | 2 | 1 | 3 | 33.3 | 1.24 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
@@ -84,9 +84,9 @@
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20260924T202735Z | 2026-09-24T20:27:35+00:00 | yes | — | — | — |
+| run_20260925T071142Z | 2026-09-25T07:11:42+00:00 | no | — | — | — |
+| run_20260924T202735Z | 2026-09-24T20:27:35+00:00 | yes | 1 | 0 | 0.0 |
 | run_20260924T193032Z | 2026-09-24T19:30:32+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260924T165842Z | 2026-09-24T16:58:42+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260924T152058Z | 2026-09-24T15:20:58+00:00 | yes | 0 | 0 | 0.0 |
-| run_20260924T123112Z | 2026-09-24T12:31:12+00:00 | yes | 0 | 0 | 0.0 |
 

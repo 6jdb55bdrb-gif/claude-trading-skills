@@ -2,11 +2,11 @@
  "counts": {
   "calls": 6,
   "llm_usage": 0,
-  "price_history": 64,
+  "price_history": 69,
   "role_verdicts": 15,
-  "runs": 29
+  "runs": 30
  },
- "exported_at": "2026-09-24T20:28:21+00:00",
+ "exported_at": "2026-09-25T07:11:53+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -27,7 +27,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (dilution)",
     "kind": "shadow",
-    "last_price_at": "2026-09-24T20:27:36+00:00",
+    "last_price_at": "2026-09-25T07:11:44+00:00",
     "notes": " | ticker corrected from SSDEV (FinViz logo-span parse bug)",
     "pnl_pct": 24.0385,
     "position_usd": 945.36,
@@ -103,7 +103,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (extension)",
     "kind": "shadow",
-    "last_price_at": "2026-09-24T20:27:36+00:00",
+    "last_price_at": "2026-09-25T07:11:44+00:00",
     "notes": null,
     "pnl_pct": -18.1818,
     "position_usd": 549.12,
@@ -131,7 +131,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 0,
-    "current_price": 14.8149995803833,
+    "current_price": 14.890000343322754,
     "direction": "long",
     "entry_price": 10.67,
     "expiry_date": null,
@@ -141,9 +141,9 @@
     "judge_decision": "UNREVIEWED",
     "judge_reason": null,
     "kind": "unreviewed",
-    "last_price_at": "2026-09-24T19:30:33+00:00",
+    "last_price_at": "2026-09-25T07:11:44+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
-    "pnl_pct": 38.8472,
+    "pnl_pct": 39.5501,
     "position_usd": null,
     "price_as_of": "2026-09-24",
     "researcher_score": null,
@@ -179,7 +179,7 @@
     "judge_decision": "UNREVIEWED",
     "judge_reason": null,
     "kind": "unreviewed",
-    "last_price_at": "2026-09-24T20:27:36+00:00",
+    "last_price_at": "2026-09-25T07:11:44+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
     "pnl_pct": -10.8808,
     "position_usd": null,
@@ -207,7 +207,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 0,
-    "current_price": 1.27,
+    "current_price": 1.2699999809265137,
     "direction": "long",
     "entry_price": 1.27,
     "expiry_date": null,
@@ -217,11 +217,11 @@
     "judge_decision": "UNREVIEWED",
     "judge_reason": null,
     "kind": "unreviewed",
-    "last_price_at": "2026-09-24T20:27:58+00:00",
+    "last_price_at": "2026-09-25T07:11:44+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
     "pnl_pct": 0.0,
     "position_usd": null,
-    "price_as_of": null,
+    "price_as_of": "2026-09-24",
     "researcher_score": null,
     "review_run_id": null,
     "reviewed_at": null,
@@ -688,6 +688,41 @@
     "observed_at": "2026-09-24T20:27:58+00:00",
     "pnl_pct": 0.0,
     "price": 1.27
+   },
+   {
+    "call_id": 1,
+    "id": 69,
+    "observed_at": "2026-09-25T07:11:44+00:00",
+    "pnl_pct": 24.0385,
+    "price": 1.2899999618530273
+   },
+   {
+    "call_id": 3,
+    "id": 70,
+    "observed_at": "2026-09-25T07:11:44+00:00",
+    "pnl_pct": -18.1818,
+    "price": 1.440000057220459
+   },
+   {
+    "call_id": 4,
+    "id": 71,
+    "observed_at": "2026-09-25T07:11:44+00:00",
+    "pnl_pct": 39.5501,
+    "price": 14.890000343322754
+   },
+   {
+    "call_id": 5,
+    "id": 72,
+    "observed_at": "2026-09-25T07:11:44+00:00",
+    "pnl_pct": -10.8808,
+    "price": 1.7200000286102295
+   },
+   {
+    "call_id": 6,
+    "id": 73,
+    "observed_at": "2026-09-25T07:11:44+00:00",
+    "pnl_pct": 0.0,
+    "price": 1.2699999809265137
    }
   ],
   "role_verdicts": [
@@ -1320,6 +1355,23 @@
     "screening_ran": 1,
     "session_reason": "trading day, extended hours",
     "started_at": "2026-09-24T20:27:35+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-25T07:11:44+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 5,
+    "reviewed": 0,
+    "run_id": "run_20260925T071142Z",
+    "screening_ran": 0,
+    "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
+    "started_at": "2026-09-25T07:11:42+00:00"
    }
   ]
  }
