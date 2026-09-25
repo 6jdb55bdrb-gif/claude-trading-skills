@@ -8,9 +8,11 @@
 
 **Backend:** DOWN · reviewed 2 / unreviewed 3 · TAKE/SKIP 0/2 (0.0% TAKE)
 
-**Total PnL:** +6.91% — equal weight across all 5 priced call(s)
+**Portfolio:** $1,077.03 (+7.70% on $1,000.00) · 50.0% allocated · cash $500.00
 
-**Generated:** 2026-09-25T13:04:50+00:00  
+**Total PnL:** +15.40% — equal weight across all 5 priced call(s)
+
+**Generated:** 2026-09-25T14:27:29+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -24,41 +26,41 @@
 | TAKE calls | 0 |
 | Shadow (SKIP) calls | 2 |
 | Open | 5 |
-| Right | 2 |
+| Right | 3 |
 | Wrong | 0 |
-| Neutral | 3 |
-| Hit rate % | 40.0 |
-| **Total PnL % (equal weight, all calls)** | +6.91% |
-| Average PnL % per call | 6.91 |
+| Neutral | 2 |
+| Hit rate % | 60.0 |
+| **Total PnL % (equal weight, all calls)** | +15.40% |
+| Average PnL % per call | 15.4 |
 | Portfolio PnL % (equal weight, TAKE only) | — |
 
-**Best call:** GRML (long, squeeze, unreviewed) +39.55% — entry 10.67 → 14.890000343322754
-**Worst call:** GDC (long, squeeze, shadow) -18.18% — entry 1.76 → 1.440000057220459
+**Best call:** GRML (long, squeeze, unreviewed) +52.25% — entry 10.67 → 16.2450008392334
+**Worst call:** GDC (long, squeeze, shadow) -21.62% — entry 1.76 → 1.3794000148773193
 
 ### By instrument (call / put)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 2 | 2 | 1 | 0 | 1 | 50.0 | 2.93 |
+| call | 2 | 2 | 1 | 0 | 1 | 50.0 | 9.62 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| stock | 5 | 5 | 2 | 0 | 3 | 40.0 | 6.91 |
+| stock | 5 | 5 | 3 | 0 | 2 | 60.0 | 15.4 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| squeeze | 5 | 5 | 2 | 0 | 3 | 40.0 | 6.91 |
+| squeeze | 5 | 5 | 3 | 0 | 2 | 60.0 | 15.4 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | TAKE | 0 | 0 | 0 | 0 | 0 | — | — |
-| SKIP (shadow) | 2 | 2 | 1 | 0 | 1 | 50.0 | 2.93 |
+| SKIP (shadow) | 2 | 2 | 1 | 0 | 1 | 50.0 | 9.62 |
 
 **Judge edge (avg PnL TAKE − avg PnL shadow):** None → no comparison yet
 
@@ -77,7 +79,7 @@
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | 0-40 | 0 | 0 | 0 | 0 | 0 | — | — |
-| 40-70 | 2 | 2 | 1 | 0 | 1 | 50.0 | 2.93 |
+| 40-70 | 2 | 2 | 1 | 0 | 1 | 50.0 | 9.62 |
 | 70-100 | 0 | 0 | 0 | 0 | 0 | — | — |
 
 
@@ -95,9 +97,9 @@ anything.
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20260925T130426Z | 2026-09-25T13:04:26+00:00 | yes | — | — | — |
+| run_20260925T142702Z | 2026-09-25T14:27:02+00:00 | yes | — | — | — |
+| run_20260925T130426Z | 2026-09-25T13:04:26+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260925T104125Z | 2026-09-25T10:41:25+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260925T102701Z | 2026-09-25T10:27:01+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260925T071142Z | 2026-09-25T07:11:42+00:00 | no | 0 | 0 | 0.0 |
-| run_20260924T202735Z | 2026-09-24T20:27:35+00:00 | yes | 1 | 0 | 0.0 |
 

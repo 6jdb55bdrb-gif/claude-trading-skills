@@ -60,7 +60,7 @@ def test_overlay_is_deep_merged(tmp_path):
     merged = load_config(overlay)
     assert merged["tracker"]["close_threshold_pct"] == -50.0
     # Untouched keys survive the merge.
-    assert merged["tracker"]["account_size"] == 10000.0
+    assert merged["tracker"]["account_size"] == 1000.0
     assert set(merged["screener"]["variants"]) == {"squeeze", "momentum_breakout", "etf_momentum"}
 
 

@@ -88,7 +88,9 @@ CREATE TABLE IF NOT EXISTS calls (
     -- a fresh close from the previous one and refuse to mark backwards.
     price_as_of TEXT,
     -- The screener row, kept so an UNREVIEWED call can be reviewed later.
-    hit_json TEXT
+    hit_json TEXT,
+    -- Dollars committed to this call at entry, fixed and never rebalanced.
+    allocation_usd REAL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_calls_open_ticker
@@ -210,6 +212,7 @@ class CallDatabase:
             ("review_run_id", "ALTER TABLE calls ADD COLUMN review_run_id TEXT"),
             ("hit_json", "ALTER TABLE calls ADD COLUMN hit_json TEXT"),
             ("price_as_of", "ALTER TABLE calls ADD COLUMN price_as_of TEXT"),
+            ("allocation_usd", "ALTER TABLE calls ADD COLUMN allocation_usd REAL"),
         ):
             if column not in existing:
                 self.conn.execute(ddl)
@@ -247,6 +250,7 @@ class CallDatabase:
         run_id: str,
         now: str | None = None,
         allow_short: bool = True,
+        allocation_usd: float | None = None,
     ) -> int | None:
         """Insert a call from a review. Returns the id, or None when a duplicate.
 
@@ -298,8 +302,8 @@ class CallDatabase:
                 researcher_score, technician_score, skeptic_score, risk_manager_score,
                 stop_price, target_price, shares, position_usd, risk_usd,
                 status, current_price, pnl_pct, last_price_at, run_id, backend, notes,
-                reviewed_at, hit_json
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                reviewed_at, hit_json, allocation_usd
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 ticker,
@@ -335,6 +339,7 @@ class CallDatabase:
                 "; ".join(review.get("notes", []))[:500] or None,
                 None if unreviewed else stamp,
                 json.dumps(review.get("hit"), default=str) if review.get("hit") else None,
+                allocation_usd,
             ),
         )
         call_id = int(cursor.lastrowid)
@@ -476,9 +481,7 @@ class CallDatabase:
         )
         return {row["role"]: json.loads(row["verdict_json"]) for row in rows}
 
-    def void_call(
-        self, call_id: int, *, reason: str, now: str | None = None
-    ) -> dict[str, Any]:
+    def void_call(self, call_id: int, *, reason: str, now: str | None = None) -> dict[str, Any]:
         """Mark a call as never-executable and drop it from the statistics.
 
         Distinct from closing: a closed call counts as a result, a voided one

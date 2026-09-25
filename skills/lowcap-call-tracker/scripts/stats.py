@@ -27,6 +27,7 @@ from datetime import datetime, timezone
 from statistics import mean
 from typing import Any
 
+from allocation import money, portfolio_state
 from call_db import (
     KIND_ACTIVE,
     KIND_SHADOW,
@@ -265,6 +266,7 @@ def compute_stats(
             "take_calls_counted": len(take_pnls),
         },
         # An unjudged call chose no instrument, so it belongs in no bucket.
+        "account": portfolio_state(db, config),
         "by_instrument": _by([row for row in rows if row["instrument"]], "instrument"),
         "voided": [
             {
@@ -373,6 +375,12 @@ def render_markdown(stats: dict[str, Any]) -> str:
         ]
     lines += [
         format_backend_line(backend),
+        "",
+        f"**Portfolio:** {money(stats['account']['portfolio_value_usd'])} "
+        f"({_signed(stats['account']['total_return_pct'])} on "
+        f"{money(stats['account']['account_usd'])}) · "
+        f"{stats['account']['allocated_pct']}% allocated · "
+        f"cash {money(stats['account']['cash_usd'])}",
         "",
         f"**Total PnL:** {_signed(stats['portfolio']['total_pnl_pct'])} "
         f"— equal weight across all {stats['portfolio']['calls_counted']} priced call(s)",
@@ -536,6 +544,7 @@ def render_text(stats: dict[str, Any]) -> str:
     overall = stats["overall"]
     take = stats["take_vs_skip"]
     backend = stats.get("backend") or {}
+    account = stats.get("account") or {}
     lines = [
         "=" * 72,
         "CALL STATISTICS",
@@ -547,6 +556,9 @@ def render_text(stats: dict[str, Any]) -> str:
         f"  total={overall['total']}  open={overall['open']}  right={overall['right']}  "
         f"wrong={overall['wrong']}  neutral={overall['neutral']}  "
         f"hit_rate={_pct(overall['hit_rate_pct'])}",
+        f"  PORTFOLIO {money(account['portfolio_value_usd'])} "
+        f"({_signed(account['total_return_pct'])} on {money(account['account_usd'])})  ·  "
+        f"{account['allocated_pct']}% allocated  ·  cash {money(account['cash_usd'])}",
         f"  TOTAL PnL (equal weight, all {stats['portfolio']['calls_counted']} calls)="
         f"{_signed(stats['portfolio']['total_pnl_pct'])}"
         + (

@@ -32,8 +32,14 @@ tracker:
     expiry_warning_days: 7
   # Equal-weight assumption used for "total portfolio PnL" across TAKE calls.
   equal_weight_pct: 100.0
-  # Inputs handed to the position-sizer skill for the RISK MANAGER role.
-  account_size: 10000.0
+  # The account the tracker is pretending to run. Every call takes a fixed
+  # slice of it at entry; what is not in a position is cash.
+  account_size: 1000.0
+  # Dollars per call, as a percent of account_size. 10% -> $100 a call and room
+  # for ten positions. The last position gets whatever cash is actually left,
+  # and once the account is fully committed no further call is funded (it is
+  # still recorded and tracked — the screener's record stays complete).
+  position_pct: 10.0
   risk_pct: 1.0
   max_position_pct: 10.0
   # Safety valve: never open more than this many new calls in one run.

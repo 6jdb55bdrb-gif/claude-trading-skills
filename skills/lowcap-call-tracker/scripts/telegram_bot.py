@@ -46,6 +46,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 import membership as ms
+from allocation import money
 from call_db import KIND_ACTIVE, STATUS_EXPIRED, STATUS_OPEN, CallDatabase
 from option_contract import days_to_expiry
 
@@ -444,6 +445,7 @@ def format_stats_message(stats: dict[str, Any], *, compact: bool = False) -> str
     """Render the statistics block (compact for run pushes, full for /stats)."""
     overall = stats.get("overall", {})
     portfolio = stats.get("portfolio", {})
+    account = stats.get("account", {})
     take_vs_skip = stats.get("take_vs_skip", {})
     if not overall.get("total"):
         return (
@@ -458,6 +460,10 @@ def format_stats_message(stats: dict[str, Any], *, compact: bool = False) -> str
         f"right {overall.get('right')} · wrong {overall.get('wrong')} · "
         f"neutral {overall.get('neutral')} · hit rate "
         f"{_num(overall.get('hit_rate_pct'), '.1f', '%')}",
+        f"<b>Portfolio {money(account.get('portfolio_value_usd'))}</b> "
+        f"({_signed(account.get('total_return_pct'))} on "
+        f"{money(account.get('account_usd'))})",
+        f"{account.get('allocated_pct', 0)}% allocated · cash {money(account.get('cash_usd'))}",
         f"<b>Total PnL {_signed(portfolio.get('total_pnl_pct'))}</b> "
         f"<i>(equal weight, all {portfolio.get('calls_counted', 0)} calls)</i>",
         f"avg PnL {_num(overall.get('avg_pnl_pct'), '.2f', '%')} · portfolio "

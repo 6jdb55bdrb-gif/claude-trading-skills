@@ -2,22 +2,23 @@
  "counts": {
   "calls": 6,
   "llm_usage": 0,
-  "price_history": 82,
+  "price_history": 87,
   "role_verdicts": 15,
-  "runs": 33
+  "runs": 34
  },
- "exported_at": "2026-09-25T13:05:07+00:00",
+ "exported_at": "2026-09-25T14:27:56+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
    {
+    "allocation_usd": 100.0,
     "asset_type": "stock",
     "backend": "heuristic",
     "call_date": "2026-09-20T19:04:44+00:00",
     "close_reason": null,
     "closed_at": null,
     "confidence": 43,
-    "current_price": 1.2899999618530273,
+    "current_price": 1.465000033378601,
     "direction": "long",
     "entry_price": 1.04,
     "expiry_date": "2026-10-23",
@@ -27,11 +28,11 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (dilution)",
     "kind": "shadow",
-    "last_price_at": "2026-09-25T13:04:27+00:00",
+    "last_price_at": "2026-09-25T14:27:04+00:00",
     "notes": " | ticker corrected from SSDEV (FinViz logo-span parse bug)",
-    "pnl_pct": 24.0385,
+    "pnl_pct": 40.8654,
     "position_usd": 945.36,
-    "price_as_of": "2026-09-24",
+    "price_as_of": "2026-09-25",
     "researcher_score": 4.5,
     "review_run_id": null,
     "reviewed_at": null,
@@ -49,6 +50,7 @@
     "ticker": "SDEV"
    },
    {
+    "allocation_usd": null,
     "asset_type": "stock",
     "backend": "heuristic",
     "call_date": "2026-09-21T15:22:46+00:00",
@@ -87,13 +89,14 @@
     "ticker": "NCPL"
    },
    {
+    "allocation_usd": 100.0,
     "asset_type": "stock",
     "backend": "heuristic",
     "call_date": "2026-09-21T18:12:46+00:00",
     "close_reason": null,
     "closed_at": null,
     "confidence": 53,
-    "current_price": 1.440000057220459,
+    "current_price": 1.3794000148773193,
     "direction": "long",
     "entry_price": 1.76,
     "expiry_date": "2026-10-23",
@@ -103,11 +106,11 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (extension)",
     "kind": "shadow",
-    "last_price_at": "2026-09-25T13:04:27+00:00",
+    "last_price_at": "2026-09-25T14:27:04+00:00",
     "notes": null,
-    "pnl_pct": -18.1818,
+    "pnl_pct": -21.625,
     "position_usd": 549.12,
-    "price_as_of": "2026-09-24",
+    "price_as_of": "2026-09-25",
     "researcher_score": 4.5,
     "review_run_id": null,
     "reviewed_at": null,
@@ -125,13 +128,14 @@
     "ticker": "GDC"
    },
    {
+    "allocation_usd": 100.0,
     "asset_type": "stock",
     "backend": "none",
     "call_date": "2026-09-22T08:50:48+00:00",
     "close_reason": null,
     "closed_at": null,
     "confidence": 0,
-    "current_price": 14.890000343322754,
+    "current_price": 16.2450008392334,
     "direction": "long",
     "entry_price": 10.67,
     "expiry_date": null,
@@ -141,11 +145,11 @@
     "judge_decision": "UNREVIEWED",
     "judge_reason": null,
     "kind": "unreviewed",
-    "last_price_at": "2026-09-25T13:04:27+00:00",
+    "last_price_at": "2026-09-25T14:27:04+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
-    "pnl_pct": 39.5501,
+    "pnl_pct": 52.2493,
     "position_usd": null,
-    "price_as_of": "2026-09-24",
+    "price_as_of": "2026-09-25",
     "researcher_score": null,
     "review_run_id": null,
     "reviewed_at": null,
@@ -163,13 +167,14 @@
     "ticker": "GRML"
    },
    {
+    "allocation_usd": 100.0,
     "asset_type": "stock",
     "backend": "none",
     "call_date": "2026-09-23T14:24:21+00:00",
     "close_reason": null,
     "closed_at": null,
     "confidence": 0,
-    "current_price": 1.7200000286102295,
+    "current_price": 1.7100000381469727,
     "direction": "long",
     "entry_price": 1.93,
     "expiry_date": null,
@@ -179,11 +184,11 @@
     "judge_decision": "UNREVIEWED",
     "judge_reason": null,
     "kind": "unreviewed",
-    "last_price_at": "2026-09-25T10:41:26+00:00",
+    "last_price_at": "2026-09-25T14:27:04+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
-    "pnl_pct": -10.8808,
+    "pnl_pct": -11.399,
     "position_usd": null,
-    "price_as_of": "2026-09-24",
+    "price_as_of": "2026-09-25",
     "researcher_score": null,
     "review_run_id": null,
     "reviewed_at": null,
@@ -201,13 +206,14 @@
     "ticker": "MSS"
    },
    {
+    "allocation_usd": 100.0,
     "asset_type": "stock",
     "backend": "none",
     "call_date": "2026-09-24T20:27:58+00:00",
     "close_reason": null,
     "closed_at": null,
     "confidence": 0,
-    "current_price": 1.2699999809265137,
+    "current_price": 1.4850000143051147,
     "direction": "long",
     "entry_price": 1.27,
     "expiry_date": null,
@@ -217,11 +223,11 @@
     "judge_decision": "UNREVIEWED",
     "judge_reason": null,
     "kind": "unreviewed",
-    "last_price_at": "2026-09-25T13:04:27+00:00",
+    "last_price_at": "2026-09-25T14:27:04+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
-    "pnl_pct": 0.0,
+    "pnl_pct": 16.9291,
     "position_usd": null,
-    "price_as_of": "2026-09-24",
+    "price_as_of": "2026-09-25",
     "researcher_score": null,
     "review_run_id": null,
     "reviewed_at": null,
@@ -814,6 +820,41 @@
     "observed_at": "2026-09-25T13:04:27+00:00",
     "pnl_pct": 0.0,
     "price": 1.2699999809265137
+   },
+   {
+    "call_id": 1,
+    "id": 87,
+    "observed_at": "2026-09-25T14:27:04+00:00",
+    "pnl_pct": 40.8654,
+    "price": 1.465000033378601
+   },
+   {
+    "call_id": 3,
+    "id": 88,
+    "observed_at": "2026-09-25T14:27:04+00:00",
+    "pnl_pct": -21.625,
+    "price": 1.3794000148773193
+   },
+   {
+    "call_id": 4,
+    "id": 89,
+    "observed_at": "2026-09-25T14:27:04+00:00",
+    "pnl_pct": 52.2493,
+    "price": 16.2450008392334
+   },
+   {
+    "call_id": 5,
+    "id": 90,
+    "observed_at": "2026-09-25T14:27:04+00:00",
+    "pnl_pct": -11.399,
+    "price": 1.7100000381469727
+   },
+   {
+    "call_id": 6,
+    "id": 91,
+    "observed_at": "2026-09-25T14:27:04+00:00",
+    "pnl_pct": 16.9291,
+    "price": 1.4850000143051147
    }
   ],
   "role_verdicts": [
@@ -1514,6 +1555,23 @@
     "screening_ran": 1,
     "session_reason": "trading day, extended hours",
     "started_at": "2026-09-25T13:04:26+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-25T14:27:29+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 5,
+    "reviewed": 0,
+    "run_id": "run_20260925T142702Z",
+    "screening_ran": 1,
+    "session_reason": "regular trading hours",
+    "started_at": "2026-09-25T14:27:02+00:00"
    }
   ]
  }

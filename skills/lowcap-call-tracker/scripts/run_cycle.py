@@ -25,6 +25,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
+from allocation import portfolio_state, slice_usd
 from call_db import DECISION_UNREVIEWED, KIND_ACTIVE, KIND_UNREVIEWED, CallDatabase
 from fetch_screener import FetchError, screen_all
 from llm_client import LLMClient, current_month
@@ -289,7 +290,13 @@ def run_cycle(
                 if dry_run:
                     report["new_calls"].append({**_call_line(review), "call_id": None})
                     continue
-                call_id = db.insert_call(review, run_id=run_id, allow_short=short_allowed(config))
+                cash = portfolio_state(db, config)["cash_usd"]
+                call_id = db.insert_call(
+                    review,
+                    run_id=run_id,
+                    allow_short=short_allowed(config),
+                    allocation_usd=slice_usd(config, cash_available=cash),
+                )
                 if call_id is None:
                     report["duplicates_skipped"].append(review["ticker"])
                     continue

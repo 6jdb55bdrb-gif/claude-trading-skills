@@ -255,6 +255,7 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 
 **Scripts:**
 
+- `skills/lowcap-call-tracker/scripts/allocation.py`
 - `skills/lowcap-call-tracker/scripts/call_db.py`
 - `skills/lowcap-call-tracker/scripts/config.py`
 - `skills/lowcap-call-tracker/scripts/fetch_screener.py`
