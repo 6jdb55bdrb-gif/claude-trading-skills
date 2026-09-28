@@ -2,17 +2,17 @@
 
 > ## ⛔ BACKEND DOWN
 >
-> The role review could not run: ANTHROPIC_API_KEY is not set.
+> The role review could not run: the 'anthropic' package is not installed.
 > New screener hits are recorded UNREVIEWED and will be judged on the
 > next healthy run. No decision below was made while the backend was down.
 
 **Backend:** DOWN · reviewed 6 / unreviewed 0 · TAKE/SKIP 0/6 (0.0% TAKE)
 
-**Portfolio:** $1,009.12 (+0.91% on $1,000.00) · 60.0% allocated · cash $400.00
+**Portfolio:** $1,009.61 (+0.96% on $1,000.00) · 20.0% allocated · cash $756.72
 
-**Total PnL:** +1.52% — equal weight across all 6 priced call(s)
+**Total PnL:** +1.60% — equal weight across all 6 priced call(s)
 
-**Generated:** 2026-09-28T16:30:19+00:00  
+**Generated:** 2026-09-28T16:34:13+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -25,42 +25,42 @@
 | Voided (not executable) | 1 |
 | TAKE calls | 0 |
 | Shadow (SKIP) calls | 6 |
-| Open | 6 |
+| Open | 2 |
 | Right | 3 |
-| Wrong | 0 |
-| Neutral | 3 |
+| Wrong | 3 |
+| Neutral | 0 |
 | Hit rate % | 50.0 |
-| **Total PnL % (equal weight, all calls)** | +1.52% |
-| Average PnL % per call | 1.52 |
+| **Total PnL % (equal weight, all calls)** | +1.60% |
+| Average PnL % per call | 1.6 |
 | Portfolio PnL % (equal weight, TAKE only) | — |
 
-**Best call:** SDEV (long, squeeze, shadow) +45.19% — entry 1.04 → 1.5099999904632568
-**Worst call:** GDC (long, squeeze, shadow) -25.57% — entry 1.76 → 1.309999942779541
+**Best call:** SDEV (long, squeeze, shadow) +45.67% — entry 1.04 → 1.5149999856948853
+**Worst call:** GDC (long, squeeze, shadow) -25.52% — entry 1.76 → 1.3107999563217163
 
 ### By instrument (call / put)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 6 | 6 | 3 | 0 | 3 | 50.0 | 1.52 |
+| call | 6 | 2 | 3 | 3 | 0 | 50.0 | 1.6 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| stock | 6 | 6 | 3 | 0 | 3 | 50.0 | 1.52 |
+| stock | 6 | 2 | 3 | 3 | 0 | 50.0 | 1.6 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| squeeze | 6 | 6 | 3 | 0 | 3 | 50.0 | 1.52 |
+| squeeze | 6 | 2 | 3 | 3 | 0 | 50.0 | 1.6 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | TAKE | 0 | 0 | 0 | 0 | 0 | — | — |
-| SKIP (shadow) | 6 | 6 | 3 | 0 | 3 | 50.0 | 1.52 |
+| SKIP (shadow) | 6 | 2 | 3 | 3 | 0 | 50.0 | 1.6 |
 
 **Judge edge (avg PnL TAKE − avg PnL shadow):** None → no comparison yet
 
@@ -68,18 +68,18 @@
 
 | Role | Avg score (winners) | Avg score (others) | Edge | Corr(score, PnL) | n | Polarity |
 |---|---|---|---|---|---|---|
-| researcher | 6.0 | 4.5 | 1.5 | 0.123 | 6 | quality (higher is better) |
-| technician | 4.67 | 5.0 | -0.33 | 0.147 | 6 | quality (higher is better) |
-| skeptic | 8.33 | 6.83 | 1.5 | 0.652 | 6 | severity (lower is better) |
-| risk_manager | 5.33 | 5.0 | 0.33 | 0.551 | 6 | quality (higher is better) |
+| researcher | 6.0 | 4.5 | 1.5 | 0.136 | 6 | quality (higher is better) |
+| technician | 4.67 | 5.0 | -0.33 | 0.15 | 6 | quality (higher is better) |
+| skeptic | 8.33 | 6.83 | 1.5 | 0.643 | 6 | severity (lower is better) |
+| risk_manager | 5.33 | 5.0 | 0.33 | 0.554 | 6 | quality (higher is better) |
 
 ### Confidence buckets
 
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| 0-40 | 1 | 1 | 0 | 0 | 1 | 0.0 | -13.41 |
-| 40-70 | 5 | 5 | 3 | 0 | 2 | 60.0 | 4.51 |
+| 0-40 | 1 | 0 | 0 | 1 | 0 | 0.0 | -14.17 |
+| 40-70 | 5 | 2 | 3 | 2 | 0 | 60.0 | 4.76 |
 | 70-100 | 0 | 0 | 0 | 0 | 0 | — | — |
 
 
@@ -97,9 +97,9 @@ anything.
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20260928T162954Z | 2026-09-28T16:29:54+00:00 | yes | — | — | — |
+| run_20260928T163350Z | 2026-09-28T16:33:50+00:00 | yes | — | — | — |
+| run_20260928T163238Z | 2026-09-28T16:32:38+00:00 | yes | 0 | 4 | 0.0 |
+| run_20260928T162954Z | 2026-09-28T16:29:54+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260928T155514Z | 2026-09-28T15:55:14+00:00 | yes | 0 | 0 | 0.0 |
 | run_20260928T140429Z | 2026-09-28T14:04:29+00:00 | yes | 0 | 0 | 0.0 |
-| run_20260928T140229Z | 2026-09-28T14:02:29+00:00 | yes | 1 | 0 | 0.0 |
-| run_20260928T091305Z | 2026-09-28T09:13:05+00:00 | yes | 0 | 0 | 0.0 |
 

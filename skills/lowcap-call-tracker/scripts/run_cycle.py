@@ -417,9 +417,17 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
     lines += ["", "CLOSED THIS RUN"]
     if closed:
         for update in closed:
+            pnl = update["pnl_pct"] or 0.0
+            if update.get("stopped"):
+                # A trailing stop is an exit, not a verdict: banked above the
+                # entry is a WIN, and calling it WRONG would libel the call.
+                why = "trailing stop"
+            elif update.get("expired"):
+                why = "contract expired"
+            else:
+                why = f"threshold {report['price_update']['threshold_pct']}%"
             lines.append(
-                f"  {update['ticker']:<6} pnl={update['pnl_pct']:+.1f}% "
-                f"<= {report['price_update']['threshold_pct']}% → WRONG"
+                f"  {update['ticker']:<6} pnl={pnl:+.1f}% → {'WIN' if pnl > 0 else 'LOSS'} ({why})"
             )
     else:
         lines.append("  (none)")

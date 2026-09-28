@@ -106,3 +106,34 @@ def test_a_stopped_ticker_can_be_called_again(tmp_db, config):
     _open(tmp_db)
     _walk(tmp_db, _cfg(config), "AAA", [8.0])
     assert tmp_db.insert_call(review_payload("AAA", entry=8.0), run_id="r2") is not None
+
+
+def test_a_stopped_winner_is_never_reported_as_wrong(tmp_db, config):
+    """A trailing stop banks a gain; the closed list must not call that WRONG."""
+    from run_cycle import format_report
+    from stats import compute_stats
+
+    cfg = _cfg(config)
+    _open(tmp_db)
+    update_open_calls(tmp_db, cfg, prices={"AAA": 16.0})
+    result = update_open_calls(tmp_db, cfg, prices={"AAA": 13.5})
+    report = {
+        "run_id": "r1",
+        "session": {"as_of": "2026-09-28T12:00:00-04:00", "reason": "regular trading hours"},
+        "screening_ran": True,
+        "llm": {"available": False, "reason": "x"},
+        "backend_health": {"ok": True, "reason": "ok", "checked": True, "model": "m"},
+        "new_calls": [],
+        "duplicates_skipped": [],
+        "reviews": [],
+        "errors": [],
+        "price_update": result,
+        "stats": compute_stats(tmp_db, cfg),
+        "llm_cost": {"cost_usd": 0.0, "calls": 0, "input_tokens": 0, "output_tokens": 0},
+        "llm_month_to_date_usd": 0.0,
+        "llm_cap_usd": 10.0,
+    }
+    text = format_report(report)
+    assert "+35.0% → WIN (trailing stop)" in text
+    assert "WRONG" not in text
+    assert "None%" not in text
