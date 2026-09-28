@@ -134,6 +134,8 @@ def update_open_calls(
     raw_threshold = config["tracker"].get("close_threshold_pct")
     threshold = None if raw_threshold is None else float(raw_threshold)
     close_on_expiry = bool(config["tracker"].get("close_on_expiry", True))
+    raw_trail = config["tracker"].get("trailing_stop_pct")
+    trailing = None if raw_trail is None else float(raw_trail)
     open_calls = db.open_calls()
     tickers = [row["ticker"] for row in open_calls]
     # An explicitly empty mapping means "offline, no prices" — not "go fetch".
@@ -188,7 +190,13 @@ def update_open_calls(
                 }
             )
             continue
-        result = db.apply_price(row["id"], float(price), close_threshold_pct=threshold, as_of=as_of)
+        result = db.apply_price(
+            row["id"],
+            float(price),
+            close_threshold_pct=threshold,
+            as_of=as_of,
+            trailing_stop_pct=trailing,
+        )
         result["stale_source"] = False
         result.update({"priced": True, "stale_days": 0, **common})
         updates.append(result)
@@ -218,6 +226,9 @@ def format_updates(result: dict[str, Any]) -> str:
         if update.get("expired"):
             verdict = "RIGHT" if (update.get("pnl_pct") or 0) > 0 else "WRONG"
             tag = f"EXPIRED ({verdict})"
+        elif update.get("stopped"):
+            verdict = "WIN" if (update.get("pnl_pct") or 0) > 0 else "LOSS"
+            tag = f"STOPPED ({verdict})"
         elif update["closed"]:
             tag = "CLOSED (WRONG)"
         elif update.get("stale_source"):

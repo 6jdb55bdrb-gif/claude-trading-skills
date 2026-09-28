@@ -105,6 +105,8 @@ def test_no_other_auto_close_exists(tmp_db):
 
 
 def test_threshold_is_taken_from_config(tmp_db, config):
+    """The legacy threshold stop-out, tested without the trailing stop."""
+    config = {**config, "tracker": {**config["tracker"], "trailing_stop_pct": None}}
     config["tracker"]["close_threshold_pct"] = -30.0
     call_id = tmp_db.insert_call(review_payload("AAA", entry=10.0), run_id="r1")
     update_open_calls(tmp_db, config, prices={"AAA": 6.5})  # -35%
@@ -115,6 +117,7 @@ def test_threshold_is_taken_from_config(tmp_db, config):
 
 
 def test_update_prices_every_open_call_including_shadows(tmp_db, config):
+    config = {**config, "tracker": {**config["tracker"], "trailing_stop_pct": None}}
     tmp_db.insert_call(review_payload("AAA", entry=10.0), run_id="r1")
     tmp_db.insert_call(review_payload("BBB", decision="SKIP", entry=5.0), run_id="r1")
     result = update_open_calls(tmp_db, config, prices={"AAA": 11.0, "BBB": 4.0})
@@ -417,6 +420,7 @@ def test_dry_run_writes_nothing(config, tmp_path):
 
 
 def test_cycle_settles_a_contract_at_expiry(config, tmp_path):
+    config = {**config, "tracker": {**config["tracker"], "trailing_stop_pct": None}}
     """A deep drawdown does NOT close a call; the expiration date does."""
     config["tracker"]["stats_file"] = str(tmp_path / "stats.md")
     kwargs = _cycle_kwargs(tmp_path)

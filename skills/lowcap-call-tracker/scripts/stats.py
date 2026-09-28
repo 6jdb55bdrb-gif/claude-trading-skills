@@ -34,6 +34,7 @@ from call_db import (
     KIND_UNREVIEWED,
     STATUS_EXPIRED,
     STATUS_OPEN,
+    STATUS_STOPPED,
     STATUS_VOID,
     CallDatabase,
 )
@@ -59,7 +60,8 @@ def outcome(row: sqlite3.Row | dict[str, Any]) -> str:
     """
     pnl = row["pnl_pct"]
     status = row["status"]
-    if status == STATUS_EXPIRED:
+    if status in (STATUS_EXPIRED, STATUS_STOPPED):
+        # A trailing stop is an exit, not a verdict: banked above entry is RIGHT.
         return "RIGHT" if (pnl is not None and pnl > 0) else "WRONG"
     if status != STATUS_OPEN:
         return "WRONG"

@@ -171,6 +171,8 @@ def test_days_to_expiry_and_is_expired():
 
 
 def test_a_call_survives_a_crash_until_its_contract_expires(tmp_db, config):
+    """With no trailing stop configured, only the contract date closes a call."""
+    config = {**config, "tracker": {**config["tracker"], "trailing_stop_pct": None}}
     """The whole point of the change: no drawdown closes a call any more."""
     call_id = tmp_db.insert_call(review_payload("DEEP", entry=10.0), run_id="r1")
     tmp_db.conn.execute("UPDATE calls SET expiry_date = ? WHERE id = ?", ("2099-01-16", call_id))
@@ -183,6 +185,7 @@ def test_a_call_survives_a_crash_until_its_contract_expires(tmp_db, config):
 
 
 def test_the_price_update_settles_an_expired_contract(tmp_db, config):
+    config = {**config, "tracker": {**config["tracker"], "trailing_stop_pct": None}}
     call_id = tmp_db.insert_call(review_payload("GONE", entry=10.0), run_id="r1")
     tmp_db.conn.execute("UPDATE calls SET expiry_date = '2026-01-16' WHERE id = ?", (call_id,))
     tmp_db.conn.commit()

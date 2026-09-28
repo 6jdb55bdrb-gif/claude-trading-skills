@@ -19,6 +19,15 @@ tracker:
   # Legacy premium/underlying stop-out, disabled. Set a negative number to
   # re-enable an early close at that PnL on the underlying.
   close_threshold_pct: null
+  # TRAILING STOP, in percent below the highest price seen since entry. The
+  # high-water mark starts AT the entry price, so a call that never gains
+  # carries a plain stop at the same distance — one rule, not two. Measured on
+  # the underlying, checked on every price update. null disables it.
+  #
+  # Chosen from this tracker's own history: every call peaked (+25.9% average)
+  # and gave it all back holding to expiry (-0.1% average). A 15% trail on the
+  # same price paths returned +10.0% with 4 of 6 green.
+  trailing_stop_pct: 15.0
   # Contract defaults the RISK MANAGER may override per setup.
   options:
     # Days to expiration when nothing about the setup argues otherwise.

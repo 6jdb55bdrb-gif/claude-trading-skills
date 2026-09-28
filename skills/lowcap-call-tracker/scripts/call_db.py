@@ -35,6 +35,10 @@ STATUS_EXPIRED = "EXPIRED"  # the contract reached its expiration date
 # every performance figure: a position nobody could have held must not move a
 # number that claims to say how the tracker did.
 STATUS_VOID = "VOID"
+# Closed by the trailing stop. Unlike the legacy threshold stop-out this is not
+# a verdict: a call stopped above its entry is a WINNER that was banked, and one
+# stopped below it is a loser that was cut.
+STATUS_STOPPED = "STOPPED"
 KIND_ACTIVE = "active"
 KIND_SHADOW = "shadow"
 # A hit the screener found while the role backend was down. It is tracked like
@@ -90,7 +94,11 @@ CREATE TABLE IF NOT EXISTS calls (
     -- The screener row, kept so an UNREVIEWED call can be reviewed later.
     hit_json TEXT,
     -- Dollars committed to this call at entry, fixed and never rebalanced.
-    allocation_usd REAL
+    allocation_usd REAL,
+    -- Highest price seen since entry, the high-water mark the trailing stop
+    -- measures from. Starts at the entry price, so a call that never rises
+    -- carries a plain stop at the same distance — one rule, not two.
+    peak_price REAL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_calls_open_ticker
@@ -213,6 +221,7 @@ class CallDatabase:
             ("hit_json", "ALTER TABLE calls ADD COLUMN hit_json TEXT"),
             ("price_as_of", "ALTER TABLE calls ADD COLUMN price_as_of TEXT"),
             ("allocation_usd", "ALTER TABLE calls ADD COLUMN allocation_usd REAL"),
+            ("peak_price", "ALTER TABLE calls ADD COLUMN peak_price REAL"),
         ):
             if column not in existing:
                 self.conn.execute(ddl)
@@ -220,6 +229,10 @@ class CallDatabase:
         # call is excluded — its NULL instrument is deliberate (nobody chose a
         # contract), and backfilling one here would re-invent the very claim the
         # unjudged state exists to avoid.
+        self.conn.execute(
+            "UPDATE calls SET peak_price = MAX(COALESCE(peak_price, 0), entry_price, "
+            "COALESCE(current_price, 0)) WHERE peak_price IS NULL"
+        )
         self.conn.execute(
             "UPDATE calls SET instrument = CASE WHEN direction = 'short' THEN 'put' "
             "ELSE 'call' END WHERE instrument IS NULL AND kind != ?",
@@ -302,8 +315,8 @@ class CallDatabase:
                 researcher_score, technician_score, skeptic_score, risk_manager_score,
                 stop_price, target_price, shares, position_usd, risk_usd,
                 status, current_price, pnl_pct, last_price_at, run_id, backend, notes,
-                reviewed_at, hit_json, allocation_usd
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                reviewed_at, hit_json, allocation_usd, peak_price
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 ticker,
@@ -340,6 +353,7 @@ class CallDatabase:
                 None if unreviewed else stamp,
                 json.dumps(review.get("hit"), default=str) if review.get("hit") else None,
                 allocation_usd,
+                float(entry),
             ),
         )
         call_id = int(cursor.lastrowid)
@@ -570,6 +584,7 @@ class CallDatabase:
         close_threshold_pct: float | None,
         now: str | None = None,
         as_of: str | None = None,
+        trailing_stop_pct: float | None = None,
     ) -> dict[str, Any]:
         """Record a price observation, recompute PnL, and close at the threshold."""
         row = self.call(call_id)
@@ -578,6 +593,51 @@ class CallDatabase:
         stamp = now or utc_now()
         pnl = pnl_pct(row["entry_price"], price, row["direction"])
         closed = False
+
+        # The high-water mark only ever rises, and starts at the entry price, so
+        # a call that never gains carries a stop at the same distance below entry.
+        peak = max(float(row["peak_price"] or row["entry_price"]), float(price))
+        stopped = False
+        if trailing_stop_pct and row["status"] == STATUS_OPEN and peak > 0:
+            drop_pct = (float(price) - peak) / peak * 100.0
+            stopped = drop_pct <= -abs(float(trailing_stop_pct))
+        if stopped:
+            self.conn.execute(
+                """
+                UPDATE calls SET current_price = ?, pnl_pct = ?, last_price_at = ?,
+                       price_as_of = COALESCE(?, price_as_of), peak_price = ?,
+                       status = ?, closed_at = ?, close_reason = ?
+                 WHERE id = ?
+                """,
+                (
+                    price,
+                    pnl,
+                    stamp,
+                    as_of,
+                    peak,
+                    STATUS_STOPPED,
+                    stamp,
+                    f"trailing stop {abs(float(trailing_stop_pct)):.0f}% from peak "
+                    f"{peak:.4f}".rstrip("0").rstrip("."),
+                    call_id,
+                ),
+            )
+            self.conn.execute(
+                "INSERT INTO price_history (call_id, observed_at, price, pnl_pct) VALUES (?,?,?,?)",
+                (call_id, stamp, price, pnl),
+            )
+            self.conn.commit()
+            return {
+                "call_id": call_id,
+                "ticker": row["ticker"],
+                "price": price,
+                "pnl_pct": pnl,
+                "closed": True,
+                "stopped": True,
+                "peak_price": peak,
+                "price_as_of": as_of or row["price_as_of"],
+            }
+
         stop_out = (
             close_threshold_pct is not None
             and pnl is not None
@@ -607,8 +667,8 @@ class CallDatabase:
         else:
             self.conn.execute(
                 "UPDATE calls SET current_price = ?, pnl_pct = ?, last_price_at = ?, "
-                "price_as_of = COALESCE(?, price_as_of) WHERE id = ?",
-                (price, pnl, stamp, as_of, call_id),
+                "price_as_of = COALESCE(?, price_as_of), peak_price = ? WHERE id = ?",
+                (price, pnl, stamp, as_of, peak, call_id),
             )
         self.conn.execute(
             "INSERT INTO price_history (call_id, observed_at, price, pnl_pct) VALUES (?,?,?,?)",
@@ -621,6 +681,8 @@ class CallDatabase:
             "price": price,
             "pnl_pct": pnl,
             "closed": closed,
+            "stopped": False,
+            "peak_price": peak,
             "price_as_of": as_of or row["price_as_of"],
         }
 
