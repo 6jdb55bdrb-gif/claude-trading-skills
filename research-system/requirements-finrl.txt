@@ -1,0 +1,6 @@
+# FinRL is installed WITHOUT its own dependency list (--no-deps): upstream pins ccxt 3.x and
+# pulls ray/jqdatasdk/elegantrl. requirements-finrl.lock holds the exact, tested set that
+# FinRL's StockTradingEnv + SB3 DRLAgent import chain needs (alpaca/wrds/yfinance/selenium are
+# import-only: finrl/__init__.py imports every data processor).
+# PyPI finrl (0.3.7) is stale; pin the GitHub master commit reviewed on 2026-09-29.
+finrl @ git+https://github.com/AI4Finance-Foundation/FinRL.git@e60e26e4870f00fbc704c6297edfd9d81816b3d3

@@ -1,0 +1,57 @@
+# Research-system settings. Copy to config/settings.yaml (git-ignored) to change anything.
+# The code reads settings.yaml if it exists, otherwise this example file.
+
+# ---------------------------------------------------------------------------
+# SAFETY: paper trading only.
+# Live trading is possible ONLY if YOU edit your own settings.yaml so that ALL of
+# the following hold. No script, agent or CI job ever writes these three fields.
+#   trading_mode: live
+#   live_trading_enabled: true
+#   live_trading_ack: "I ACCEPT REAL MONEY RISK"
+# Even then, no exchange API keys are ever stored in this repository.
+# ---------------------------------------------------------------------------
+trading_mode: paper
+live_trading_enabled: false
+live_trading_ack: ""
+
+data:
+  exchange: okx            # Binance is geo-blocked from the build environment; okx or kraken also work
+  quote: USDT
+  start: "2022-10-01"      # >= 3 years of history
+  end: null                # null = up to the last fully closed candle
+  timeframes: ["1d", "4h"]
+
+universe:
+  source: coinmarketcap    # live /v1/cryptocurrency/listings/latest (needs CMC_API_KEY)
+  top_n: 50
+  min_volume_24h_usd: 50000000
+  max_pairs: 15
+  always_include: [BTC, ETH]
+  # Rejected when any CMC tag contains one of these words
+  exclude_tag_keywords: [stablecoin, wrapped, tokenized-gold, bridged]
+  # Rejected by symbol (stablecoins, wrapped/staked/bridged duplicates, gold tokens)
+  exclude_symbols: [USDT, USDC, DAI, FDUSD, TUSD, USDE, USDS, PYUSD, USDD, BUSD, USD1, RLUSD, USDG,
+                    USDTB, USDF, USDX, FRAX, GUSD, USDP, EURC, WBTC, WETH, STETH, WSTETH, WEETH,
+                    CBBTC, BTCB, LBTC, RETH, CBETH, METH, SOLVBTC, BSC-USD, PAXG, XAUT]
+
+costs:
+  fee_pct_per_side: 0.10
+  slippage_pct_per_side: 0.05
+  slippage_stress_pct_per_side: 0.15
+
+risk:                      # enforced by the RISK MANAGER in Phase 5
+  max_position_pct: 20
+  stoploss_pct: 10         # hard stoploss on every non-baseline trade
+  max_daily_loss_pct: 3
+  max_drawdown_stop_pct: 20
+  leverage: 1              # futures/margin disabled
+
+paper:
+  starting_wallet_usdt: 10000
+
+supertrend:                # PLACEHOLDER defaults until you send your parameters
+  params_confirmed: false
+  pair: BTC/USDT
+  timeframe: 4h
+  atr_period: 10
+  multiplier: 3.0

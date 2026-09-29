@@ -8,36 +8,79 @@ An evidence-driven research pipeline that decides whether to focus on **TRADING*
 
 | Phase | Role | Status | Output |
 |---|---|---|---|
-| 1 | RESEARCHER | ✅ Done | [phase-reports/phase1_researcher.md](phase-reports/phase1_researcher.md), [data/phase1_scores.json](data/phase1_scores.json) |
-| 2 | STRATEGIST | ✅ Done, ⏸ **awaiting your confirmation** | [phase-reports/phase2_strategist.md](phase-reports/phase2_strategist.md) |
-| 3 | DATA ENGINEER + DEVELOPER | ⏳ Not started | Docker stack, ccxt/CMC pipelines, strategies |
+| 1 | RESEARCHER | ✅ Done | [phase1_researcher.md](phase-reports/phase1_researcher.md), [phase1_scores.json](data/phase1_scores.json) |
+| 2 | STRATEGIST | ✅ Done (TRADING, confirmed) | [phase2_strategist.md](phase-reports/phase2_strategist.md) |
+| 3 | DATA ENGINEER + DEVELOPER | 🔨 Checkpoint 1: core pipeline verified; waiting on CMC key, SuperTrend parameters, eliza tokens | [phase3_build.md](phase-reports/phase3_build.md) |
 | 4 | BACKTESTER | ⏳ | freqtrade → jesse → nautilus_trader results |
 | 5 | RISK MANAGER | ⏳ | Limits and veto report |
 | 6 | REVIEWER | ⏳ | Final verdict |
-
-**Current decision:** TRADING (crypto). Net score 7.57 vs 4.17. See the Phase 2 report for the reasoning and for what I need from you.
 
 ## Layout
 
 ```
 research-system/
-├── data/phase1_scores.json   # Researcher scores and facts (edit to re-run the decision)
-├── scripts/decide.py         # Strategist decision rule (stdlib only)
-├── tests/test_decide.py      # Tests for the decision rule
-└── phase-reports/            # One report per phase, labelled with the active role
+├── config/settings.example.yaml  # all knobs; copy to settings.yaml (git-ignored) to change
+├── .env.example                  # API keys go in .env (git-ignored), never in code
+├── rsys/                         # Python package
+│   ├── safety.py                 # paper-only lock
+│   ├── universe.py               # live CoinMarketCap universe + filters
+│   ├── ohlcv.py                  # ccxt candles -> canonical CSV (+ validation)
+│   ├── indicators.py             # shared SuperTrend (same signals in every engine)
+│   ├── freqtrade_config.py       # paper-only freqtrade configs
+│   ├── finrl_agent.py            # FinRL PPO agent
+│   └── cli.py                    # python -m rsys.cli ...
+├── freqtrade/user_data/strategies/  # BuyAndHold, SuperTrendStrategy
+├── docker/ + docker-compose.yml  # research, finrl, freqtrade, freqtrade-paper
+├── data/phase1_scores.json       # Researcher scores (edit to re-run the decision)
+├── data/universe/                # CMC universe snapshots (committed for audit)
+├── data/ohlcv/                   # downloaded candles (git-ignored, re-downloadable)
+├── scripts/decide.py             # Strategist decision rule
+├── tests/                        # unit tests (python -m pytest tests)
+└── phase-reports/                # one report per phase, labelled with the active role
 ```
 
-## Re-running the decision
+## Setup
+
+Requirements: Docker with Compose v2. Everything else runs inside containers.
 
 ```bash
-python3 research-system/scripts/decide.py            # prints the decision as JSON
-python3 -m pytest research-system/tests -q           # tests for the decision rule
+cd research-system
+cp .env.example .env               # then put your CoinMarketCap key in CMC_API_KEY
+docker compose build research
+docker compose build finrl         # large (torch); only needed for the RL agent
+
+# 1. Universe (live from the CoinMarketCap API) and candles (ccxt, OKX by default)
+docker compose run --rm research universe
+docker compose run --rm research download
+docker compose run --rm research export-freqtrade
+docker compose run --rm research freqtrade-config   # dry_run is forced on
+
+# 2. Backtests
+docker compose run --rm freqtrade backtesting --config user_data/config.base.json \
+    --config user_data/config.buyhold.json --fee 0.0015
+docker compose run --rm freqtrade backtesting --config user_data/config.base.json \
+    --config user_data/config.supertrend.json --fee 0.0015
+docker compose run --rm freqtrade lookahead-analysis --config user_data/config.base.json \
+    --config user_data/config.supertrend.json --fee 0.0015
+docker compose run --rm finrl --timesteps 50000 --seeds 5   # validation window only
+
+# 3. Paper trading bot (dry-run)
+docker compose --profile paper up -d freqtrade-paper
 ```
 
-To challenge the decision, change a score or weight in `data/phase1_scores.json` and re-run. The rule is:
+Without Docker: `pip install -r requirements.txt`, then `python -m rsys.cli <command>` from `research-system/`.
 
-- Each path's score is the weighted mean of its core tools' scores (the main engine counts twice).
-- One point is subtracted for each Phase 4 validation engine that cannot trade that path's assets.
+If you sit behind a TLS-intercepting proxy, build with `--secret id=extra_ca,src=<ca.crt>`. The certificate is never copied into the image.
+
+## Re-running the Phase 2 decision
+
+```bash
+python3 scripts/decide.py     # prints the decision as JSON
+```
+
+The rule:
+- Each path gets the weighted mean of its tools' Phase 1 scores (the main engine counts twice).
+- It loses 1 point for each Phase 4 validation engine that cannot trade its assets.
 - A gap below 0.5 means "BOTH".
 
 ## How to read the results (applies from Phase 4 on)
@@ -49,13 +92,18 @@ To challenge the decision, change a score or weight in `data/phase1_scores.json`
 - **Trade count:** fewer than about 30 out-of-sample trades is too few to trust.
 - **Engine disagreement:** if freqtrade, jesse and nautilus differ by more than about 20% in return or in trade count on the same settings, the result is flagged until the cause is explained.
 - **Survivorship label:** results on screened altcoin pairs are marked "optimistic". BTC/ETH results are the primary evidence.
+- **Locked holdout:** the last 6 months (2026-04 → 2026-09) are scored only in the final Backtester run.
 
-## Safety (planned for Phase 3)
+## Safety
 
-- Every engine runs in paper, dry-run or backtest mode. Exchange API keys are never needed.
-- Live mode needs **both** of these, typed by you in your local, git-ignored config:
-  - `live_trading_enabled: true`
-  - a `live_trading_ack` phrase
-- No script, agent or CI job writes those fields.
-- API keys (CoinMarketCap, Telegram/Discord) are only read from a git-ignored `.env` file. Claude will ask you for them and will never hardcode them.
-- The eliza bot has its wallet and trading plugins removed and can only read reports.
+- Every engine runs in paper, dry-run or backtest mode. Exchange API keys are never needed or stored.
+- Live mode is possible only if **you** put all three of these lines in your own `config/settings.yaml`:
+  ```yaml
+  trading_mode: live
+  live_trading_enabled: true
+  live_trading_ack: "I ACCEPT REAL MONEY RISK"
+  ```
+  The example file can never enable live mode, and no script, agent or CI job writes these fields.
+- The config generator refuses any freqtrade config that has `dry_run` off, or that contains exchange credentials, unless that lock is open.
+- API keys (CoinMarketCap, Telegram/Discord, LLM) are read only from environment variables or `.env`.
+- The eliza bot (coming next) gets read-only access to reports and no wallet or trading plugins.

@@ -1,0 +1,65 @@
+# Paper-only research stack. Usage (from research-system/):
+#   docker compose run --rm research universe          # live CoinMarketCap universe (needs CMC_API_KEY in .env)
+#   docker compose run --rm research download          # ccxt candles -> data/ohlcv
+#   docker compose run --rm research export-freqtrade
+#   docker compose run --rm research freqtrade-config
+#   docker compose run --rm freqtrade backtesting --config user_data/config.base.json \
+#       --config user_data/config.supertrend.json --fee 0.0015
+#   docker compose up -d freqtrade-paper               # SuperTrend dry-run (paper) bot
+# If you sit behind an HTTPS proxy, export HTTPS_PROXY before running; it is passed through.
+
+x-proxy-env: &proxy-env
+  HTTPS_PROXY: ${HTTPS_PROXY:-}
+  https_proxy: ${https_proxy:-}
+
+services:
+  research:
+    build:
+      context: .
+      dockerfile: docker/research.Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *proxy-env
+    volumes:
+      - ./:/research
+    working_dir: /research
+    entrypoint: ["python", "-m", "rsys.cli"]
+
+  finrl:
+    build:
+      context: .
+      dockerfile: docker/finrl.Dockerfile
+    environment:
+      <<: *proxy-env
+    volumes:
+      - ./:/research
+    working_dir: /research
+    entrypoint: ["python", "-m", "rsys.finrl_agent"]
+    profiles: ["tools"]
+
+  freqtrade:
+    image: freqtradeorg/freqtrade:stable
+    environment:
+      <<: *proxy-env
+      PYTHONPATH: /research
+    volumes:
+      - ./freqtrade/user_data:/freqtrade/user_data
+      - ./rsys:/research/rsys:ro
+    profiles: ["tools"]
+
+  freqtrade-paper:
+    image: freqtradeorg/freqtrade:stable
+    restart: unless-stopped
+    environment:
+      <<: *proxy-env
+      PYTHONPATH: /research
+    volumes:
+      - ./freqtrade/user_data:/freqtrade/user_data
+      - ./rsys:/research/rsys:ro
+    # dry_run is forced true by rsys.safety when the config is generated.
+    command: >
+      trade --config user_data/config.base.json --config user_data/config.supertrend.json
+      --db-url sqlite:////freqtrade/user_data/paper_trades.sqlite
+    profiles: ["paper"]
