@@ -2,11 +2,11 @@
  "counts": {
   "calls": 7,
   "llm_usage": 0,
-  "price_history": 145,
+  "price_history": 147,
   "role_verdicts": 35,
-  "runs": 48
+  "runs": 49
  },
- "exported_at": "2026-09-29T12:53:51+00:00",
+ "exported_at": "2026-09-29T14:40:31+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -18,7 +18,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 43,
-    "current_price": 1.5700000524520874,
+    "current_price": 2.198499917984009,
     "direction": "long",
     "entry_price": 1.04,
     "expiry_date": "2026-10-23",
@@ -28,12 +28,12 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (dilution)",
     "kind": "shadow",
-    "last_price_at": "2026-09-29T12:53:15+00:00",
+    "last_price_at": "2026-09-29T14:39:52+00:00",
     "notes": "| ticker corrected from SSDEV (FinViz logo-span parse bug) | trailing stop 15% applied retroactively on 2026-09-28 against the true observed peak; exit price is the live price on that date, not the level the trail would have fired at",
-    "peak_price": 1.669800043106079,
-    "pnl_pct": 50.9615,
+    "peak_price": 2.198499917984009,
+    "pnl_pct": 111.3942,
     "position_usd": 945.36,
-    "price_as_of": "2026-09-28",
+    "price_as_of": "2026-09-29",
     "researcher_score": 4.5,
     "review_run_id": null,
     "reviewed_at": null,
@@ -258,7 +258,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 40,
-    "current_price": 3.809999942779541,
+    "current_price": 3.68179988861084,
     "direction": "long",
     "entry_price": 3.91,
     "expiry_date": null,
@@ -268,12 +268,12 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP \u2014 Skeptic objection not explicitly answered",
     "kind": "shadow",
-    "last_price_at": "2026-09-29T12:53:15+00:00",
+    "last_price_at": "2026-09-29T14:39:52+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set | trailing stop 15% applied retroactively on 2026-09-28 against the true observed peak; exit price is the live price on that date, not the level the trail would have fired at",
     "peak_price": 4.192399978637695,
-    "pnl_pct": -2.5575,
+    "pnl_pct": -5.8363,
     "position_usd": null,
-    "price_as_of": "2026-09-28",
+    "price_as_of": "2026-09-29",
     "researcher_score": 6.0,
     "review_run_id": "review_20260928_meds",
     "reviewed_at": "2026-09-28T14:04:19+00:00",
@@ -1307,6 +1307,20 @@
     "observed_at": "2026-09-29T12:53:15+00:00",
     "pnl_pct": -2.5575,
     "price": 3.809999942779541
+   },
+   {
+    "call_id": 1,
+    "id": 150,
+    "observed_at": "2026-09-29T14:39:52+00:00",
+    "pnl_pct": 111.3942,
+    "price": 2.198499917984009
+   },
+   {
+    "call_id": 7,
+    "id": 151,
+    "observed_at": "2026-09-29T14:39:52+00:00",
+    "pnl_pct": -5.8363,
+    "price": 3.68179988861084
    }
   ],
   "role_verdicts": [
@@ -2442,6 +2456,23 @@
     "screening_ran": 1,
     "session_reason": "trading day, extended hours",
     "started_at": "2026-09-29T12:53:13+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-29T14:40:18+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 2,
+    "reviewed": 0,
+    "run_id": "run_20260929T143950Z",
+    "screening_ran": 1,
+    "session_reason": "regular trading hours",
+    "started_at": "2026-09-29T14:39:50+00:00"
    }
   ]
  }
