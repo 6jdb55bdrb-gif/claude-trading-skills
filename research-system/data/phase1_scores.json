@@ -1,0 +1,150 @@
+{
+  "_comment": "RESEARCHER output (Phase 1). Facts gathered 2026-09-29 from public GitHub pages and vendor pricing pages. Scores are 1-10. Edit scores here, then re-run scripts/decide.py; the STRATEGIST decision is recomputed from this file.",
+  "as_of": "2026-09-29",
+  "tools": {
+    "ccxt": {
+      "kind": "repo",
+      "built_for": "trading",
+      "asset_classes": ["crypto"],
+      "facts": "44.2k stars, 8.9k forks, 241 open issues, MIT, ~101k commits, 100+ exchanges, Python/JS/Go/C#/PHP/Java/Rust",
+      "solo_usability": 6,
+      "scores": {"trading": 9, "investing": 4},
+      "reasons": {
+        "trading": "De-facto standard unified exchange API; free historical OHLCV from exchanges (Binance spot has years of 1h/1d candles). freqtrade uses it internally.",
+        "investing": "Crypto only; useful for long-term crypto holdings data but no equities, no fundamentals."
+      },
+      "limitations": "Library, not an app; history depth and rate limits depend on each exchange; exchange-specific quirks."
+    },
+    "freqtrade": {
+      "kind": "repo",
+      "built_for": "trading",
+      "asset_classes": ["crypto"],
+      "facts": "54.9k stars, 11.4k forks, 22 open issues, GPL-3.0, monthly releases (2026.6, 2026.7, 2026.8 on 2026-08-31), Python 3.11+, Docker images, Telegram + Web UI",
+      "solo_usability": 7,
+      "scores": {"trading": 9, "investing": 3},
+      "reasons": {
+        "trading": "Most mature open-source crypto bot: dry-run (paper) mode built in, backtesting with fees, hyperopt, and built-in lookahead-analysis and recursive-analysis commands that directly detect look-ahead bias. Config-driven.",
+        "investing": "Can hold positions long but has no portfolio-weight allocation or rebalancing model; crypto only."
+      },
+      "limitations": "Strategies are Python classes; backtests use candle data (no order book), so fills are approximate; hyperopt makes curve fitting easy."
+    },
+    "jesse": {
+      "kind": "repo",
+      "built_for": "trading",
+      "asset_classes": ["crypto"],
+      "facts": "8.6k stars, 1.3k forks, 7 open issues, MIT, no GitHub releases (ships via PyPI), docs.jesse.trade",
+      "solo_usability": 6,
+      "scores": {"trading": 7, "investing": 2},
+      "reasons": {
+        "trading": "Clean backtester with Monte Carlo and rule-significance testing; good independent cross-check for freqtrade on the same candles.",
+        "investing": "Crypto only; no equities, no allocation model. Cannot cross-check a stock portfolio."
+      },
+      "limitations": "Paper/live trading needs the live-trade plugin (license key; premium tier historically ~$1,600, a limited free tier exists). Backtesting itself is free. Smaller community."
+    },
+    "nautilus_trader": {
+      "kind": "repo",
+      "built_for": "both",
+      "asset_classes": ["crypto", "equities", "futures", "fx"],
+      "facts": "29.5k stars, 3.9k forks, 131 open issues, LGPL-3.0, Rust core + Python, bi-weekly releases, 24+ adapters (Binance, Bybit, OKX, Interactive Brokers, Databento, Tardis)",
+      "solo_usability": 3,
+      "scores": {"trading": 8, "investing": 5},
+      "reasons": {
+        "trading": "Highest-fidelity engine in the list: event-driven, nanosecond resolution, order-book/tick data; same code runs backtest and live. Ideal final validation.",
+        "investing": "Supports equities via Interactive Brokers, but good equity data is paid (Databento) and it has no portfolio-optimisation layer."
+      },
+      "limitations": "Steep learning curve; breaking changes between releases (v2 release candidates not recommended for real capital); highest value needs tick/order-book data which is large or paid."
+    },
+    "hummingbot": {
+      "kind": "repo",
+      "built_for": "trading",
+      "asset_classes": ["crypto"],
+      "facts": "20.3k stars, 5.0k forks, 72 open issues, Apache-2.0, 50+ connectors (CEX + DEX), paper-trade connectors",
+      "solo_usability": 6,
+      "scores": {"trading": 6, "investing": 1},
+      "reasons": {
+        "trading": "Specialist for market making / arbitrage with a real paper-trade mode, but MM edge depends on fee tier, latency and inventory risk that a retail user rarely controls.",
+        "investing": "Not designed for it."
+      },
+      "limitations": "Backtesting of MM is weak (queue position and adverse selection are not modelled on candles); paper MM results are systematically optimistic."
+    },
+    "finrl": {
+      "kind": "repo",
+      "built_for": "both",
+      "asset_classes": ["equities", "crypto"],
+      "facts": "16.4k stars, 3.5k forks, 283 open issues, MIT, active commits (several on 2026-09-24..28), SB3 agents (A2C, PPO, SAC, TD3, DDPG), yfinance/Alpaca/FMP/ccxt processors",
+      "solo_usability": 3,
+      "scores": {"trading": 4, "investing": 6},
+      "reasons": {
+        "trading": "RL on crypto candles is possible but results are highly seed- and period-dependent; weak baseline evidence.",
+        "investing": "Has a portfolio-allocation environment that fits monthly rebalancing research; that is its strongest use."
+      },
+      "limitations": "Self-described educational/research framework; maintainers point production users to FinRL-X/FinRL-Trading. High open-issue count, dependency churn (PyTorch, SB3, pandas). RL overfits easily; needs many seeds and strict walk-forward."
+    },
+    "ai_hedge_fund": {
+      "kind": "repo",
+      "built_for": "investing",
+      "asset_classes": ["equities"],
+      "facts": "63.8k stars, 11.2k forks, 54 open issues, MIT, ~930 commits, LLM investor-persona agents, needs financialdatasets.ai (no free tier: $20 for 1,000 requests or $200/month) plus an LLM API key",
+      "solo_usability": 7,
+      "scores": {"trading": 2, "investing": 5},
+      "reasons": {
+        "trading": "Not for short-term trading.",
+        "investing": "Useful as a qualitative idea/analysis layer on a stock list, but not a validated signal."
+      },
+      "limitations": "Explicitly educational, not for real trading. Backtests are structurally contaminated: the LLM has read about the outcomes in its training data (look-ahead the project can only partially mask). Non-deterministic, paid per run, hard to walk-forward."
+    },
+    "eliza": {
+      "kind": "repo",
+      "built_for": "neither (agent framework)",
+      "asset_classes": [],
+      "facts": "19.5k stars, 5.8k forks, 24 open issues, MIT, TypeScript on Node/Bun monorepo, Telegram/Discord connectors, EVM/Solana wallet features, no longer accepts third-party plugins",
+      "solo_usability": 5,
+      "scores": {"trading": 3, "investing": 3},
+      "reasons": {
+        "trading": "Only relevant as the report/alert bot; neutral between paths.",
+        "investing": "Same."
+      },
+      "limitations": "Heavy framework for sending reports; ships wallet/on-chain actions that must be disabled so it can never trade. freqtrade's own Telegram bot already covers basic alerts."
+    },
+    "finviz_elite": {
+      "kind": "screener",
+      "built_for": "investing",
+      "asset_classes": ["equities", "etfs"],
+      "facts": "Elite $39.50/month or $299.50/year; CSV/API export of screeners is Elite-only; free tier has no export; unofficial scrapers exist but automated access to the free site may breach their terms",
+      "solo_usability": 8,
+      "scores": {"trading": 3, "investing": 7},
+      "reasons": {
+        "trading": "US equity snapshot screener; no crypto; not a short-term signal source.",
+        "investing": "Excellent fundamentals/valuation filters for a US universe with a simple export."
+      },
+      "limitations": "Snapshot of today only, no point-in-time history: back-testing today's screen over past years causes survivorship and look-ahead bias. Paid for export. No scraping without your explicit OK."
+    },
+    "coinmarketcap_api": {
+      "kind": "screener",
+      "built_for": "both",
+      "asset_classes": ["crypto"],
+      "facts": "Free Basic: 15,000 credits/month, 50 requests/minute, latest listings/quotes, only ~1 month of historical data; Builder $29/month adds 3 years of history",
+      "solo_usability": 8,
+      "scores": {"trading": 7, "investing": 4},
+      "reasons": {
+        "trading": "Good for ranking, market cap, 24h volume and stablecoin tags to build a liquid universe.",
+        "investing": "Crypto only; a long-term crypto allocation is possible but narrow."
+      },
+      "limitations": "Free plan cannot rebuild the historical top-50: using today's top-50 for a 3-year backtest is survivorship bias (dead coins are missing). Mitigate with fixed large caps (BTC/ETH) as primary evidence, or Builder plan for history."
+    }
+  },
+  "paths": {
+    "trading": {
+      "core": {"ccxt": 1, "freqtrade": 2, "jesse": 1, "nautilus_trader": 1, "coinmarketcap_api": 1, "finrl": 1},
+      "validation_chain": ["freqtrade", "jesse", "nautilus_trader"],
+      "asset_class": "crypto",
+      "min_annual_data_cost_usd": 0
+    },
+    "investing": {
+      "core": {"finviz_elite": 1, "ai_hedge_fund": 1, "finrl": 2, "jesse": 1, "nautilus_trader": 1},
+      "validation_chain": ["finrl", "jesse", "nautilus_trader"],
+      "asset_class": "equities",
+      "min_annual_data_cost_usd": 319.5
+    }
+  }
+}
