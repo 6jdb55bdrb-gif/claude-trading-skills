@@ -2,11 +2,11 @@
  "counts": {
   "calls": 7,
   "llm_usage": 0,
-  "price_history": 143,
+  "price_history": 145,
   "role_verdicts": 35,
-  "runs": 47
+  "runs": 48
  },
- "exported_at": "2026-09-29T07:49:41+00:00",
+ "exported_at": "2026-09-29T12:53:51+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -28,7 +28,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (dilution)",
     "kind": "shadow",
-    "last_price_at": "2026-09-29T07:49:29+00:00",
+    "last_price_at": "2026-09-29T12:53:15+00:00",
     "notes": "| ticker corrected from SSDEV (FinViz logo-span parse bug) | trailing stop 15% applied retroactively on 2026-09-28 against the true observed peak; exit price is the live price on that date, not the level the trail would have fired at",
     "peak_price": 1.669800043106079,
     "pnl_pct": 50.9615,
@@ -268,7 +268,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP \u2014 Skeptic objection not explicitly answered",
     "kind": "shadow",
-    "last_price_at": "2026-09-29T07:49:29+00:00",
+    "last_price_at": "2026-09-29T12:53:15+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set | trailing stop 15% applied retroactively on 2026-09-28 against the true observed peak; exit price is the live price on that date, not the level the trail would have fired at",
     "peak_price": 4.192399978637695,
     "pnl_pct": -2.5575,
@@ -1291,6 +1291,20 @@
     "call_id": 7,
     "id": 147,
     "observed_at": "2026-09-29T07:49:29+00:00",
+    "pnl_pct": -2.5575,
+    "price": 3.809999942779541
+   },
+   {
+    "call_id": 1,
+    "id": 148,
+    "observed_at": "2026-09-29T12:53:15+00:00",
+    "pnl_pct": 50.9615,
+    "price": 1.5700000524520874
+   },
+   {
+    "call_id": 7,
+    "id": 149,
+    "observed_at": "2026-09-29T12:53:15+00:00",
     "pnl_pct": -2.5575,
     "price": 3.809999942779541
    }
@@ -2411,6 +2425,23 @@
     "screening_ran": 0,
     "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
     "started_at": "2026-09-29T07:49:28+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-09-29T12:53:39+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 2,
+    "reviewed": 0,
+    "run_id": "run_20260929T125313Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-09-29T12:53:13+00:00"
    }
   ]
  }
