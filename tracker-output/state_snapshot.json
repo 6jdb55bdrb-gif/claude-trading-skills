@@ -2,11 +2,11 @@
  "counts": {
   "calls": 7,
   "llm_usage": 0,
-  "price_history": 155,
+  "price_history": 156,
   "role_verdicts": 35,
-  "runs": 53
+  "runs": 54
  },
- "exported_at": "2026-09-30T15:07:44+00:00",
+ "exported_at": "2026-09-30T15:24:27+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -15,10 +15,10 @@
     "asset_type": "stock",
     "backend": "heuristic",
     "call_date": "2026-09-20T19:04:44+00:00",
-    "close_reason": null,
-    "closed_at": null,
+    "close_reason": "trailing stop 15% from peak 3.3901",
+    "closed_at": "2026-09-30T15:23:21+00:00",
     "confidence": 43,
-    "current_price": 2.910099983215332,
+    "current_price": 2.868499994277954,
     "direction": "long",
     "entry_price": 1.04,
     "expiry_date": "2026-10-23",
@@ -28,10 +28,10 @@
     "judge_decision": "SKIP",
     "judge_reason": "Skeptic objection unanswered (dilution)",
     "kind": "shadow",
-    "last_price_at": "2026-09-30T15:07:01+00:00",
+    "last_price_at": "2026-09-30T15:23:21+00:00",
     "notes": "| ticker corrected from SSDEV (FinViz logo-span parse bug) | trailing stop 15% applied retroactively on 2026-09-28 against the true observed peak; exit price is the live price on that date, not the level the trail would have fired at",
     "peak_price": 3.3901000022888184,
-    "pnl_pct": 179.8173,
+    "pnl_pct": 175.8173,
     "position_usd": 945.36,
     "price_as_of": "2026-09-30",
     "researcher_score": 4.5,
@@ -43,7 +43,7 @@
     "screen_variant": "squeeze",
     "shares": 909.0,
     "skeptic_score": 9.0,
-    "status": "OPEN",
+    "status": "STOPPED",
     "stop_price": 0.93,
     "strike": 1.5,
     "target_price": 1.26,
@@ -1377,6 +1377,13 @@
     "observed_at": "2026-09-30T15:07:01+00:00",
     "pnl_pct": -15.0563,
     "price": 3.3213000297546387
+   },
+   {
+    "call_id": 1,
+    "id": 160,
+    "observed_at": "2026-09-30T15:23:21+00:00",
+    "pnl_pct": 175.8173,
+    "price": 2.868499994277954
    }
   ],
   "role_verdicts": [
@@ -2597,6 +2604,23 @@
     "screening_ran": 1,
     "session_reason": "regular trading hours",
     "started_at": "2026-09-30T15:06:59+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 1,
+    "finished_at": "2026-09-30T15:23:44+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 1,
+    "reviewed": 0,
+    "run_id": "run_20260930T152320Z",
+    "screening_ran": 1,
+    "session_reason": "regular trading hours",
+    "started_at": "2026-09-30T15:23:20+00:00"
    }
   ]
  }
