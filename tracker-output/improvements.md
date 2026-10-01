@@ -68,7 +68,10 @@ operator's call.
   (09:30-16:00 ET), or keep pre-market screening but defer the entry price to
   the regular-session open. Do not keep booking entries at zero-volume
   pre-market quotes on sub-$20M microcaps.
-- **Approve?** ☐ yes  ☐ no
+- **Decision (2026-10-01):** *not now* — pre-market screening stays on, and
+  pre-market quotes continue to set the entry. The finding stands as the
+  explanation for the MEDS 5.16 entry and its -19.0% exit; revisit if a
+  second call is entered on a zero-volume print.
 
 ### 6. [HIGH] stop geometry — `tracker.trailing_stop_pct`
 
@@ -98,3 +101,12 @@ operator's call.
   pairing it with a tightening rule once a call is up enough that giving back
   a GRML-sized gain is the larger risk.
 - **Approve?** ☐ yes  ☐ no
+- **Decision (2026-10-01): APPLIED.** `trailing_stop_atr_mult: 1.5` added, with
+  `trailing_stop_pct: 15.0` kept as the floor. The distance is resolved once at
+  entry from the ATR on the screener row and stored per call (`calls.trail_pct`),
+  so changing the setting never re-stops a position that is already open, and a
+  book keeps the geometry it was taken with. The floor remains the single
+  off-switch: `trailing_stop_pct: null` disables the trail entirely, and the
+  multiplier only ever widens a trail that is switched on. Closed calls were
+  left closed — their stops fired under the rule in force at the time, and
+  re-opening banked results would rewrite the record.

@@ -8,11 +8,11 @@
 
 **Backend:** DOWN · reviewed 10 / unreviewed 0 · TAKE/SKIP 1/9 (10.0% TAKE)
 
-**Portfolio:** $1,119.11 (+11.91% on $1,000.00) · 30.0% allocated · cash $798.49
+**Portfolio:** $1,128.41 (+12.84% on $1,000.00) · 30.0% allocated · cash $798.49
 
-**Total PnL:** +11.91% — equal weight across all 10 priced call(s)
+**Total PnL:** +12.84% — equal weight across all 10 priced call(s)
 
-**Generated:** 2026-10-01T13:56:55+00:00  
+**Generated:** 2026-10-01T14:26:34+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -26,12 +26,12 @@
 | TAKE calls | 1 |
 | Shadow (SKIP) calls | 9 |
 | Open | 3 |
-| Right | 3 |
+| Right | 4 |
 | Wrong | 5 |
-| Neutral | 2 |
-| Hit rate % | 30.0 |
-| **Total PnL % (equal weight, all calls)** | +11.91% |
-| Average PnL % per call | 11.91 |
+| Neutral | 1 |
+| Hit rate % | 40.0 |
+| **Total PnL % (equal weight, all calls)** | +12.84% |
+| Average PnL % per call | 12.84 |
 | Portfolio PnL % (equal weight, TAKE only) | -18.99 |
 
 **Best call:** SDEV (long, squeeze, shadow) +175.82% — entry 1.04 → 2.868499994277954
@@ -41,46 +41,46 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 10 | 3 | 3 | 5 | 2 | 30.0 | 11.91 |
+| call | 10 | 3 | 4 | 5 | 1 | 40.0 | 12.84 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| stock | 10 | 3 | 3 | 5 | 2 | 30.0 | 11.91 |
+| stock | 10 | 3 | 4 | 5 | 1 | 40.0 | 12.84 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| squeeze | 10 | 3 | 3 | 5 | 2 | 30.0 | 11.91 |
+| squeeze | 10 | 3 | 4 | 5 | 1 | 40.0 | 12.84 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | TAKE | 1 | 0 | 0 | 1 | 0 | 0.0 | -18.99 |
-| SKIP (shadow) | 9 | 3 | 3 | 4 | 2 | 33.3 | 15.34 |
+| SKIP (shadow) | 9 | 3 | 4 | 4 | 1 | 44.4 | 16.38 |
 
-**Judge edge (avg PnL TAKE − avg PnL shadow):** -34.34 → Judge is not adding value
+**Judge edge (avg PnL TAKE − avg PnL shadow):** -35.37 → Judge is not adding value
 
 ### Per-role accuracy
 
 | Role | Avg score (winners) | Avg score (others) | Edge | Corr(score, PnL) | n | Polarity |
 |---|---|---|---|---|---|---|
-| researcher | 4.33 | 5.36 | -1.02 | -0.154 | 10 | quality (higher is better) |
-| technician | 4.0 | 5.14 | -1.14 | 0.132 | 10 | quality (higher is better) |
-| skeptic | 9.0 | 7.07 | 1.93 | 0.408 | 10 | severity (lower is better) |
-| risk_manager | 5.0 | 4.29 | 0.71 | 0.591 | 10 | quality (higher is better) |
+| researcher | 4.88 | 5.17 | -0.29 | -0.184 | 10 | quality (higher is better) |
+| technician | 4.88 | 4.75 | 0.12 | 0.11 | 10 | quality (higher is better) |
+| skeptic | 8.12 | 7.33 | 0.79 | 0.423 | 10 | severity (lower is better) |
+| risk_manager | 4.88 | 4.25 | 0.62 | 0.567 | 10 | quality (higher is better) |
 
 ### Confidence buckets
 
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| 0-40 | 2 | 1 | 1 | 1 | 0 | 50.0 | 3.23 |
-| 40-70 | 7 | 1 | 2 | 4 | 1 | 28.6 | 16.09 |
-| 70-100 | 1 | 1 | 0 | 0 | 1 | 0.0 | 0.0 |
+| 0-40 | 2 | 1 | 1 | 1 | 0 | 50.0 | 9.24 |
+| 40-70 | 7 | 1 | 3 | 4 | 0 | 42.9 | 16.54 |
+| 70-100 | 1 | 1 | 0 | 0 | 1 | 0.0 | -5.86 |
 
 
 ### Voided calls

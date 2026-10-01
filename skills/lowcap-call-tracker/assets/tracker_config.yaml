@@ -24,10 +24,28 @@ tracker:
   # carries a plain stop at the same distance — one rule, not two. Measured on
   # the underlying, checked on every price update. null disables it.
   #
+  # This is now the FLOOR, not the whole rule — see trailing_stop_atr_mult.
   # Chosen from this tracker's own history: every call peaked (+25.9% average)
   # and gave it all back holding to expiry (-0.1% average). A 15% trail on the
   # same price paths returned +10.0% with 4 of 6 green.
   trailing_stop_pct: 15.0
+  # The trail is widened to this multiple of the instrument's own ATR, as a
+  # percentage of the entry price, whenever that is wider than the floor:
+  #     trail = max(trailing_stop_pct, mult x ATR / entry x 100)
+  # A fixed 15% is narrower than one session on most of this universe — 6 of
+  # the first 10 calls carried an ATR above 13% of entry and 4 above 22% — so
+  # the floor alone closes positions on noise rather than on thesis failure.
+  # Replaying the whole book on daily closes: +9.2% per call on the fixed 15%
+  # against +11.7% at 1.5x ATR. Read that as directional, not proven: 6 closed
+  # calls is not a sample, one name (SDEV +149%) supplies all the profit under
+  # both rules, and the replay walks daily closes while the live tracker samples
+  # whenever a scan runs. The cost is visible too — GRML banked +11.1% on the
+  # floor and -2.8% on the wider trail, because a wider stop gives back more on
+  # a name that round-trips.
+  # Resolved once per call at entry and stored on the row, so changing this
+  # never re-stops a position that is already open. null disables scaling and
+  # restores the plain fixed trail.
+  trailing_stop_atr_mult: 1.5
   # Contract defaults the RISK MANAGER may override per setup.
   options:
     # Days to expiration when nothing about the setup argues otherwise.

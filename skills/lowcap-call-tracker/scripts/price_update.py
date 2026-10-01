@@ -177,6 +177,9 @@ def update_open_calls(
             "asset_type": row["asset_type"],
             "call_date": row["call_date"],
             "age_days": _age_days(row["call_date"], now),
+            # Per-call now, scaled to the instrument's ATR, so the report has to
+            # say which distance each position is actually being managed on.
+            "trail_pct": row["trail_pct"],
         }
         if price is None:
             # An open call that cannot be priced must still be REPORTED, with its
@@ -264,11 +267,13 @@ def format_updates(result: dict[str, Any]) -> str:
         contract = str(instrument).upper() if instrument else "—"
         dte = update.get("days_to_expiry")
         contract += f" {dte:>3}d" if dte is not None else ""
+        trail = update.get("trail_pct")
         lines.append(
             f"  {update['ticker']:<6} {contract:<9} "
             f"entry={update['entry_price']:<8.2f} "
             f"now={'-' if price is None else format(price, '.2f'):<8} "
-            f"pnl={'-' if pnl is None else format(pnl, '+.1f') + '%':<8} {tag}"
+            f"pnl={'-' if pnl is None else format(pnl, '+.1f') + '%':<8} "
+            f"trail={'off' if trail is None else format(trail, 'g') + '%':<6} {tag}"
         )
     return "\n".join(lines) or "  (no open calls)"
 

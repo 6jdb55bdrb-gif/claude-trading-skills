@@ -98,7 +98,12 @@ CREATE TABLE IF NOT EXISTS calls (
     -- Highest price seen since entry, the high-water mark the trailing stop
     -- measures from. Starts at the entry price, so a call that never rises
     -- carries a plain stop at the same distance — one rule, not two.
-    peak_price REAL
+    peak_price REAL,
+    -- How far below the peak this call's stop sits, in percent. Resolved once
+    -- at entry from the instrument's own ATR (see resolve_trail_pct) and then
+    -- fixed: a stop that moves with the data is not a stop. Stored per call so
+    -- a book written under one setting keeps its geometry when the config moves.
+    trail_pct REAL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_calls_open_ticker
@@ -187,6 +192,74 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
+# Trail defaults, used when backfilling a legacy row that predates the column.
+# Live pricing reads the value stored on the call, and new calls resolve theirs
+# from the config, so these only decide the shape of history.
+DEFAULT_TRAIL_FLOOR_PCT = 15.0
+DEFAULT_TRAIL_ATR_MULT = 1.5
+
+
+def resolve_trail_pct(
+    entry: Any,
+    atr: Any,
+    *,
+    floor_pct: Any = None,
+    atr_mult: Any = None,
+) -> float | None:
+    """How far below the high-water mark this call's stop sits, in percent.
+
+    A fixed distance is the wrong shape for this universe: a 15% trail inside a
+    27% average daily range is hit by noise, not by thesis failure. So the trail
+    is the wider of a floor and a multiple of the instrument's own ATR,
+    expressed as a percentage of the entry price.
+
+    Resolved once, at entry, from the ATR the screener reported — not re-derived
+    later, because a stop that moves with the data is not a stop. An ATR that is
+    missing, zero, negative or unparsable falls back to the floor: never widen
+    a stop on a number we cannot trust. An ``atr_mult`` of None disables scaling
+    and restores the plain fixed trail; a ``floor_pct`` of None switches the
+    trailing stop off altogether.
+    """
+    # abs(), not reject: a negative floor or multiplier is a sign slip, and the
+    # safe reading of a typo in a stop-loss setting is never "no stop". Only an
+    # explicit null disables the trail.
+    floor = _positive(floor_pct, signed=True)
+    if floor is None:
+        # The floor is the master switch. `trailing_stop_pct: null` means no
+        # trailing stop at all, as it always has; the multiplier only ever
+        # widens a trail that is already switched on. One off-switch, not two.
+        return None
+    mult = _positive(atr_mult, signed=True)
+    scaled = 0.0
+    if mult is not None:
+        entry_price = _positive(entry)
+        atr_value = _positive(atr)
+        if entry_price and atr_value:
+            scaled = round(mult * atr_value / entry_price * 100.0, 1)
+    return round(max(floor, scaled), 1) or None
+
+
+def _positive(value: Any, *, signed: bool = False) -> float | None:
+    """A usable positive number, or None. Never raises on junk input.
+
+    ``signed=True`` folds a negative into its magnitude, for settings where a
+    minus sign is a typo rather than a meaningful value.
+    """
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number:  # NaN
+        return None
+    if signed:
+        number = abs(number)
+    if number <= 0:
+        return None
+    return number
+
+
 def pnl_pct(entry: float, current: float, direction: str) -> float | None:
     """Direction-corrected PnL in percent (long: up is positive; short: down is)."""
     if not entry or entry <= 0 or current is None:
@@ -212,6 +285,7 @@ class CallDatabase:
     def _migrate(self) -> None:
         """Add columns introduced after a database was first created."""
         existing = {row["name"] for row in self.conn.execute("PRAGMA table_info(calls)")}
+        added: set[str] = set()
         for column, ddl in (
             ("instrument", "ALTER TABLE calls ADD COLUMN instrument TEXT"),
             ("expiry_date", "ALTER TABLE calls ADD COLUMN expiry_date TEXT"),
@@ -222,9 +296,11 @@ class CallDatabase:
             ("price_as_of", "ALTER TABLE calls ADD COLUMN price_as_of TEXT"),
             ("allocation_usd", "ALTER TABLE calls ADD COLUMN allocation_usd REAL"),
             ("peak_price", "ALTER TABLE calls ADD COLUMN peak_price REAL"),
+            ("trail_pct", "ALTER TABLE calls ADD COLUMN trail_pct REAL"),
         ):
             if column not in existing:
                 self.conn.execute(ddl)
+                added.add(column)
         # Pre-options rows: a long was a call, a short was a put. An UNREVIEWED
         # call is excluded — its NULL instrument is deliberate (nobody chose a
         # contract), and backfilling one here would re-invent the very claim the
@@ -238,6 +314,47 @@ class CallDatabase:
             "ELSE 'call' END WHERE instrument IS NULL AND kind != ?",
             (KIND_UNREVIEWED,),
         )
+        # Only when the column is first added. Afterwards a NULL trail means
+        # the call was deliberately made without one (the trailing stop is off),
+        # and re-deriving a distance for it on every open would switch the stop
+        # back on behind the operator's back.
+        if "trail_pct" in added:
+            self._backfill_trail_pct()
+
+    def _backfill_trail_pct(self) -> None:
+        """Give every pre-column row the trail its own ATR implies.
+
+        Runs exactly once, when the column appears. Rows written before the
+        trail was per-call have no stored distance, and an open one would
+        otherwise fall back to whatever the config floor happens to be — the
+        mis-sized stop this change exists to remove. The ATR comes from the
+        screener row kept on the call; a row without one lands on the floor,
+        exactly where it already was.
+        """
+        rows = self.conn.execute(
+            "SELECT id, entry_price, hit_json FROM calls WHERE trail_pct IS NULL"
+        ).fetchall()
+        for row in rows:
+            atr = None
+            if row["hit_json"]:
+                try:
+                    atr = (json.loads(row["hit_json"]) or {}).get("atr")
+                except (ValueError, TypeError):
+                    atr = None
+            self.conn.execute(
+                "UPDATE calls SET trail_pct = ? WHERE id = ?",
+                (
+                    resolve_trail_pct(
+                        row["entry_price"],
+                        atr,
+                        floor_pct=DEFAULT_TRAIL_FLOOR_PCT,
+                        atr_mult=DEFAULT_TRAIL_ATR_MULT,
+                    ),
+                    row["id"],
+                ),
+            )
+        if rows:
+            self.conn.commit()
 
     def close(self) -> None:
         self.conn.close()
@@ -264,6 +381,11 @@ class CallDatabase:
         now: str | None = None,
         allow_short: bool = True,
         allocation_usd: float | None = None,
+        # No default: a caller that says nothing about the trail gets no stored
+        # distance, and the call falls back to whatever the config says at price
+        # time — which is how `trailing_stop_pct: null` keeps disabling the stop.
+        trail_floor_pct: float | None = None,
+        trail_atr_mult: float | None = None,
     ) -> int | None:
         """Insert a call from a review. Returns the id, or None when a duplicate.
 
@@ -315,8 +437,8 @@ class CallDatabase:
                 researcher_score, technician_score, skeptic_score, risk_manager_score,
                 stop_price, target_price, shares, position_usd, risk_usd,
                 status, current_price, pnl_pct, last_price_at, run_id, backend, notes,
-                reviewed_at, hit_json, allocation_usd, peak_price
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                reviewed_at, hit_json, allocation_usd, peak_price, trail_pct
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 ticker,
@@ -354,6 +476,15 @@ class CallDatabase:
                 json.dumps(review.get("hit"), default=str) if review.get("hit") else None,
                 allocation_usd,
                 float(entry),
+                # Resolved here, from the ATR on the screener row, and never
+                # recomputed: the distance this call was taken with is the
+                # distance it is managed with.
+                resolve_trail_pct(
+                    entry,
+                    (review.get("hit") or {}).get("atr"),
+                    floor_pct=trail_floor_pct,
+                    atr_mult=trail_atr_mult,
+                ),
             ),
         )
         call_id = int(cursor.lastrowid)
@@ -597,10 +728,14 @@ class CallDatabase:
         # The high-water mark only ever rises, and starts at the entry price, so
         # a call that never gains carries a stop at the same distance below entry.
         peak = max(float(row["peak_price"] or row["entry_price"]), float(price))
+        # The call's own distance wins over the caller's. A book written under
+        # one setting keeps the geometry it was taken with, so moving the config
+        # never silently re-stops positions that are already open.
+        trail = _positive(row["trail_pct"]) or _positive(trailing_stop_pct)
         stopped = False
-        if trailing_stop_pct and row["status"] == STATUS_OPEN and peak > 0:
+        if trail and row["status"] == STATUS_OPEN and peak > 0:
             drop_pct = (float(price) - peak) / peak * 100.0
-            stopped = drop_pct <= -abs(float(trailing_stop_pct))
+            stopped = drop_pct <= -trail
         if stopped:
             self.conn.execute(
                 """
@@ -617,8 +752,7 @@ class CallDatabase:
                     peak,
                     STATUS_STOPPED,
                     stamp,
-                    f"trailing stop {abs(float(trailing_stop_pct)):.0f}% from peak "
-                    f"{peak:.4f}".rstrip("0").rstrip("."),
+                    f"trailing stop {trail:g}% from peak {peak:.4f}".rstrip("0").rstrip("."),
                     call_id,
                 ),
             )

@@ -2,11 +2,11 @@
  "counts": {
   "calls": 12,
   "llm_usage": 0,
-  "price_history": 163,
+  "price_history": 166,
   "role_verdicts": 55,
   "runs": 60
  },
- "exported_at": "2026-10-01T13:56:55+00:00",
+ "exported_at": "2026-10-01T14:26:34+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -48,7 +48,8 @@
     "strike": 1.5,
     "target_price": 1.26,
     "technician_score": 6.0,
-    "ticker": "SDEV"
+    "ticker": "SDEV",
+    "trail_pct": 15.0
    },
    {
     "allocation_usd": null,
@@ -88,7 +89,8 @@
     "strike": 1.0,
     "target_price": 0.65,
     "technician_score": 2.0,
-    "ticker": "NCPL"
+    "ticker": "NCPL",
+    "trail_pct": 15.0
    },
    {
     "allocation_usd": 100.0,
@@ -128,7 +130,8 @@
     "strike": 2.0,
     "target_price": 2.4,
     "technician_score": 6.0,
-    "ticker": "GDC"
+    "ticker": "GDC",
+    "trail_pct": 15.0
    },
    {
     "allocation_usd": 100.0,
@@ -168,7 +171,8 @@
     "strike": null,
     "target_price": 16.0,
     "technician_score": 4.0,
-    "ticker": "GRML"
+    "ticker": "GRML",
+    "trail_pct": 21.4
    },
    {
     "allocation_usd": 100.0,
@@ -208,7 +212,8 @@
     "strike": null,
     "target_price": 2.6,
     "technician_score": 5.0,
-    "ticker": "MSS"
+    "ticker": "MSS",
+    "trail_pct": 20.2
    },
    {
     "allocation_usd": 100.0,
@@ -248,7 +253,8 @@
     "strike": null,
     "target_price": 1.7,
     "technician_score": 4.0,
-    "ticker": "NCPL"
+    "ticker": "NCPL",
+    "trail_pct": 28.3
    },
    {
     "allocation_usd": 100.0,
@@ -288,7 +294,8 @@
     "strike": null,
     "target_price": 5.5,
     "technician_score": 4.0,
-    "ticker": "MEDS"
+    "ticker": "MEDS",
+    "trail_pct": 43.4
    },
    {
     "allocation_usd": 100.0,
@@ -298,7 +305,7 @@
     "close_reason": "false stop on the 2026-09-30 bar, a session that closed before this call was made; reversed 2026-10-01",
     "closed_at": null,
     "confidence": 10,
-    "current_price": 3.859999895095825,
+    "current_price": 4.244999885559082,
     "direction": "long",
     "entry_price": 3.2,
     "expiry_date": null,
@@ -308,10 +315,10 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP \u2014 Skeptic objection not explicitly answered",
     "kind": "shadow",
-    "last_price_at": "2026-10-01T13:51:16+00:00",
+    "last_price_at": "2026-10-01T14:26:34+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
-    "peak_price": 3.859999895095825,
-    "pnl_pct": 20.625,
+    "peak_price": 4.244999885559082,
+    "pnl_pct": 32.6562,
     "position_usd": null,
     "price_as_of": "2026-10-01",
     "researcher_score": 1.0,
@@ -328,7 +335,8 @@
     "strike": null,
     "target_price": 4.0,
     "technician_score": 2.0,
-    "ticker": "SDEV"
+    "ticker": "SDEV",
+    "trail_pct": 20.2
    },
    {
     "allocation_usd": 100.0,
@@ -368,7 +376,8 @@
     "strike": null,
     "target_price": 7.0,
     "technician_score": 6.0,
-    "ticker": "MEDS"
+    "ticker": "MEDS",
+    "trail_pct": 33.7
    },
    {
     "allocation_usd": 100.0,
@@ -408,7 +417,8 @@
     "strike": null,
     "target_price": null,
     "technician_score": null,
-    "ticker": "SDEV"
+    "ticker": "SDEV",
+    "trail_pct": 18.5
    },
    {
     "allocation_usd": 100.0,
@@ -418,7 +428,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 42,
-    "current_price": 3.2,
+    "current_price": 3.299999952316284,
     "direction": "long",
     "entry_price": 3.2,
     "expiry_date": null,
@@ -428,12 +438,12 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at low conviction (42). In favour: the first filed, dated, same-day catalyst in this book; the best technicals logged so far (113x relative volume, bought through the open); and an extreme squeeze structure, 76.5% of a 1.59M float. Against, and decisive: a 27% ATR against our fixed 15% trailing stop means ordinary noise very likely closes this regardless of whether the thesis is right \u2014 MEDS realised exactly that failure mode this morning. The catalyst is also non-binding, and a term sheet on a company with $887k of cash can reverse on a single 8-K. Bias check: VEEA looks attractive partly because it has the catalyst the rest of the book lacked. That is a genuine signal, not a bias, but it must not override the stop geometry. Stated plainly: if the trailing stop were ATR-scaled rather than fixed at 15%, this would be a TAKE.",
     "kind": "shadow",
-    "last_price_at": "2026-10-01T13:51:40+00:00",
+    "last_price_at": "2026-10-01T14:26:34+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
-    "peak_price": 3.2,
-    "pnl_pct": 0.0,
+    "peak_price": 3.299999952316284,
+    "pnl_pct": 3.125,
     "position_usd": null,
-    "price_as_of": null,
+    "price_as_of": "2026-10-01",
     "researcher_score": 6.5,
     "review_run_id": "run_20261001T135115Z_manual",
     "reviewed_at": "2026-10-01T13:55:34+00:00",
@@ -448,7 +458,8 @@
     "strike": null,
     "target_price": null,
     "technician_score": 7.5,
-    "ticker": "VEEA"
+    "ticker": "VEEA",
+    "trail_pct": 40.3
    },
    {
     "allocation_usd": 100.0,
@@ -458,7 +469,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 88,
-    "current_price": 4.3,
+    "current_price": 4.047999858856201,
     "direction": "long",
     "entry_price": 4.3,
     "expiry_date": null,
@@ -468,12 +479,12 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at high conviction (88). Catalysts are press releases, not filings; the stock is 85% above its 50-day; squeeze fuel is absent at short ratio 0.08; the balance sheet is $2.46M cash against $32.6M debt; and this is a third call on a name that stopped out twice this week, offered above the live tape. The one point in its favour, from_open +10.5%, is the same signal that justified the 5.16 entry at 06:18 this morning, and that entry is already a realised -19.0%. Logged explicitly: the Technician signal that persuaded me last time has now been falsified once on this exact ticker, so I am weighting it down.",
     "kind": "shadow",
-    "last_price_at": "2026-10-01T13:51:40+00:00",
+    "last_price_at": "2026-10-01T14:26:34+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 4.3,
-    "pnl_pct": 0.0,
+    "pnl_pct": -5.8605,
     "position_usd": null,
-    "price_as_of": null,
+    "price_as_of": "2026-10-01",
     "researcher_score": 4.0,
     "review_run_id": "run_20261001T135115Z_manual",
     "reviewed_at": "2026-10-01T13:55:34+00:00",
@@ -488,7 +499,8 @@
     "strike": null,
     "target_price": null,
     "technician_score": 3.5,
-    "ticker": "MEDS"
+    "ticker": "MEDS",
+    "trail_pct": 37.7
    }
   ],
   "llm_usage": [],
@@ -1633,6 +1645,27 @@
     "observed_at": "2026-10-01T13:51:40+00:00",
     "pnl_pct": 0.0,
     "price": 4.3
+   },
+   {
+    "call_id": 8,
+    "id": 169,
+    "observed_at": "2026-10-01T14:26:34+00:00",
+    "pnl_pct": 32.6562,
+    "price": 4.244999885559082
+   },
+   {
+    "call_id": 11,
+    "id": 170,
+    "observed_at": "2026-10-01T14:26:34+00:00",
+    "pnl_pct": 3.125,
+    "price": 3.299999952316284
+   },
+   {
+    "call_id": 12,
+    "id": 171,
+    "observed_at": "2026-10-01T14:26:34+00:00",
+    "pnl_pct": -5.8605,
+    "price": 4.047999858856201
    }
   ],
   "role_verdicts": [

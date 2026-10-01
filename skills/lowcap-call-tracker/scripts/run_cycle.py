@@ -296,6 +296,8 @@ def run_cycle(
                     run_id=run_id,
                     allow_short=short_allowed(config),
                     allocation_usd=slice_usd(config, cash_available=cash),
+                    trail_floor_pct=config["tracker"].get("trailing_stop_pct"),
+                    trail_atr_mult=config["tracker"].get("trailing_stop_atr_mult"),
                 )
                 if call_id is None:
                     report["duplicates_skipped"].append(review["ticker"])
