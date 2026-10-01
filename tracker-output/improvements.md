@@ -234,3 +234,55 @@ premise the whole book is built on.
   4. `sh_short_o15` → `sh_short_o10`: 8 names, but a weaker squeeze premise.
      Not recommended without a reason to believe 10-15% short float squeezes.
 - **Approve?** ☐ 1  ☐ 2  ☐ 3  ☐ 4  ☐ none
+
+## Findings added by hand — 2026-10-01, fourth scan
+
+### 11. [INFO] entry timing is NOT biased toward the day's high — hypothesis rejected
+
+All three open calls faded from their morning highs, which looked like it might
+mean the screener systematically buys the top of the day. Tested: for every
+call, where the entry sat inside that call's own regular-session range, where
+0% is the day's low and 100% the day's high.
+
+| call | date | entry | day low | day high | in range |
+|---|---|---|---|---|---|
+| GDC | 09-21 | 1.76 | 1.33 | 1.95 | 69% |
+| GRML | 09-22 | 10.67 | 12.61 | 18.21 | **-35%** |
+| MSS | 09-23 | 1.93 | 1.81 | 2.95 | 11% |
+| NCPL | 09-24 | 1.27 | 1.20 | 1.63 | 16% |
+| MEDS | 09-28 | 3.91 | 3.44 | 4.65 | 39% |
+| SDEV | 10-01 | 3.20 | 3.48 | 4.54 | **-26%** |
+| MEDS | 10-01 | 5.16 | 3.63 | 4.35 | **213%** |
+| VEEA | 10-01 | 3.20 | 2.92 | 3.93 | 28% |
+| MEDS | 10-01 | 4.30 | 3.63 | 4.35 | 93% |
+
+**Mean 45%, against a neutral 50%. Three of nine in the top third.** The
+hypothesis does not hold: the fading is this universe's behaviour, not an entry
+timing bias, and no fix is warranted. The negative result is recorded so the
+question is not re-opened on a hunch.
+
+The outliers are informative, though. `213%` is the MEDS 5.16 pre-market entry
+(finding 5) — quantified, it was taken above the *entire* regular-session range
+of the day it was bought in. The two negative figures are the opposite case:
+GRML and SDEV were bought pre-market *below* the regular session's eventual low,
+which is a better price than the session ever offered.
+
+**This weakens my own finding 5, and the operator's decision to keep pre-market
+screening looks better than my write-up implied.** Splitting the book by
+session:
+
+| | n | sum | avg | median |
+|---|---|---|---|---|
+| regular hours | 6 | +113.5% | +18.9% | -10.1% |
+| pre / post | 4 | -7.8% | -2.0% | -2.2% |
+
+Regular hours wins on the mean only because SDEV +175.8% sits in it; strip that
+and regular hours averages **-12.5%**, worse than pre-market. By median
+pre-market is ahead. With 10 calls none of this is significant, and it should
+not be treated as such — but there is no evidence here for restricting
+pre-market entries. The narrow concern in finding 5 stands: a *zero-volume*
+quote at the top of a thin spike is a bad entry, and that is one call, not a
+session-wide rule.
+
+- **Proposed change:** none. Finding 5 should be read as being about the single
+  MEDS 5.16 entry rather than about pre-market trading in general.
