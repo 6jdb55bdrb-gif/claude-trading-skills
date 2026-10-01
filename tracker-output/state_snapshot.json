@@ -1,12 +1,12 @@
 {
  "counts": {
-  "calls": 7,
+  "calls": 9,
   "llm_usage": 0,
-  "price_history": 156,
-  "role_verdicts": 35,
-  "runs": 55
+  "price_history": 158,
+  "role_verdicts": 45,
+  "runs": 58
  },
- "exported_at": "2026-09-30T19:16:48+00:00",
+ "exported_at": "2026-10-01T10:21:34+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -288,6 +288,86 @@
     "strike": null,
     "target_price": 5.5,
     "technician_score": 4.0,
+    "ticker": "MEDS"
+   },
+   {
+    "allocation_usd": 100.0,
+    "asset_type": "stock",
+    "backend": "llm",
+    "call_date": "2026-10-01T10:18:56+00:00",
+    "close_reason": null,
+    "closed_at": null,
+    "confidence": 10,
+    "current_price": 3.2,
+    "direction": "long",
+    "entry_price": 3.2,
+    "expiry_date": null,
+    "hit_json": "{\"ticker\": \"SDEV\", \"company\": \"Stablecoin Development Corp\", \"sector\": \"Financial\", \"industry\": \"Asset Management\", \"country\": \"USA\", \"market_cap\": 165610000.0, \"price\": 3.2, \"change_pct\": 23.55, \"volume\": 16127759.0, \"shares_outstanding\": 50590000.0, \"float_shares\": 1830000.0, \"insider_trans_pct\": -0.15, \"inst_own_pct\": 3.25, \"short_float_pct\": 66.24, \"short_ratio\": 0.24, \"avg_volume\": 5100000.0, \"perf_week_pct\": 148.06, \"perf_month_pct\": 272.18, \"perf_quarter_pct\": 135.29, \"perf_half_pct\": 101.26, \"perf_ytd_pct\": -88.65, \"perf_year_pct\": -53.28, \"volatility_week_pct\": 47.46, \"volatility_month_pct\": 19.87, \"rel_volume\": 63.2, \"beta\": -0.08, \"atr\": 0.43, \"sma20_pct\": 141.14, \"sma50_pct\": 177.6, \"sma200_pct\": -51.59, \"high52w_pct\": -96.79, \"low52w_pct\": 309.78, \"rsi\": 75.81, \"from_open_pct\": 15.11, \"gap_pct\": 7.34, \"asset_type\": \"stock\", \"variant\": \"squeeze\", \"screen_mode\": \"public\", \"filters\": \"cap_smallunder,sh_price_1to20,sh_avgvol_o500,sh_relvol_o2,ta_perf_dup,ta_sma20_pa,ta_sma50_pa,ind_stocksonly,geo_usa,sh_float_u20,sh_short_o15\"}",
+    "id": 8,
+    "instrument": "call",
+    "judge_decision": "SKIP",
+    "judge_reason": "SKIP \u2014 Skeptic objection not explicitly answered",
+    "kind": "shadow",
+    "last_price_at": "2026-10-01T10:18:56+00:00",
+    "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
+    "peak_price": 3.2,
+    "pnl_pct": 0.0,
+    "position_usd": null,
+    "price_as_of": null,
+    "researcher_score": 1.0,
+    "review_run_id": "review_20261001",
+    "reviewed_at": "2026-10-01T10:20:58+00:00",
+    "risk_manager_score": 2.0,
+    "risk_usd": null,
+    "run_id": "run_20261001T101832Z",
+    "screen_variant": "squeeze",
+    "shares": null,
+    "skeptic_score": 10.0,
+    "status": "OPEN",
+    "stop_price": 2.77,
+    "strike": null,
+    "target_price": 4.0,
+    "technician_score": 2.0,
+    "ticker": "SDEV"
+   },
+   {
+    "allocation_usd": 100.0,
+    "asset_type": "stock",
+    "backend": "llm",
+    "call_date": "2026-10-01T10:18:56+00:00",
+    "close_reason": null,
+    "closed_at": null,
+    "confidence": 58,
+    "current_price": 5.16,
+    "direction": "long",
+    "entry_price": 5.16,
+    "expiry_date": null,
+    "hit_json": "{\"ticker\": \"MEDS\", \"company\": \"DataMEDS AI Inc\", \"sector\": \"Healthcare\", \"industry\": \"Medical Distribution\", \"country\": \"USA\", \"market_cap\": 16370000.000000002, \"price\": 5.16, \"change_pct\": 62.76, \"volume\": 2881386.0, \"shares_outstanding\": 2840000.0, \"float_shares\": 1540000.0, \"insider_trans_pct\": 0.0, \"inst_own_pct\": 1.62, \"short_float_pct\": 27.96, \"short_ratio\": 0.08, \"avg_volume\": 5230000.0, \"perf_week_pct\": 47.42, \"perf_month_pct\": 421.17, \"perf_quarter_pct\": 73.14, \"perf_half_pct\": -3.56, \"perf_ytd_pct\": -74.17, \"perf_year_pct\": -87.78, \"volatility_week_pct\": 15.81, \"volatility_month_pct\": 44.4, \"rel_volume\": 11.01, \"beta\": -3.5, \"atr\": 1.16, \"sma20_pct\": 80.88, \"sma50_pct\": 121.04, \"sma200_pct\": -34.56, \"high52w_pct\": -92.93, \"low52w_pct\": 527.31, \"rsi\": 64.68, \"from_open_pct\": 56.83, \"gap_pct\": 3.79, \"asset_type\": \"stock\", \"variant\": \"squeeze\", \"screen_mode\": \"public\", \"filters\": \"cap_smallunder,sh_price_1to20,sh_avgvol_o500,sh_relvol_o2,ta_perf_dup,ta_sma20_pa,ta_sma50_pa,ind_stocksonly,geo_usa,sh_float_u20,sh_short_o15\"}",
+    "id": 9,
+    "instrument": "call",
+    "judge_decision": "TAKE",
+    "judge_reason": "Dated launch today, bought intraday rather than faded, and a defined 15% exit.",
+    "kind": "active",
+    "last_price_at": "2026-10-01T10:18:56+00:00",
+    "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
+    "peak_price": 5.16,
+    "pnl_pct": 0.0,
+    "position_usd": null,
+    "price_as_of": null,
+    "researcher_score": 7.5,
+    "review_run_id": "review_20261001",
+    "reviewed_at": "2026-10-01T10:20:59+00:00",
+    "risk_manager_score": 5.0,
+    "risk_usd": null,
+    "run_id": "run_20261001T101832Z",
+    "screen_variant": "squeeze",
+    "shares": null,
+    "skeptic_score": 7.0,
+    "status": "OPEN",
+    "stop_price": 4.39,
+    "strike": null,
+    "target_price": 7.0,
+    "technician_score": 6.0,
     "ticker": "MEDS"
    }
   ],
@@ -1384,6 +1464,20 @@
     "observed_at": "2026-09-30T15:23:21+00:00",
     "pnl_pct": 175.8173,
     "price": 2.868499994277954
+   },
+   {
+    "call_id": 8,
+    "id": 161,
+    "observed_at": "2026-10-01T10:18:56+00:00",
+    "pnl_pct": 0.0,
+    "price": 3.2
+   },
+   {
+    "call_id": 9,
+    "id": 162,
+    "observed_at": "2026-10-01T10:18:56+00:00",
+    "pnl_pct": 0.0,
+    "price": 5.16
    }
   ],
   "role_verdicts": [
@@ -1701,6 +1795,96 @@
     "role": "judge",
     "score": null,
     "verdict_json": "{\"decision\": \"SKIP\", \"confidence\": 40, \"reason\": \"SKIP \\u2014 Skeptic objection not explicitly answered\", \"reasoning\": \"This is the strongest fundamental case the screener has produced: $19M of liabilities extinguished against a $12.4M market cap is transformative arithmetic, and the Helomics lab came with cash rather than taking it. I looked hard for a reason to take it. Three things stop me. The catalyst closed on 15 September and the stock already did +300% on it that day, so today is a re-rate of stale news; the Technician has the gap fading within the session (from_open -0.38%) and the week already red; and the Risk Manager cannot place a stop \\u2014 one ATR is 29% away on a name with 45% monthly volatility, so a stop would be inside the noise. The Skeptic's point that a $18.4M quarterly burn forces an equity sale is arithmetic I cannot argue with. What would change my mind: a raise completed and absorbed, then a base above SMA20.\", \"skeptic_answer\": \"I cannot answer it. The $19M liability extinguishment reduces the SIZE of the eventual raise but does not remove the need for one at a $18.4M quarterly burn, and the Technician's fading gap is consistent with distribution ahead of it.\", \"skeptic_objections_answered\": false, \"role\": \"judge\", \"backend\": \"llm\", \"gate_overrides\": [\"Skeptic objection not explicitly answered\", \"confidence 40 below threshold 55\"], \"judge_reason\": \"Genuinely repaired balance sheet, but a 13-day-old catalyst, a fading gap, and no placeable stop.\"}"
+   },
+   {
+    "backend": "llm",
+    "call_id": 8,
+    "created_at": "2026-10-01T10:20:58+00:00",
+    "id": 36,
+    "role": "researcher",
+    "score": 1.0,
+    "verdict_json": "{\"score\": 1.0, \"catalyst_type\": \"none_found\", \"searched\": true, \"catalyst_summary\": \"No catalyst \\u2014 and not merely unfound. The company itself filed a statement on the unusual trading activity saying it is NOT aware of any material non-public information or pending transaction that could explain the move, and that there have been no undisclosed material developments.\", \"catalyst_date\": null, \"sector_theme\": \"crypto treasury / stablecoin\", \"queries\": [\"\\\"Stablecoin Development Corp\\\" SDEV stock news October 2026\"], \"evidence\": [\"Investing.com: Stablecoin Development Corp addresses unusual trading activity, reports NO new developments\", \"Formerly NovaBay Pharmaceuticals \\u2014 rebranded into an on-chain holding company for the Sky protocol\", \"Latest quarter: $2.2M revenue, net loss ~$41.1M, EBITDA -$44.6M, cash $6.97M\"], \"reasons\": [\"The issuer has publicly disclaimed any explanation for its own share price \\u2014 that is a confirmed absence, not an unfound one\", \"A pharmaceutical company rebranded into a crypto treasury vehicle: the second theme-pivot shell this screener has surfaced\", \"$41.1M quarterly loss against $6.97M of cash is roughly one quarter of runway\"], \"role\": \"researcher\", \"backend\": \"llm\"}"
+   },
+   {
+    "backend": "llm",
+    "call_id": 8,
+    "created_at": "2026-10-01T10:20:58+00:00",
+    "id": 37,
+    "role": "technician",
+    "score": 2.0,
+    "verdict_json": "{\"score\": 2.0, \"trend\": \"parabolic\", \"volume_pattern\": \"climactic\", \"extension_pct_sma20\": 141.14, \"support\": 2.77, \"reasons\": [\"+141% above SMA20 and +178% above SMA50 \\u2014 among the most extended readings possible\", \"RelVol 63x, +148% on the week, +272% on the month, +310% off the 52-week low\", \"RSI 75.8 and still -51.6% below SMA200: a vertical move inside a long downtrend\"], \"role\": \"technician\", \"backend\": \"llm\"}"
+   },
+   {
+    "backend": "llm",
+    "call_id": 8,
+    "created_at": "2026-10-01T10:20:58+00:00",
+    "id": 38,
+    "role": "skeptic",
+    "score": 10.0,
+    "verdict_json": "{\"score\": 10.0, \"objection_category\": \"dilution\", \"strongest_objection\": \"A company that has publicly told the exchange there is no reason for its stock price, burning $41.1M a quarter against $6.97M of cash, is up 253% in a month on a 1.83M float. Selling equity into this is not a risk \\u2014 it is the only rational thing management can do, and the window is open now.\", \"reasons\": [\"One quarter of runway and a share price up 253%: the raise is arithmetic\", \"66.2% short float on a 1.83M float means the price is squeeze mechanics, not valuation\", \"Institutional ownership 3.25% \\u2014 no professional capital has validated the pivot\"], \"role\": \"skeptic\", \"backend\": \"llm\"}"
+   },
+   {
+    "backend": "llm",
+    "call_id": 8,
+    "created_at": "2026-10-01T10:20:58+00:00",
+    "id": 39,
+    "role": "risk_manager",
+    "score": 2.0,
+    "verdict_json": "{\"score\": 2.0, \"direction\": \"long\", \"instrument\": \"call\", \"entry\": 3.2, \"stop\": 2.77, \"stop_basis\": \"1x ATR (0.43); the 15% trailing stop would sit at 2.72\", \"target\": 4.0, \"reasons\": [\"Weekly move of +148% means any stop inside 20% is inside the noise\", \"A 1.83M float that traded 16.1M shares will gap through a stop, not fill at it\"], \"role\": \"risk_manager\", \"backend\": \"llm\"}"
+   },
+   {
+    "backend": "llm",
+    "call_id": 8,
+    "created_at": "2026-10-01T10:20:58+00:00",
+    "id": 40,
+    "role": "judge",
+    "score": null,
+    "verdict_json": "{\"decision\": \"SKIP\", \"confidence\": 10, \"reason\": \"SKIP \\u2014 Skeptic objection not explicitly answered\", \"reasoning\": \"This is the clearest SKIP the tracker has produced. The Researcher did not merely fail to find a catalyst \\u2014 the company filed a statement saying none exists. Set against that: $41.1M of quarterly losses against $6.97M of cash, a rebrand from NovaBay Pharmaceuticals into a crypto treasury, and a price 141% above its 20-day average. Every role corroborates the Skeptic instead of offsetting it. I note that the tracker banked +175.8% on this same ticker last week from $1.04; that is exactly why I am refusing it at $3.20 \\u2014 the move I was paid for has already happened. What would change my mind: a completed raise and a base above SMA20.\", \"skeptic_answer\": \"There is no answer. The company's own filing is the Skeptic's evidence.\", \"skeptic_objections_answered\": false, \"role\": \"judge\", \"backend\": \"llm\", \"catalyst_penalty\": {\"researcher_score\": 1.0, \"floor\": 4.0, \"points\": 15, \"confidence_before\": 25, \"confidence_after\": 10}, \"gate_overrides\": [\"Skeptic objection not explicitly answered\", \"confidence 10 below threshold 55\"], \"judge_reason\": \"The issuer says there is no news. One quarter of cash, 253% month, 66% short float.\"}"
+   },
+   {
+    "backend": "llm",
+    "call_id": 9,
+    "created_at": "2026-10-01T10:20:59+00:00",
+    "id": 41,
+    "role": "researcher",
+    "score": 7.5,
+    "verdict_json": "{\"score\": 7.5, \"catalyst_type\": \"product_launch\", \"searched\": true, \"catalyst_summary\": \"Sequential, dated product catalysts: the 'Health Lives Here' app launched 2026-09-28 with Tollo Health targeting GLP-1 patients (telemedicine plus pharmacy fulfilment), the stock rose 25% on it, and a Galectovid direct-to-consumer launch is scheduled for TODAY, 2026-10-01. Long COVID expansion guided for Q4.\", \"catalyst_date\": \"2026-10-01\", \"sector_theme\": \"GLP-1 telehealth\", \"queries\": [\"DataMEDS AI MEDS stock news October 1 2026 offering\"], \"evidence\": [\"Investing.com / Benzinga: DataMeds AI stock rises on Health Lives Here app launch with Tollo Health, 2026-09-28\", \"Scheduled event: Galectovid DTC launch, 2026-10-01\", \"Prior: Helomics CLIA/CAP lab closed with $1.5M cash in; ~$19M of liabilities extinguished\"], \"reasons\": [\"Dated and sequential rather than a single press release \\u2014 app shipped, DTC launch today, Q4 expansion guided\", \"Builds on the balance-sheet repair already verified last week ($19M liabilities gone)\", \"Still a launch, not revenue: nothing here is yet in the financials\"], \"role\": \"researcher\", \"backend\": \"llm\"}"
+   },
+   {
+    "backend": "llm",
+    "call_id": 9,
+    "created_at": "2026-10-01T10:20:59+00:00",
+    "id": 42,
+    "role": "technician",
+    "score": 6.0,
+    "verdict_json": "{\"score\": 6.0, \"trend\": \"up\", \"volume_pattern\": \"accumulation\", \"extension_pct_sma20\": 80.88, \"support\": 4.39, \"reasons\": [\"Gapped only +3.8% but closed +62.8%: from_open +56.8%, so the session was BOUGHT, not faded\", \"That is the opposite signature to this ticker's last call, which gapped +25.7% and went nowhere (from_open -0.4%)\", \"RSI 64.7 \\u2014 extended at +81% over SMA20 but not yet overbought\"], \"role\": \"technician\", \"backend\": \"llm\"}"
+   },
+   {
+    "backend": "llm",
+    "call_id": 9,
+    "created_at": "2026-10-01T10:20:59+00:00",
+    "id": 43,
+    "role": "skeptic",
+    "score": 7.0,
+    "verdict_json": "{\"score\": 7.0, \"objection_category\": \"dilution\", \"strongest_objection\": \"A $16.4M company that lost $18.4M last quarter is up 421% in a month on a 1.54M float. The launches are announcements, not revenue, and management must sell equity into this strength.\", \"reasons\": [\"Quarterly loss exceeds the entire market capitalisation\", \"Institutional ownership 1.62%: no professional money has underwritten the story\", \"-92.9% from the 52-week high means this capital structure has been reset before\"], \"role\": \"skeptic\", \"backend\": \"llm\"}"
+   },
+   {
+    "backend": "llm",
+    "call_id": 9,
+    "created_at": "2026-10-01T10:20:59+00:00",
+    "id": 44,
+    "role": "risk_manager",
+    "score": 5.0,
+    "verdict_json": "{\"score\": 5.0, \"direction\": \"long\", \"instrument\": \"call\", \"entry\": 5.16, \"stop\": 4.39, \"stop_basis\": \"the tracker's 15% trailing stop, which is tighter than 1x ATR (1.16)\", \"target\": 7.0, \"reasons\": [\"Unlike last week, the exit is defined: the 15% trail caps the loss at -15% and ratchets on any new high\", \"ATR 1.16 is wider than the trail, so the stop will be hit on noise as often as on a trend break\", \"A 1.54M float makes the fill worse than the trigger \\u2014 assume slippage beyond 15%\"], \"role\": \"risk_manager\", \"backend\": \"llm\"}"
+   },
+   {
+    "backend": "llm",
+    "call_id": 9,
+    "created_at": "2026-10-01T10:20:59+00:00",
+    "id": 45,
+    "role": "judge",
+    "score": null,
+    "verdict_json": "{\"decision\": \"TAKE\", \"confidence\": 58, \"reason\": \"Dated launch today, bought intraday rather than faded, and a defined 15% exit.\", \"reasoning\": \"The first candidate where I can answer the Skeptic rather than concede to it. The dilution arithmetic is real and I am not dismissing it. But two things the other roles established cut against imminent distribution: the Technician has the stock up 56.8% FROM THE OPEN, which is accumulation through the session rather than supply hitting a gap, and the Risk Manager now has a defined 15% trailing exit that did not exist when I last judged this ticker. The catalyst is dated to today and sequential rather than a single announcement. I am taking it with the loss bounded at roughly -15% and no expectation of holding through a financing. What would change my mind: an offering filed, or a close back below the 20-day.\", \"skeptic_answer\": \"The raise is likely and I accept it. What I do not accept is that it is imminent THIS session: a stock being bought +56.8% from the open is not one being distributed into, and the 15% trailing stop means a financing announcement costs roughly 15%, not 50%. That is a risk I can size.\", \"skeptic_objections_answered\": true, \"role\": \"judge\", \"backend\": \"llm\"}"
    }
   ],
   "runs": [
@@ -2638,6 +2822,57 @@
     "screening_ran": 1,
     "session_reason": "regular trading hours",
     "started_at": "2026-09-30T19:15:39+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-01T07:54:39+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 0,
+    "reviewed": 0,
+    "run_id": "run_20261001T075438Z",
+    "screening_ran": 0,
+    "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
+    "started_at": "2026-10-01T07:54:39+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-01T10:18:56+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 2,
+    "new_shadows": 2,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 0,
+    "reviewed": 2,
+    "run_id": "run_20261001T101832Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-10-01T10:18:32+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-01T10:21:32+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 the 'anthropic' package is not installed",
+    "priced": 0,
+    "reviewed": 0,
+    "run_id": "run_20261001T102109Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-10-01T10:21:09+00:00"
    }
   ]
  }
