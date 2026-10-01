@@ -2,11 +2,11 @@
  "counts": {
   "calls": 12,
   "llm_usage": 0,
-  "price_history": 169,
+  "price_history": 172,
   "role_verdicts": 55,
-  "runs": 61
+  "runs": 62
  },
- "exported_at": "2026-10-01T14:40:25+00:00",
+ "exported_at": "2026-10-01T15:07:22+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -305,7 +305,7 @@
     "close_reason": "false stop on the 2026-09-30 bar, a session that closed before this call was made; reversed 2026-10-01",
     "closed_at": null,
     "confidence": 10,
-    "current_price": 4.199999809265137,
+    "current_price": 4.06689977645874,
     "direction": "long",
     "entry_price": 3.2,
     "expiry_date": null,
@@ -315,10 +315,10 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP \u2014 Skeptic objection not explicitly answered",
     "kind": "shadow",
-    "last_price_at": "2026-10-01T14:37:14+00:00",
+    "last_price_at": "2026-10-01T15:00:20+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
     "peak_price": 4.244999885559082,
-    "pnl_pct": 31.25,
+    "pnl_pct": 27.0906,
     "position_usd": null,
     "price_as_of": "2026-10-01",
     "researcher_score": 1.0,
@@ -428,7 +428,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 42,
-    "current_price": 3.289900064468384,
+    "current_price": 3.115000009536743,
     "direction": "long",
     "entry_price": 3.2,
     "expiry_date": null,
@@ -438,10 +438,10 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at low conviction (42). In favour: the first filed, dated, same-day catalyst in this book; the best technicals logged so far (113x relative volume, bought through the open); and an extreme squeeze structure, 76.5% of a 1.59M float. Against, and decisive: a 27% ATR against our fixed 15% trailing stop means ordinary noise very likely closes this regardless of whether the thesis is right \u2014 MEDS realised exactly that failure mode this morning. The catalyst is also non-binding, and a term sheet on a company with $887k of cash can reverse on a single 8-K. Bias check: VEEA looks attractive partly because it has the catalyst the rest of the book lacked. That is a genuine signal, not a bias, but it must not override the stop geometry. Stated plainly: if the trailing stop were ATR-scaled rather than fixed at 15%, this would be a TAKE.",
     "kind": "shadow",
-    "last_price_at": "2026-10-01T14:37:14+00:00",
+    "last_price_at": "2026-10-01T15:00:20+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 3.299999952316284,
-    "pnl_pct": 2.8094,
+    "pnl_pct": -2.6562,
     "position_usd": null,
     "price_as_of": "2026-10-01",
     "researcher_score": 6.5,
@@ -469,7 +469,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 88,
-    "current_price": 4.019999980926514,
+    "current_price": 3.9200000762939453,
     "direction": "long",
     "entry_price": 4.3,
     "expiry_date": null,
@@ -479,10 +479,10 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at high conviction (88). Catalysts are press releases, not filings; the stock is 85% above its 50-day; squeeze fuel is absent at short ratio 0.08; the balance sheet is $2.46M cash against $32.6M debt; and this is a third call on a name that stopped out twice this week, offered above the live tape. The one point in its favour, from_open +10.5%, is the same signal that justified the 5.16 entry at 06:18 this morning, and that entry is already a realised -19.0%. Logged explicitly: the Technician signal that persuaded me last time has now been falsified once on this exact ticker, so I am weighting it down.",
     "kind": "shadow",
-    "last_price_at": "2026-10-01T14:37:14+00:00",
+    "last_price_at": "2026-10-01T15:00:20+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 4.3,
-    "pnl_pct": -6.5116,
+    "pnl_pct": -8.8372,
     "position_usd": null,
     "price_as_of": "2026-10-01",
     "researcher_score": 4.0,
@@ -1687,6 +1687,27 @@
     "observed_at": "2026-10-01T14:37:14+00:00",
     "pnl_pct": -6.5116,
     "price": 4.019999980926514
+   },
+   {
+    "call_id": 8,
+    "id": 175,
+    "observed_at": "2026-10-01T15:00:20+00:00",
+    "pnl_pct": 27.0906,
+    "price": 4.06689977645874
+   },
+   {
+    "call_id": 11,
+    "id": 176,
+    "observed_at": "2026-10-01T15:00:20+00:00",
+    "pnl_pct": -2.6562,
+    "price": 3.115000009536743
+   },
+   {
+    "call_id": 12,
+    "id": 177,
+    "observed_at": "2026-10-01T15:00:20+00:00",
+    "pnl_pct": -8.8372,
+    "price": 3.9200000762939453
    }
   ],
   "role_verdicts": [
@@ -3223,6 +3244,23 @@
     "screening_ran": 1,
     "session_reason": "regular trading hours",
     "started_at": "2026-10-01T14:37:13+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-01T15:00:44+00:00",
+    "hits": 3,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 the 'anthropic' package is not installed",
+    "priced": 3,
+    "reviewed": 0,
+    "run_id": "run_20261001T150019Z",
+    "screening_ran": 1,
+    "session_reason": "regular trading hours",
+    "started_at": "2026-10-01T15:00:19+00:00"
    }
   ]
  }

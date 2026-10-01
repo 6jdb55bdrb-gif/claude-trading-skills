@@ -170,3 +170,67 @@ operator's call.
   once, consider scaling the slice down by the trail width so each call risks a
   similar number of dollars rather than a similar number of dollars of notional.
 - **Approve?** ☐ yes  ☐ no
+
+## Findings added by hand — 2026-10-01, third scan
+
+### 10. [HIGH] the two dead variants, diagnosed against the live screener
+
+Three consecutive scans have returned the same three tickers. Probing each
+variant's filters one token at a time, live, settles why.
+
+**`momentum_breakout` — 0 hits, and redundant rather than merely broken.**
+`ta_highlow52w_nh` (at a new 52-week high) is the binding token: dropping it
+takes the variant from 0 hits to 3. But those 3 are **SDEV, VEEA, MEDS** — the
+identical set `squeeze` already returns. Every other token in the variant
+(cap, price band, relvol, above SMA20/50, float, US-only) is a subset of the
+squeeze filters, so the 52-week high was the *only* thing distinguishing the
+two. Fixing it does not widen the funnel; it clones it.
+
+| token dropped | hits |
+|---|---|
+| `ta_highlow52w_nh` | 3 — `SDEV, VEEA, MEDS` (same as squeeze) |
+| `sh_float_u20` | 1 |
+| `sh_avgvol_o500` | 1 |
+| anything else | 0 |
+
+**`etf_momentum` — 0 hits; fixable, but into a different strategy.**
+Same binding token: dropping `ta_highlow52w_nh` gives 5 hits — `COHH, AXTL,
+DXD, TETH, RWM`. DXD and RWM are *inverse* index ETFs (short Dow, short Russell
+2000). So the variant can be made to fire, but what it returns is leveraged and
+inverse index products at a new high — a market-hedging signal, not a lowcap
+squeeze. As written it does not belong in this skill.
+
+**The root contradiction:** this strategy screens microcaps that are 80-95%
+below their 52-week highs for short squeezes. Two of the three variants
+simultaneously require a *new 52-week high*. The premises cannot both hold, so
+the variants were unfireable from the day they were written, not broken later.
+
+**What actually limits `squeeze`,** measured the same way — and note that the
+cheap-looking knobs do nothing:
+
+| change | hits |
+|---|---|
+| as shipped (`sh_float_u20`, `sh_short_o15`) | 3 — `SDEV, VEEA, MEDS` |
+| `sh_float_u50` | 3 — unchanged |
+| `sh_float_u100` | 5 — `+ VUZI, GO` |
+| no float filter | 6 — `+ PACB` |
+| no float, `sh_short_o10` | 8 |
+| no float, no short-float floor | 14 |
+| market cap up to mid, float u50, short o20 | 3 — unchanged |
+
+Widening short float or market cap changes nothing. The float cap is the only
+knob that adds names while leaving the thesis intact, and the short-float floor
+*is* the thesis — removing it is not widening the screen, it is abandoning the
+premise the whole book is built on.
+
+- **Options, in order of cost:**
+  1. `sh_float_u20` → `sh_float_u100` on `squeeze`: 3 → 5-6 names a day, thesis
+     untouched. The cheapest real improvement.
+  2. Delete `momentum_breakout`. Fixing it duplicates `squeeze`; it cannot earn
+     its place without being re-specified around a genuinely different setup
+     (a pullback-continuation entry, say, rather than a breakout).
+  3. Drop `etf_momentum` from this skill, or re-scope it explicitly as a
+     market-hedging screen and judge it on different criteria.
+  4. `sh_short_o15` → `sh_short_o10`: 8 names, but a weaker squeeze premise.
+     Not recommended without a reason to believe 10-15% short float squeezes.
+- **Approve?** ☐ 1  ☐ 2  ☐ 3  ☐ 4  ☐ none

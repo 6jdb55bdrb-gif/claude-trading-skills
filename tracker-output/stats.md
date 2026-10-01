@@ -8,11 +8,11 @@
 
 **Backend:** DOWN · reviewed 10 / unreviewed 0 · TAKE/SKIP 1/9 (10.0% TAKE)
 
-**Portfolio:** $1,126.04 (+12.60% on $1,000.00) · 30.0% allocated · cash $798.49
+**Portfolio:** $1,114.08 (+11.41% on $1,000.00) · 30.0% allocated · cash $798.49
 
-**Total PnL:** +12.60% — equal weight across all 10 priced call(s)
+**Total PnL:** +11.41% — equal weight across all 10 priced call(s)
 
-**Generated:** 2026-10-01T14:37:38+00:00  
+**Generated:** 2026-10-01T15:00:44+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -26,12 +26,12 @@
 | TAKE calls | 1 |
 | Shadow (SKIP) calls | 9 |
 | Open | 3 |
-| Right | 4 |
+| Right | 3 |
 | Wrong | 5 |
-| Neutral | 1 |
-| Hit rate % | 40.0 |
-| **Total PnL % (equal weight, all calls)** | +12.60% |
-| Average PnL % per call | 12.6 |
+| Neutral | 2 |
+| Hit rate % | 30.0 |
+| **Total PnL % (equal weight, all calls)** | +11.41% |
+| Average PnL % per call | 11.41 |
 | Portfolio PnL % (equal weight, TAKE only) | -18.99 |
 
 **Best call:** SDEV (long, squeeze, shadow) +175.82% — entry 1.04 → 2.868499994277954
@@ -41,46 +41,46 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 10 | 3 | 4 | 5 | 1 | 40.0 | 12.6 |
+| call | 10 | 3 | 3 | 5 | 2 | 30.0 | 11.41 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| stock | 10 | 3 | 4 | 5 | 1 | 40.0 | 12.6 |
+| stock | 10 | 3 | 3 | 5 | 2 | 30.0 | 11.41 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| squeeze | 10 | 3 | 4 | 5 | 1 | 40.0 | 12.6 |
+| squeeze | 10 | 3 | 3 | 5 | 2 | 30.0 | 11.41 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | TAKE | 1 | 0 | 0 | 1 | 0 | 0.0 | -18.99 |
-| SKIP (shadow) | 9 | 3 | 4 | 4 | 1 | 44.4 | 16.11 |
+| SKIP (shadow) | 9 | 3 | 3 | 4 | 2 | 33.3 | 14.79 |
 
-**Judge edge (avg PnL TAKE − avg PnL shadow):** -35.11 → Judge is not adding value
+**Judge edge (avg PnL TAKE − avg PnL shadow):** -33.78 → Judge is not adding value
 
 ### Per-role accuracy
 
 | Role | Avg score (winners) | Avg score (others) | Edge | Corr(score, PnL) | n | Polarity |
 |---|---|---|---|---|---|---|
-| researcher | 4.88 | 5.17 | -0.29 | -0.179 | 10 | quality (higher is better) |
-| technician | 4.88 | 4.75 | 0.12 | 0.115 | 10 | quality (higher is better) |
-| skeptic | 8.12 | 7.33 | 0.79 | 0.42 | 10 | severity (lower is better) |
-| risk_manager | 4.88 | 4.25 | 0.62 | 0.572 | 10 | quality (higher is better) |
+| researcher | 4.33 | 5.36 | -1.02 | -0.169 | 10 | quality (higher is better) |
+| technician | 4.0 | 5.14 | -1.14 | 0.115 | 10 | quality (higher is better) |
+| skeptic | 9.0 | 7.07 | 1.93 | 0.419 | 10 | severity (lower is better) |
+| risk_manager | 5.0 | 4.29 | 0.71 | 0.588 | 10 | quality (higher is better) |
 
 ### Confidence buckets
 
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| 0-40 | 2 | 1 | 1 | 1 | 0 | 50.0 | 8.54 |
-| 40-70 | 7 | 1 | 3 | 4 | 0 | 42.9 | 16.5 |
-| 70-100 | 1 | 1 | 0 | 0 | 1 | 0.0 | -6.51 |
+| 0-40 | 2 | 1 | 1 | 1 | 0 | 50.0 | 6.46 |
+| 40-70 | 7 | 1 | 2 | 4 | 1 | 28.6 | 15.71 |
+| 70-100 | 1 | 1 | 0 | 0 | 1 | 0.0 | -8.84 |
 
 
 ### Voided calls
@@ -98,9 +98,9 @@ anything.
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20261001T143713Z | 2026-10-01T14:37:13+00:00 | yes | — | — | — |
+| run_20261001T150019Z | 2026-10-01T15:00:19+00:00 | yes | — | — | — |
+| run_20261001T143713Z | 2026-10-01T14:37:13+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261001T135115Z | 2026-10-01T13:51:15+00:00 | yes | 2 | 1 | 0.0 |
 | run_20261001T125611Z | 2026-10-01T12:56:11+00:00 | yes | 1 | 1 | 0.0 |
 | run_20261001T102109Z | 2026-10-01T10:21:09+00:00 | yes | 0 | 0 | 0.0 |
-| run_20261001T101832Z | 2026-10-01T10:18:32+00:00 | yes | 2 | 0 | 0.0 |
 
