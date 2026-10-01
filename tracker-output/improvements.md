@@ -110,3 +110,63 @@ operator's call.
   multiplier only ever widens a trail that is switched on. Closed calls were
   left closed — their stops fired under the rule in force at the time, and
   re-opening banked results would rewrite the record.
+
+## Findings added by hand — 2026-10-01, second scan
+
+### 7. [HIGH] the "Judge is not adding value" line is not yet measuring the Judge
+
+- **Finding:** stats.md reports `edge=-35.11 (Judge is not adding value)`. That
+  number is one TAKE against nine SKIPs, and eight of those nine carry template
+  text rather than reasoning: calls 1-8 all read "Skeptic objection unanswered"
+  or "SKIP — Skeptic objection not explicitly answered", with the identical
+  sentence produced for a Skeptic score of 4.5 (GDC) and of 10.0 (SDEV). A rule
+  that fires the same way on a 4.5 and a 10.0 is not weighing anything. Note
+  that the `backend` column says `llm` for calls 4-8 even so, which is exactly
+  the silent-fallback problem the backend health check was added to stop — the
+  column cannot be trusted for that era.
+- **Consequence:** the Judge-edge figure, the per-role edges and the
+  confidence-bucket table are currently descriptions of a heuristic that no
+  longer runs. They should not be used to tune the Judge, and the learning
+  loop's "Judge too strict?" proposal rests on the same rows.
+- **Proposed change:** compute the Judge-edge and per-role statistics only over
+  calls whose review carries substantive reasoning, and report the count
+  alongside, so three real reviews cannot read as a verdict on the system.
+- **Approve?** ☐ yes  ☐ no
+
+### 8. [MEDIUM] SDEV is the one name the template gate rejected, twice
+
+- **Finding:** SDEV was SKIPped at 1.04 (+175.8%, the book's best call) and again
+  at 3.20 (+31.2% open). Both times the stated reason was an unanswered Skeptic
+  objection; both times the Skeptic score was 9.0-10.0. Every other call the
+  same gate rejected lost money, so the gate is 5-for-7 — but the two it missed
+  are the only two calls that made anything.
+- **Reading, stated carefully:** the gated group averages +21.2%, and that whole
+  number is SDEV. The median of the group is -13.5%. This is not evidence that
+  the gate is backwards; it is evidence that a blanket objection rule cannot
+  distinguish the one setup worth taking from five that were not.
+- **Proposed change:** when the role review is live again, check whether a high
+  Skeptic score on a *dilution* objection behaves differently from one on an
+  *extension* objection. SDEV's was dilution both times.
+- **Approve?** ☐ yes  ☐ no
+
+### 9. [MEDIUM] what the wider trail costs per position
+
+- **Finding:** with the ATR trail live, the stop on a fresh call sits far below
+  entry until the price rises. Today's book:
+
+  | | entry | trail | stop at | locked in |
+  |---|---|---|---|---|
+  | SDEV | 3.20 | 20.2% | 3.39 | **+5.9%** |
+  | VEEA | 3.20 | 40.3% | 1.97 | -38.4% |
+  | MEDS | 4.30 | 37.7% | 2.68 | -37.7% |
+
+  SDEV has risen enough that its trail now protects a gain. VEEA and MEDS each
+  risk about 38% of the slice before the stop engages — $38 of a $100 slice,
+  which is 3.8% of the $1,000 account per position, or roughly 11% across three.
+  That is the accepted cost of not being stopped out by noise, and it is larger
+  than the old fixed 15% made it look.
+- **Proposed change:** none yet — this is the agreed trade-off, recorded so the
+  account-level risk is visible. If three or four wide-ATR positions open at
+  once, consider scaling the slice down by the trail width so each call risks a
+  similar number of dollars rather than a similar number of dollars of notional.
+- **Approve?** ☐ yes  ☐ no
