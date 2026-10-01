@@ -2,7 +2,7 @@
 
 > ## ⛔ BACKEND DOWN
 >
-> The role review could not run: the 'anthropic' package is not installed.
+> The role review could not run: None.
 > New screener hits are recorded UNREVIEWED and will be judged on the
 > next healthy run. No decision below was made while the backend was down.
 
@@ -12,7 +12,7 @@
 
 **Total PnL:** +14.68% — equal weight across all 8 priced call(s)
 
-**Generated:** 2026-10-01T10:21:32+00:00  
+**Generated:** 2026-10-01T13:11:55+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -22,7 +22,7 @@
 | Total calls | 8 |
 | Reviewed calls | 8 |
 | UNREVIEWED calls | 0 |
-| Voided (not executable) | 1 |
+| Voided (not executable) | 2 |
 | TAKE calls | 1 |
 | Shadow (SKIP) calls | 7 |
 | Open | 2 |
@@ -92,14 +92,15 @@ anything.
 | Ticker | Instrument | PnL % | Reason |
 |---|---|---|---|
 | NCPL | put | -27.06% | put: not executable — no listed options and no borrow on this name |
+| SDEV | — | +0.00% | duplicate: created only because call 8 was falsely stopped on a pre-entry bar |
 
 ### Recent runs
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20261001T102109Z | 2026-10-01T10:21:09+00:00 | yes | — | — | — |
+| run_20261001T125611Z | 2026-10-01T12:56:11+00:00 | yes | 1 | 1 | 0.0 |
+| run_20261001T102109Z | 2026-10-01T10:21:09+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261001T101832Z | 2026-10-01T10:18:32+00:00 | yes | 2 | 0 | 0.0 |
 | run_20261001T075438Z | 2026-10-01T07:54:39+00:00 | no | 0 | 0 | 0.0 |
 | run_20260930T191539Z | 2026-09-30T19:15:39+00:00 | yes | 0 | 0 | 0.0 |
-| run_20260930T152320Z | 2026-09-30T15:23:20+00:00 | yes | 0 | 1 | 0.0 |
 

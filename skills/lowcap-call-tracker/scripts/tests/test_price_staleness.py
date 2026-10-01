@@ -13,7 +13,9 @@ def test_a_stale_bar_never_overwrites_a_newer_mark(tmp_db, config):
     """The reported failure: an overnight run reverted every call to the
     previous session's close, because the forming daily bar has no Close yet
     and the fetcher silently fell back to the last complete one."""
-    call_id = tmp_db.insert_call(review_payload("GRML", entry=10.67), run_id="r1")
+    call_id = tmp_db.insert_call(
+        review_payload("GRML", entry=10.67), run_id="r1", now="2026-09-20T00:00:00+00:00"
+    )
 
     # Intraday on the 22nd: a real, newer observation.
     tmp_db.apply_price(
@@ -37,14 +39,18 @@ def test_a_stale_bar_never_overwrites_a_newer_mark(tmp_db, config):
 
 
 def test_a_same_day_refresh_is_applied(tmp_db, config):
-    call_id = tmp_db.insert_call(review_payload("GRML", entry=10.67), run_id="r1")
+    call_id = tmp_db.insert_call(
+        review_payload("GRML", entry=10.67), run_id="r1", now="2026-09-20T00:00:00+00:00"
+    )
     tmp_db.apply_price(call_id, 14.20, close_threshold_pct=None, as_of="2026-09-22")
     update_open_calls(tmp_db, config, prices={"GRML": {"price": 15.10, "as_of": "2026-09-22"}})
     assert tmp_db.call(call_id)["current_price"] == 15.10
 
 
 def test_a_newer_bar_is_applied(tmp_db, config):
-    call_id = tmp_db.insert_call(review_payload("GRML", entry=10.67), run_id="r1")
+    call_id = tmp_db.insert_call(
+        review_payload("GRML", entry=10.67), run_id="r1", now="2026-09-20T00:00:00+00:00"
+    )
     tmp_db.apply_price(call_id, 14.20, close_threshold_pct=None, as_of="2026-09-22")
     update_open_calls(tmp_db, config, prices={"GRML": {"price": 9.42, "as_of": "2026-09-23"}})
     assert tmp_db.call(call_id)["current_price"] == 9.42
@@ -52,21 +58,35 @@ def test_a_newer_bar_is_applied(tmp_db, config):
 
 def test_a_plain_float_still_works(tmp_db, config):
     """--prices-json and every existing caller pass bare numbers."""
-    call_id = tmp_db.insert_call(review_payload("GRML", entry=10.67), run_id="r1")
+    call_id = tmp_db.insert_call(
+        review_payload("GRML", entry=10.67), run_id="r1", now="2026-09-20T00:00:00+00:00"
+    )
     update_open_calls(tmp_db, config, prices={"GRML": 12.00})
     assert tmp_db.call(call_id)["current_price"] == 12.00
 
 
-def test_the_first_price_is_always_accepted(tmp_db, config):
-    """A call with no recorded bar date has nothing to regress from."""
-    call_id = tmp_db.insert_call(review_payload("GRML", entry=10.67), run_id="r1")
+def test_the_first_price_must_still_post_date_the_call(tmp_db, config):
+    """Superseded: a first mark is NOT accepted unconditionally.
+
+    A call has nothing to regress from, but it can still be handed a bar that
+    closed before it existed — which is exactly how a fresh call was once marked
+    to the previous session and stopped out at a loss it never had.
+    """
+    call_id = tmp_db.insert_call(
+        review_payload("GRML", entry=10.67), run_id="r1", now="2026-09-20T00:00:00+00:00"
+    )
     update_open_calls(tmp_db, config, prices={"GRML": {"price": 9.42, "as_of": "2020-01-01"}})
+    assert tmp_db.call(call_id)["current_price"] == 10.67  # entry holds
+
+    update_open_calls(tmp_db, config, prices={"GRML": {"price": 9.42, "as_of": "2026-09-21"}})
     assert tmp_db.call(call_id)["current_price"] == 9.42
 
 
 def test_a_stale_call_is_still_reported(tmp_db, config):
     """A refused price must not make the position vanish from the report."""
-    call_id = tmp_db.insert_call(review_payload("GRML", entry=10.67), run_id="r1")
+    call_id = tmp_db.insert_call(
+        review_payload("GRML", entry=10.67), run_id="r1", now="2026-09-20T00:00:00+00:00"
+    )
     tmp_db.apply_price(call_id, 14.20, close_threshold_pct=None, as_of="2026-09-22")
     result = update_open_calls(
         tmp_db, config, prices={"GRML": {"price": 9.42, "as_of": "2026-09-21"}}
@@ -100,7 +120,9 @@ def test_a_held_mark_reads_differently_from_a_missing_one(tmp_db, config):
     import telegram_bot as tb
     from price_update import format_updates
 
-    call_id = tmp_db.insert_call(review_payload("GRML", entry=10.67), run_id="r1")
+    call_id = tmp_db.insert_call(
+        review_payload("GRML", entry=10.67), run_id="r1", now="2026-09-20T00:00:00+00:00"
+    )
     tmp_db.apply_price(call_id, 14.20, close_threshold_pct=None, as_of="2026-09-22")
     result = update_open_calls(
         tmp_db, config, prices={"GRML": {"price": 9.42, "as_of": "2026-09-21"}}

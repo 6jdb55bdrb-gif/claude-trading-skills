@@ -56,7 +56,9 @@ def test_health_check_reports_a_spent_budget(config, tmp_db):
         {
             "run_id": "r1",
             "created_at": NOW.isoformat(),
-            "month": NOW.strftime("%Y-%m"),
+            # The cap is month-to-date, so the record must land in the CURRENT
+            # month or this test quietly stops testing anything next month.
+            "month": datetime.now(timezone.utc).strftime("%Y-%m"),
             "role": "judge",
             "model": "claude-sonnet-5",
             "input_tokens": 1,

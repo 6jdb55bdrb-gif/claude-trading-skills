@@ -1,12 +1,12 @@
 {
  "counts": {
-  "calls": 9,
+  "calls": 10,
   "llm_usage": 0,
-  "price_history": 158,
+  "price_history": 159,
   "role_verdicts": 45,
-  "runs": 58
+  "runs": 59
  },
- "exported_at": "2026-10-01T10:21:34+00:00",
+ "exported_at": "2026-10-01T13:11:55+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -295,7 +295,7 @@
     "asset_type": "stock",
     "backend": "llm",
     "call_date": "2026-10-01T10:18:56+00:00",
-    "close_reason": null,
+    "close_reason": "false stop on the 2026-09-30 bar, a session that closed before this call was made; reversed 2026-10-01",
     "closed_at": null,
     "confidence": 10,
     "current_price": 3.2,
@@ -308,7 +308,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP \u2014 Skeptic objection not explicitly answered",
     "kind": "shadow",
-    "last_price_at": "2026-10-01T10:18:56+00:00",
+    "last_price_at": "2026-10-01T12:56:12+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
     "peak_price": 3.2,
     "pnl_pct": 0.0,
@@ -369,6 +369,46 @@
     "target_price": 7.0,
     "technician_score": 6.0,
     "ticker": "MEDS"
+   },
+   {
+    "allocation_usd": 100.0,
+    "asset_type": "stock",
+    "backend": "none",
+    "call_date": "2026-10-01T12:56:36+00:00",
+    "close_reason": "duplicate: created only because call 8 was falsely stopped on a pre-entry bar",
+    "closed_at": "2026-10-01T12:59:49+00:00",
+    "confidence": 0,
+    "current_price": 3.48,
+    "direction": "long",
+    "entry_price": 3.48,
+    "expiry_date": null,
+    "hit_json": "{\"ticker\": \"SDEV\", \"company\": \"Stablecoin Development Corp\", \"sector\": \"Financial\", \"industry\": \"Asset Management\", \"country\": \"USA\", \"market_cap\": 180110000.0, \"price\": 3.48, \"change_pct\": 34.37, \"volume\": 23225845.0, \"shares_outstanding\": 50590000.0, \"float_shares\": 1830000.0, \"insider_trans_pct\": -0.15, \"inst_own_pct\": 3.25, \"short_float_pct\": 66.24, \"short_ratio\": 0.24, \"avg_volume\": 5100000.0, \"perf_week_pct\": 168.26, \"perf_month_pct\": 302.49, \"perf_quarter_pct\": 154.46, \"perf_half_pct\": 117.65, \"perf_ytd_pct\": -87.73, \"perf_year_pct\": -49.48, \"volatility_week_pct\": 47.46, \"volatility_month_pct\": 19.87, \"rel_volume\": 91.23, \"beta\": -0.08, \"atr\": 0.43, \"sma20_pct\": 158.25, \"sma50_pct\": 198.85, \"sma200_pct\": -47.65, \"high52w_pct\": -96.53, \"low52w_pct\": 343.16, \"rsi\": 77.43, \"from_open_pct\": 24.48, \"gap_pct\": 7.34, \"asset_type\": \"stock\", \"variant\": \"squeeze\", \"screen_mode\": \"public\", \"filters\": \"cap_smallunder,sh_price_1to20,sh_avgvol_o500,sh_relvol_o2,ta_perf_dup,ta_sma20_pa,ta_sma50_pa,ind_stocksonly,geo_usa,sh_float_u20,sh_short_o15\"}",
+    "id": 10,
+    "instrument": null,
+    "judge_decision": "UNREVIEWED",
+    "judge_reason": null,
+    "kind": "unreviewed",
+    "last_price_at": "2026-10-01T12:56:36+00:00",
+    "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
+    "peak_price": 3.48,
+    "pnl_pct": 0.0,
+    "position_usd": null,
+    "price_as_of": null,
+    "researcher_score": null,
+    "review_run_id": null,
+    "reviewed_at": null,
+    "risk_manager_score": null,
+    "risk_usd": null,
+    "run_id": "run_20261001T125611Z",
+    "screen_variant": "squeeze",
+    "shares": null,
+    "skeptic_score": null,
+    "status": "VOID",
+    "stop_price": null,
+    "strike": null,
+    "target_price": null,
+    "technician_score": null,
+    "ticker": "SDEV"
    }
   ],
   "llm_usage": [],
@@ -1478,6 +1518,13 @@
     "observed_at": "2026-10-01T10:18:56+00:00",
     "pnl_pct": 0.0,
     "price": 5.16
+   },
+   {
+    "call_id": 10,
+    "id": 164,
+    "observed_at": "2026-10-01T12:56:36+00:00",
+    "pnl_pct": 0.0,
+    "price": 3.48
    }
   ],
   "role_verdicts": [
@@ -2873,6 +2920,23 @@
     "screening_ran": 1,
     "session_reason": "trading day, extended hours",
     "started_at": "2026-10-01T10:21:09+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 1,
+    "finished_at": "2026-10-01T12:56:36+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 1,
+    "new_shadows": 1,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 ANTHROPIC_API_KEY is not set",
+    "priced": 1,
+    "reviewed": 1,
+    "run_id": "run_20261001T125611Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-10-01T12:56:11+00:00"
    }
   ]
  }

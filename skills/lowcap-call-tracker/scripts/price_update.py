@@ -141,6 +141,7 @@ def update_open_calls(
     # An explicitly empty mapping means "offline, no prices" — not "go fetch".
     resolved = _as_points(prices) if prices is not None else fetch_price_points(tickers)
     stale_sources: list[str] = []
+    pre_entry_bars: list[str] = []
 
     updates: list[dict[str, Any]] = []
     missing: list[str] = []
@@ -155,6 +156,14 @@ def update_open_calls(
         regressed = bool(as_of and row["price_as_of"] and as_of < row["price_as_of"])
         if regressed:
             stale_sources.append(row["ticker"])
+            price = None
+        # A bar that closed BEFORE the call was made cannot price it. The entry
+        # comes from the live screener; the provider's newest complete daily bar
+        # can still be the previous session. Marking a fresh call to a price that
+        # predates it invents a loss — and the trailing stop then acts on it.
+        pre_entry = bool(as_of and not regressed and str(row["call_date"])[:10] > as_of)
+        if pre_entry:
+            pre_entry_bars.append(row["ticker"])
             price = None
         common = {
             "direction": row["direction"],
@@ -173,7 +182,7 @@ def update_open_calls(
             # An open call that cannot be priced must still be REPORTED, with its
             # last known figures and how stale they are — dropping it from the
             # report is how a position quietly disappears.
-            if not regressed:
+            if not regressed and not pre_entry:
                 missing.append(row["ticker"])
             updates.append(
                 {
@@ -184,6 +193,7 @@ def update_open_calls(
                     "closed": False,
                     "priced": False,
                     "stale_source": regressed,
+                    "pre_entry": pre_entry,
                     "last_price_at": row["last_price_at"],
                     "stale_days": _age_days(row["last_price_at"], now),
                     **common,
@@ -198,6 +208,7 @@ def update_open_calls(
             trailing_stop_pct=trailing,
         )
         result["stale_source"] = False
+        result["pre_entry"] = False
         result.update({"priced": True, "stale_days": 0, **common})
         updates.append(result)
 
@@ -215,6 +226,7 @@ def update_open_calls(
         "closed": sum(1 for update in updates if update["closed"]),
         "missing_prices": missing,
         "stale_sources": stale_sources,
+        "pre_entry_bars": pre_entry_bars,
         "updates": updates,
         "threshold_pct": threshold,
     }
@@ -231,6 +243,10 @@ def format_updates(result: dict[str, Any]) -> str:
             tag = f"STOPPED ({verdict})"
         elif update["closed"]:
             tag = "CLOSED (WRONG)"
+        elif update.get("pre_entry"):
+            # Called today from the live screener; the provider's newest complete
+            # bar is still yesterday's. The call holds its entry until a real one.
+            tag = f"{update['kind'].upper()} · AWAITING FIRST BAR"
         elif update.get("stale_source"):
             # The provider offered an older session than the mark we already
             # hold. Keeping the newer mark is the correct answer, not a gap.
