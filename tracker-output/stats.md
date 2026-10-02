@@ -2,7 +2,7 @@
 
 > ## ⛔ BACKEND DOWN
 >
-> The role review could not run: None.
+> The role review could not run: the 'anthropic' package is not installed.
 > New screener hits are recorded UNREVIEWED and will be judged on the
 > next healthy run. No decision below was made while the backend was down.
 
@@ -14,7 +14,7 @@
 
 **Total PnL:** +11.57% — equal weight across all 10 priced call(s)
 
-**Generated:** 2026-10-02T10:09:04+00:00  
+**Generated:** 2026-10-02T12:14:57+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -100,9 +100,9 @@ anything.
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
+| run_20261002T121432Z | 2026-10-02T12:14:32+00:00 | yes | — | — | — |
 | run_20261002T100707Z | 2026-10-02T10:07:07+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261002T100233Z | 2026-10-02T10:02:33+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261002T080618Z | 2026-10-02T08:06:18+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261002T045403Z | 2026-10-02T04:54:03+00:00 | no | 0 | 0 | 0.0 |
-| run_20261001T173437Z | 2026-10-01T17:34:37+00:00 | yes | 0 | 0 | 0.0 |
 

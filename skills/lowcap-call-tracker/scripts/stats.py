@@ -374,7 +374,9 @@ def render_markdown(stats: dict[str, Any]) -> str:
         lines += [
             "> ## ⛔ BACKEND DOWN",
             ">",
-            f"> The role review could not run: {backend.get('reason', 'unknown reason')}.",
+            # .get(key, default) only defaults on an ABSENT key, and `reason` is
+            # always present — so a None value printed as the word "None".
+            f"> The role review could not run: {_reason(backend)}.",
             "> New screener hits are recorded UNREVIEWED and will be judged on the",
             "> next healthy run. No decision below was made while the backend was down.",
             "",
@@ -534,6 +536,13 @@ def render_markdown(stats: dict[str, Any]) -> str:
             )
         lines.append("")
     return "\n".join(lines) + "\n"
+
+
+def _reason(backend: dict[str, Any]) -> str:
+    """Why the backend is down, or a phrase saying we were not told."""
+    reason = (backend or {}).get("reason")
+    text = str(reason).strip() if reason is not None else ""
+    return text or "no reason recorded"
 
 
 def _signed(value: Any) -> str:
