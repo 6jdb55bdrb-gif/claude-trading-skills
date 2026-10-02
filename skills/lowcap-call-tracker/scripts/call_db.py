@@ -716,8 +716,16 @@ class CallDatabase:
         now: str | None = None,
         as_of: str | None = None,
         trailing_stop_pct: float | None = None,
+        session_high: float | None = None,
     ) -> dict[str, Any]:
-        """Record a price observation, recompute PnL, and close at the threshold."""
+        """Record a price observation, recompute PnL, and close at the threshold.
+
+        ``session_high`` lets the high-water mark ratchet on the session's High
+        rather than on the price this scan happened to sample. A scan sees a
+        price at whatever moment it runs, so a peak built only from samples
+        understates the real one and loosens the stop by however much the move
+        was missed.
+        """
         row = self.call(call_id)
         if row is None:
             raise KeyError(f"unknown call id {call_id}")
@@ -728,6 +736,10 @@ class CallDatabase:
         # The high-water mark only ever rises, and starts at the entry price, so
         # a call that never gains carries a stop at the same distance below entry.
         peak = max(float(row["peak_price"] or row["entry_price"]), float(price))
+        if session_high is not None:
+            # Only ever upward: a quiet session after a big one must not reset
+            # the mark, and a High below entry cannot lower it either.
+            peak = max(peak, float(session_high))
         # The call's own distance wins over the caller's. A book written under
         # one setting keeps the geometry it was taken with, so moving the config
         # never silently re-stops positions that are already open.

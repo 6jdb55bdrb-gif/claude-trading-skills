@@ -109,10 +109,30 @@ def test_fetch_price_points_carries_the_bar_date(monkeypatch):
             return not self.rows
 
     # A forming bar with no Close is exactly what produced the regression.
-    series = [("2026-09-21", 9.42), ("2026-09-22", float("nan"))]
+    series = [("2026-09-21", 9.42, 10.10), ("2026-09-22", float("nan"), 9.80)]
     monkeypatch.setattr(price_update, "_download_closes", lambda _t: {"GRML": series})
     points = price_update.fetch_price_points(["GRML"])
-    assert points["GRML"] == {"price": 9.42, "as_of": "2026-09-21"}
+    assert points["GRML"] == {"price": 9.42, "as_of": "2026-09-21", "high": 10.10}
+
+
+def test_fetch_price_points_carries_the_session_high(monkeypatch):
+    """The close alone cannot give a high-water mark; the High rides with it."""
+    import price_update
+
+    series = [("2026-10-01", 3.65, 4.54)]
+    monkeypatch.setattr(price_update, "_download_closes", lambda _t: {"SDEV": series})
+    assert price_update.fetch_price_points(["SDEV"])["SDEV"]["high"] == 4.54
+
+
+def test_a_bar_with_no_high_still_yields_a_price(monkeypatch):
+    """A provider that omits High must degrade, not fail."""
+    import price_update
+
+    monkeypatch.setattr(
+        price_update, "_download_closes", lambda _t: {"SDEV": [("2026-10-01", 3.65, None)]}
+    )
+    points = price_update.fetch_price_points(["SDEV"])
+    assert points["SDEV"] == {"price": 3.65, "as_of": "2026-10-01", "high": None}
 
 
 def test_a_held_mark_reads_differently_from_a_missing_one(tmp_db, config):

@@ -46,6 +46,23 @@ tracker:
   # never re-stops a position that is already open. null disables scaling and
   # restores the plain fixed trail.
   trailing_stop_atr_mult: 1.5
+  # Which high the trail measures from.
+  #
+  # false (default): the highest price a SCAN SAMPLED. A scan reads a price at
+  # whatever moment it runs, so this understates the real high by however much
+  # of the move it missed — on 2026-10-01 SDEV printed 4.54 intraday and the
+  # recorded peak was 4.24, a 7% understatement, which loosened that call's stop
+  # from 3.62 to 3.39 and is the only reason it was not closed that day.
+  #
+  # true: the session's High, which is what "trailing stop" normally means.
+  # Stops become tighter and correct rather than accidentally loose.
+  #
+  # Left false so the geometry never tightens under an operator who has not
+  # asked for it. The evidence either way is one call: on SDEV the loose stop
+  # held and closed +14.1%, while the old fixed 15% trail measured from the TRUE
+  # high would have banked +20.6% — better than holding. That is one data point
+  # against a 6-call replay, and not enough to settle it.
+  peak_from_session_high: false
   # Contract defaults the RISK MANAGER may override per setup.
   options:
     # Days to expiration when nothing about the setup argues otherwise.

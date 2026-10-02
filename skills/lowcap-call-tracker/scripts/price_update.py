@@ -44,11 +44,18 @@ def _age_days(stamp: Any, now: datetime) -> int | None:
     return max(0, (now - moment).days)
 
 
-def _download_closes(tickers: list[str]) -> dict[str, list[tuple[str, float]]]:
-    """Daily closes per ticker as ``[(YYYY-MM-DD, close), ...]``, oldest first.
+def _download_closes(tickers: list[str]) -> dict[str, list[tuple[str, float, float | None]]]:
+    """Per ticker, ``[(YYYY-MM-DD, close, high), ...]``, oldest first.
 
     NaN closes are kept: a forming session publishes a bar with volume and no
     close yet, and the caller has to know that bar exists.
+
+    The session High travels with the close because the close alone cannot give
+    a high-water mark. A scan samples a price at whatever moment it runs, so a
+    peak built from sampled closes understates the real one — SDEV printed 4.54
+    on 2026-10-01 and the tracker recorded 4.24 — which silently loosens every
+    trailing stop measured from it. The High is fetched always and used only
+    when ``tracker.peak_from_session_high`` says to.
     """
     if not tickers or not HAS_YFINANCE:
         return {}
@@ -70,20 +77,41 @@ def _download_closes(tickers: list[str]) -> dict[str, list[tuple[str, float]]]:
     if data is not None and not getattr(data, "empty", True):
         for ticker in unique:
             try:
-                column = data[ticker]["Close"] if len(unique) > 1 else data["Close"]
+                frame = data[ticker] if len(unique) > 1 else data
+                closes = frame["Close"]
+                highs = frame["High"] if "High" in frame else None
                 series[ticker] = [
-                    (str(index.date()), float(value)) for index, value in column.items()
+                    (
+                        str(index.date()),
+                        float(value),
+                        _maybe_float(None if highs is None else highs.get(index)),
+                    )
+                    for index, value in closes.items()
                 ]
             except (KeyError, IndexError, TypeError, AttributeError):
                 continue
 
     for ticker in [name for name in unique if name not in series]:  # pragma: no cover
         try:
-            column = yfinance.Ticker(ticker).history(period="5d")["Close"]
-            series[ticker] = [(str(index.date()), float(value)) for index, value in column.items()]
+            frame = yfinance.Ticker(ticker).history(period="5d")
+            series[ticker] = [
+                (str(index.date()), float(row["Close"]), _maybe_float(row.get("High")))
+                for index, row in frame.iterrows()
+            ]
         except Exception:
             continue
     return series
+
+
+def _maybe_float(value: Any) -> float | None:
+    """A float, or None for a missing or NaN figure. Never raises."""
+    if value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return None if number != number else number
 
 
 def fetch_price_points(tickers: list[str]) -> dict[str, dict[str, Any]]:
@@ -96,10 +124,10 @@ def fetch_price_points(tickers: list[str]) -> dict[str, dict[str, Any]]:
     """
     points: dict[str, dict[str, Any]] = {}
     for ticker, rows in _download_closes(tickers).items():
-        for as_of, close in reversed(rows):
+        for as_of, close, high in reversed(rows):
             if close is None or close != close:  # NaN: the bar has not closed
                 continue
-            points[ticker] = {"price": float(close), "as_of": as_of}
+            points[ticker] = {"price": float(close), "as_of": as_of, "high": high}
             break
     return points
 
@@ -118,9 +146,14 @@ def _as_points(prices: dict[str, Any]) -> dict[str, dict[str, Any]]:
     points: dict[str, dict[str, Any]] = {}
     for ticker, value in (prices or {}).items():
         if isinstance(value, dict):
-            points[ticker] = {"price": float(value["price"]), "as_of": value.get("as_of")}
+            high = value.get("high")
+            points[ticker] = {
+                "price": float(value["price"]),
+                "as_of": value.get("as_of"),
+                "high": None if high is None else float(high),
+            }
         else:
-            points[ticker] = {"price": float(value), "as_of": None}
+            points[ticker] = {"price": float(value), "as_of": None, "high": None}
     return points
 
 
@@ -136,6 +169,7 @@ def update_open_calls(
     close_on_expiry = bool(config["tracker"].get("close_on_expiry", True))
     raw_trail = config["tracker"].get("trailing_stop_pct")
     trailing = None if raw_trail is None else float(raw_trail)
+    use_session_high = bool(config["tracker"].get("peak_from_session_high", False))
     open_calls = db.open_calls()
     tickers = [row["ticker"] for row in open_calls]
     # An explicitly empty mapping means "offline, no prices" — not "go fetch".
@@ -209,6 +243,7 @@ def update_open_calls(
             close_threshold_pct=threshold,
             as_of=as_of,
             trailing_stop_pct=trailing,
+            session_high=(point or {}).get("high") if use_session_high else None,
         )
         result["stale_source"] = False
         result["pre_entry"] = False

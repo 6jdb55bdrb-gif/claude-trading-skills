@@ -286,3 +286,63 @@ session-wide rule.
 
 - **Proposed change:** none. Finding 5 should be read as being about the single
   MEDS 5.16 entry rather than about pre-market trading in general.
+
+## Findings added by hand — 2026-10-02, overnight scan
+
+### 12. [HIGH] the high-water mark is the highest price a SCAN SAMPLED, not the session's high
+
+`peak_price` is documented as "the highest price seen since entry". What it
+actually holds is the highest price a scan happened to observe. The tracker
+reads a price when it runs, so any move between runs is invisible to it.
+
+Measured on the 1 October close:
+
+| | tracker's peak | true session high | understated by |
+|---|---|---|---|
+| SDEV | 4.24 | **4.54** | 7.1% |
+| VEEA | 3.47 | **4.08** | 17.6% |
+| MEDS | 4.30 | 4.35 | 1.1% |
+
+Because the trail measures from that mark, every stop is looser than the
+configured distance implies. SDEV's 20.2% trail should have sat at 3.62 and
+actually sat at 3.39.
+
+**That difference decided the position.** SDEV's low after its high was 3.40:
+
+| peak used | trail | stop | outcome |
+|---|---|---|---|
+| sampled 4.24 | 20.2% (ATR) | 3.39 | **survived** — closed 3.65, +14.1% |
+| true 4.54 | 20.2% (ATR) | 3.62 | stopped ~+13.2% |
+| sampled 4.24 | 15% (old) | 3.60 | stopped ~+12.6% |
+| true 4.54 | 15% (old) | 3.86 | stopped **~+20.6%** |
+
+**This is evidence against the ATR widening I recommended and that was
+approved.** The best exit available on this call was the *old, tighter* stop
+measured from the *correct* high: +20.6%, better than the +14.1% the position is
+actually worth. The combination that ran — an understated peak with a widened
+trail — gave the worst of the three exits that banked a gain. One call is not a
+refutation of the 6-call replay that argued for the widening, and it is not
+presented as one, but it points the other way and should be recorded as such
+rather than smoothed over.
+
+**Implemented:** `tracker.peak_from_session_high`, with the session High now
+fetched alongside the close and the peak ratcheting on it when the flag is set.
+The mark only ever rises, a missing High degrades to the sampled price, and a
+High below entry cannot lower the mark.
+
+**Left `false`,** so no stop tightens under an operator who has not asked for
+it. Flipping it on today closes nothing, but changes the room to each stop:
+
+| | now | stop (sampled peak) | room | stop (true high) | room |
+|---|---|---|---|---|---|
+| SDEV | 3.66 | 3.39 | +8.0% | 3.62 | **+1.0%** |
+| VEEA | 3.47 | 2.07 | +67.5% | 2.44 | +42.5% |
+| MEDS | 4.06 | 2.68 | +51.6% | 2.71 | +49.8% |
+
+- **Decision needed:** `true` gives the trailing stop its ordinary meaning and
+  the distance you actually configured. `false` keeps today's accidentally
+  looser behaviour. The honest summary is that the one data point available
+  favours a tighter stop on a correct high, and the replay favoured a wider one
+  on an understated high; those are not the same comparison, and 6 closed calls
+  cannot separate them.
+- **Approve?** ☐ true  ☐ keep false
