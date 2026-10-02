@@ -346,3 +346,53 @@ it. Flipping it on today closes nothing, but changes the room to each stop:
   on an understated high; those are not the same comparison, and 6 closed calls
   cannot separate them.
 - **Approve?** ☐ true  ☐ keep false
+
+## Findings added by hand — 2026-10-02, operator query
+
+### 13. [CRITICAL] the account value funded calls the system said to SKIP
+
+Raised by the operator: the account figure did not match the PnL they believed
+they had. They were right, and it was worse than a display problem.
+
+`portfolio_state` funded **every** call at a full $100 slice — the nine the
+Judge rejected as well as the one it took. So the headline "PORTFOLIO
+$1,115.73 (+11.57%)" was the return of a portfolio that bought all ten screener
+hits, nine of which the system had explicitly said not to buy.
+
+Decomposed:
+
+| | n | $ effect |
+|---|---|---|
+| TAKE — what the system recommended | 1 | **-18.99** |
+| SKIP — what it told you not to buy | 9 | **+134.71** |
+| total shown as "the account" | 10 | +115.72 |
+
+The entire gain came from SKIPs, and almost all of it from one: SDEV at 1.04,
+which the Judge rejected and which then ran +175.8%. The only call the system
+actually recommended lost money.
+
+**Following the system was worth $981.01, or -1.90%.** Not +11.57%.
+
+Two further consequences of funding both from one pot:
+
+* **Cash was fiction.** "cash $798.49" was the balance of a book that had
+  bought nine names it declined. The real account never spent anything beyond
+  the one TAKE.
+* **A stretch of SKIPs could starve a real TAKE.** Shadow allocations drew down
+  the same cash, so ten SKIPs would leave the next genuine TAKE with a fraction
+  of a slice, or nothing.
+
+**Fixed.** Two books, each honest about what it is:
+
+* `portfolio_state` — **the account**: TAKE calls only, and only a TAKE spends
+  cash. Reads `$981.01 (-1.90%)`.
+* `shadow_state` — **the screener's book**: every call at a notional slice, so
+  the Judge's selectivity can still be priced. Reads `$1,115.73 (+11.57%)`,
+  labelled in both reports as not an account.
+
+A voided call is in neither. An UNREVIEWED call is in the shadow book only —
+nobody decided to take it, so the account cannot have funded it.
+
+This also makes the Judge's record concrete rather than a statistic: its one
+TAKE lost 19.0% while its SKIPs averaged +15.0%. On ten calls that is not
+significant, but it is no longer hidden inside a flattering account number.

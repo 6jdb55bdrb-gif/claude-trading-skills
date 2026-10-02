@@ -1,6 +1,6 @@
 """Portfolio allocation: what the $1000 is doing, and what it is worth."""
 
-from allocation import portfolio_state, slice_usd
+from allocation import portfolio_state, shadow_state, slice_usd
 from stats import compute_stats, render_text
 
 from conftest import review_payload
@@ -117,7 +117,7 @@ def test_the_book_can_be_fully_allocated(tmp_db, config):
 def test_the_terminal_block_states_the_allocation(tmp_db, config):
     _open(tmp_db, "AAA", 10.0, 12.0, 100.0)
     text = render_text(compute_stats(tmp_db, _config(config)))
-    assert "PORTFOLIO" in text
+    assert "ACCOUNT (TAKE only)" in text
     assert "$1,020.00" in text
     assert "10.0% allocated" in text
     assert "None" not in text
@@ -158,11 +158,39 @@ def test_a_cycle_funds_each_new_call_from_the_cash_left(tmp_path, config):
         db_path=str(tmp_path / "alloc.db"),
     )
     with CallDatabase(tmp_path / "alloc.db") as db:
+        rows = db.all_calls()
+        allocations = [row["allocation_usd"] for row in rows]
+        state = portfolio_state(db, cfg)
+        shadow = shadow_state(db, cfg)
+    # The fixture gives two TAKEs and one SKIP. Every call carries a full
+    # notional slice, but only the two TAKEs are money the account committed:
+    # a SKIP is sized so the shadow book stays equal-weight, not funded.
+    assert allocations == [400.0, 400.0, 400.0]
+    assert state["allocated_usd"] == 800.0
+    assert state["cash_usd"] == 200.0
+    assert state["allocated_pct"] == 80.0
+    # The shadow book carries all three at notional.
+    assert shadow["allocated_usd"] == 1200.0
+
+
+def test_a_take_is_still_capped_by_the_cash_the_account_has_left(tmp_path, config):
+    """The account cannot commit money it does not have — the original point.
+
+    Two TAKEs at 40% leave $200, so a third is funded with $200 and not $400.
+    """
+    from call_db import CallDatabase
+
+    cfg = _config(config, position_pct=40.0)
+    with CallDatabase(tmp_path / "cap.db") as db:
+        for ticker in ("AAA", "BBB", "CCC"):
+            cash = portfolio_state(db, cfg)["cash_usd"]
+            db.insert_call(
+                review_payload(ticker, decision="TAKE", entry=10.0),
+                run_id="r1",
+                allocation_usd=slice_usd(cfg, cash_available=cash),
+            )
         allocations = [row["allocation_usd"] for row in db.all_calls()]
         state = portfolio_state(db, cfg)
-    # Two full slices, then whatever cash was actually left.
-    assert sorted(allocations) == [200.0, 400.0, 400.0]
-    assert allocations[-1] == 200.0
+    assert allocations == [400.0, 400.0, 200.0]
     assert state["allocated_usd"] == 1000.0
     assert state["cash_usd"] == 0.0
-    assert state["allocated_pct"] == 100.0

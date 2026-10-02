@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from statistics import mean
 from typing import Any
 
-from allocation import money, portfolio_state
+from allocation import money, portfolio_state, shadow_state
 from call_db import (
     KIND_ACTIVE,
     KIND_SHADOW,
@@ -269,6 +269,10 @@ def compute_stats(
         },
         # An unjudged call chose no instrument, so it belongs in no bucket.
         "account": portfolio_state(db, config),
+        # The screener's book, kept beside the account rather than merged into
+        # it. Merging them is what made the headline read +11.57% when
+        # following the system was worth -1.90%.
+        "shadow_book": shadow_state(db, config),
         "by_instrument": _by([row for row in rows if row["instrument"]], "instrument"),
         "voided": [
             {
@@ -378,11 +382,16 @@ def render_markdown(stats: dict[str, Any]) -> str:
     lines += [
         format_backend_line(backend),
         "",
-        f"**Portfolio:** {money(stats['account']['portfolio_value_usd'])} "
+        f"**Account (TAKE calls only):** {money(stats['account']['portfolio_value_usd'])} "
         f"({_signed(stats['account']['total_return_pct'])} on "
         f"{money(stats['account']['account_usd'])}) · "
         f"{stats['account']['allocated_pct']}% allocated · "
         f"cash {money(stats['account']['cash_usd'])}",
+        "",
+        f"**Shadow book (every hit, SKIPs included):** "
+        f"{money(stats['shadow_book']['portfolio_value_usd'])} "
+        f"({_signed(stats['shadow_book']['total_return_pct'])}). This is what the "
+        f"screener surfaced, not an account — nobody would have bought the SKIPs.",
         "",
         f"**Total PnL:** {_signed(stats['portfolio']['total_pnl_pct'])} "
         f"— equal weight across all {stats['portfolio']['calls_counted']} priced call(s)",
@@ -547,6 +556,7 @@ def render_text(stats: dict[str, Any]) -> str:
     take = stats["take_vs_skip"]
     backend = stats.get("backend") or {}
     account = stats.get("account") or {}
+    shadow = stats.get("shadow_book") or {}
     lines = [
         "=" * 72,
         "CALL STATISTICS",
@@ -558,9 +568,11 @@ def render_text(stats: dict[str, Any]) -> str:
         f"  total={overall['total']}  open={overall['open']}  right={overall['right']}  "
         f"wrong={overall['wrong']}  neutral={overall['neutral']}  "
         f"hit_rate={_pct(overall['hit_rate_pct'])}",
-        f"  PORTFOLIO {money(account['portfolio_value_usd'])} "
+        f"  ACCOUNT (TAKE only) {money(account['portfolio_value_usd'])} "
         f"({_signed(account['total_return_pct'])} on {money(account['account_usd'])})  ·  "
         f"{account['allocated_pct']}% allocated  ·  cash {money(account['cash_usd'])}",
+        f"  SHADOW BOOK (every hit, incl. SKIPs) {money(shadow['portfolio_value_usd'])} "
+        f"({_signed(shadow['total_return_pct'])})  —  not an account: nobody bought the SKIPs",
         f"  TOTAL PnL (equal weight, all {stats['portfolio']['calls_counted']} calls)="
         f"{_signed(stats['portfolio']['total_pnl_pct'])}"
         + (

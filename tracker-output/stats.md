@@ -2,17 +2,19 @@
 
 > ## ⛔ BACKEND DOWN
 >
-> The role review could not run: the 'anthropic' package is not installed.
+> The role review could not run: None.
 > New screener hits are recorded UNREVIEWED and will be judged on the
 > next healthy run. No decision below was made while the backend was down.
 
 **Backend:** DOWN · reviewed 10 / unreviewed 0 · TAKE/SKIP 1/9 (10.0% TAKE)
 
-**Portfolio:** $1,115.73 (+11.57% on $1,000.00) · 30.0% allocated · cash $798.49
+**Account (TAKE calls only):** $981.01 (-1.90% on $1,000.00) · 0.0% allocated · cash $981.01
+
+**Shadow book (every hit, SKIPs included):** $1,115.73 (+11.57%). This is what the screener surfaced, not an account — nobody would have bought the SKIPs.
 
 **Total PnL:** +11.57% — equal weight across all 10 priced call(s)
 
-**Generated:** 2026-10-02T04:54:04+00:00  
+**Generated:** 2026-10-02T08:18:18+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -98,9 +100,9 @@ anything.
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20261002T045403Z | 2026-10-02T04:54:03+00:00 | no | — | — | — |
+| run_20261002T080618Z | 2026-10-02T08:06:18+00:00 | yes | 0 | 0 | 0.0 |
+| run_20261002T045403Z | 2026-10-02T04:54:03+00:00 | no | 0 | 0 | 0.0 |
 | run_20261001T173437Z | 2026-10-01T17:34:37+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261001T150019Z | 2026-10-01T15:00:19+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261001T143713Z | 2026-10-01T14:37:13+00:00 | yes | 0 | 0 | 0.0 |
-| run_20261001T135115Z | 2026-10-01T13:51:15+00:00 | yes | 2 | 1 | 0.0 |
 

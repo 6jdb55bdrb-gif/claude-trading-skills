@@ -6,7 +6,21 @@ they would have been worth. A fixed dollar slice goes into every call at entry
 (``tracker.position_pct`` of ``tracker.account_size``), the position then moves
 with the underlying, and whatever is not in a position is cash.
 
-Three rules keep the number honest:
+There are two books, and conflating them flatters the account badly:
+
+* ``portfolio_state`` — **the account**. Only calls the Judge said TAKE are
+  funded, because those are the only ones anyone would have bought. This is
+  what following the system is worth.
+* ``shadow_state`` — **the screener's book**. Every call at a notional slice,
+  SKIPs included. This is what the screener found, regardless of verdict.
+
+Funding both from one pot is what made the headline wrong: on the first ten
+calls it read +11.57%, which was the return of a portfolio that bought all ten
+hits — nine of them names the Judge had rejected. Following the system gave
+-1.90%, because the whole gain came from one SKIP that ran (SDEV +175.8%) while
+the single TAKE lost money.
+
+Four rules keep the numbers honest:
 
 * **The slice is fixed at entry**, never rebalanced. A position that doubled is
   worth double; it does not quietly take more of the account.
@@ -14,13 +28,15 @@ Three rules keep the number honest:
   spent or lost for good and cannot be marked again.
 * **A voided call never touched the cash.** It could not have been executed, so
   no money was ever committed to it.
+* **Only a TAKE spends the account's cash.** A stretch of SKIPs used to consume
+  the whole balance and leave a genuine TAKE with a starved slice or none.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-from call_db import STATUS_OPEN, STATUS_VOID, CallDatabase
+from call_db import KIND_ACTIVE, STATUS_OPEN, STATUS_VOID, CallDatabase
 
 
 def account_size(config: dict[str, Any]) -> float:
@@ -50,7 +66,20 @@ def _value(allocation: float, pnl_pct: float | None) -> float:
 
 
 def portfolio_state(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
-    """Cash, open positions and total account value."""
+    """The real account: cash, open positions and value, TAKE calls only."""
+    return _book(db, config, taken_only=True)
+
+
+def shadow_state(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
+    """The screener's book: every call at a notional slice, verdict ignored.
+
+    Not an account. Nobody would have bought the SKIPs; this says what the
+    screener surfaced, so the Judge's selectivity can be priced against it.
+    """
+    return _book(db, config, taken_only=False)
+
+
+def _book(db: CallDatabase, config: dict[str, Any], *, taken_only: bool) -> dict[str, Any]:
     account = account_size(config)
     rows = db.all_calls()
 
@@ -63,6 +92,10 @@ def portfolio_state(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
     for row in rows:
         if row["status"] == STATUS_VOID:
             continue  # never executed, so never funded
+        if taken_only and row["kind"] != KIND_ACTIVE:
+            # A shadow or unjudged call was never bought. Funding it here is
+            # what let a rejected name's +175.8% read as account profit.
+            continue
         allocation = row["allocation_usd"]
         if not allocation:
             # Called before the account existed, or deliberately unfunded. It is
