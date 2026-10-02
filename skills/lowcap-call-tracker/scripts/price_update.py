@@ -17,6 +17,7 @@ import json
 import sys
 from datetime import datetime, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from call_db import CallDatabase, pnl_pct
 from option_contract import days_to_expiry, is_expired
@@ -162,14 +163,22 @@ def update_open_calls(
     config: dict[str, Any],
     *,
     prices: dict[str, float] | None = None,
+    today: str | None = None,
 ) -> dict[str, Any]:
-    """Price every open call, apply the close rule, and summarize the result."""
+    """Price every open call, apply the close rule, and summarize the result.
+
+    ``today`` is the Eastern date a mark is judged fresh against; it resolves
+    itself in production and is only passed by tests.
+    """
     raw_threshold = config["tracker"].get("close_threshold_pct")
     threshold = None if raw_threshold is None else float(raw_threshold)
     close_on_expiry = bool(config["tracker"].get("close_on_expiry", True))
     raw_trail = config["tracker"].get("trailing_stop_pct")
     trailing = None if raw_trail is None else float(raw_trail)
     use_session_high = bool(config["tracker"].get("peak_from_session_high", False))
+    # The market's calendar day, not the server's: a mark is "today's" only if
+    # its bar belongs to the Eastern session now in progress.
+    today = today or datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d")
     open_calls = db.open_calls()
     tickers = [row["ticker"] for row in open_calls]
     # An explicitly empty mapping means "offline, no prices" — not "go fetch".
@@ -231,6 +240,8 @@ def update_open_calls(
                     "priced": False,
                     "stale_source": regressed,
                     "pre_entry": pre_entry,
+                    "prior_session": bool(row["price_as_of"] and row["price_as_of"] < today),
+                    "price_as_of": row["price_as_of"],
                     "last_price_at": row["last_price_at"],
                     "stale_days": _age_days(row["last_price_at"], now),
                     **common,
@@ -247,6 +258,10 @@ def update_open_calls(
         )
         result["stale_source"] = False
         result["pre_entry"] = False
+        # Correct but a day old: no daily bar exists for today until the session
+        # makes one, so a pre-market run marks on yesterday's close. Printing
+        # that as "now" is how 3.66 was shown while SDEV traded 5.21.
+        result["prior_session"] = bool(as_of and as_of < today)
         result.update({"priced": True, "stale_days": 0, **common})
         updates.append(result)
 
@@ -265,6 +280,8 @@ def update_open_calls(
         "missing_prices": missing,
         "stale_sources": stale_sources,
         "pre_entry_bars": pre_entry_bars,
+        "prior_session_marks": [u["ticker"] for u in updates if u.get("prior_session")],
+        "today": today,
         "updates": updates,
         "threshold_pct": threshold,
     }
@@ -294,6 +311,11 @@ def format_updates(result: dict[str, Any]) -> str:
             tag = f"{update['kind'].upper()} · NO PRICE" + (f" ({stale}d stale)" if stale else "")
         else:
             tag = update["kind"].upper()
+        if update.get("prior_session"):
+            # Append rather than replace: a stop-out or an expiry is the louder
+            # fact, but which session the mark came from must not be lost.
+            bar = update.get("price_as_of")
+            tag += f" · PRIOR CLOSE ({bar})" if bar else " · PRIOR CLOSE"
         price = update["price"]
         pnl = update["pnl_pct"]
         # An unjudged call has no contract to name: printing one would state a

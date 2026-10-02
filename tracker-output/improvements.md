@@ -396,3 +396,44 @@ nobody decided to take it, so the account cannot have funded it.
 This also makes the Judge's record concrete rather than a statistic: its one
 TAKE lost 19.0% while its SKIPs averaged +15.0%. On ten calls that is not
 significant, but it is no longer hidden inside a flattering account number.
+
+## Findings added by hand — 2026-10-02, 06:02 ET scan
+
+### 14. [HIGH] a mark from yesterday's session was printed as "now"
+
+At 06:02 ET on Friday the book read `SDEV now=3.66 pnl=+14.4%`. SDEV was
+trading **5.21** in pre-market at that moment, a session high of 5.52, and
+**+62.8%** from the 3.20 entry. The same run's screener saw it: `SDEV price=5.22
+chg=42.61`.
+
+Nothing was mis-priced. The tracker marks on completed daily bars, and no daily
+bar exists for 2 October until the session makes one, so holding Thursday's
+close is the correct answer. Printing it as `now` with no label is not, and it
+is the same class of error as pricing a call on a bar that predates it: the
+report stated something it did not know.
+
+**Fixed.** A mark whose bar predates the current *Eastern* date is tagged
+`PRIOR CLOSE (<date>)`. The tag appends rather than replaces, so a stop-out or
+expiry stays the louder fact without losing which session the mark came from.
+`prior_session_marks` lists the affected tickers on the result. The day is the
+market's, not the server's.
+
+Two of my own tests were wrong before this passed, both in the same way: they
+fed a bar older than the call, which the pre-entry guard correctly refuses, so
+the call went unpriced and the new flag never set. The prior-close case only
+arises once a call has outlived the session it was made in — which is every
+call, by the next day.
+
+**The consequence that is not fixed, and matters more:** the trailing stop and
+the high-water mark both run on these daily marks. SDEV's recorded peak is
+4.24, Thursday's intraday high was 4.54, and it has now printed 5.52
+pre-market. The 20.2% trail therefore sits at 3.39 — around **39% below where
+the stock is actually trading**. A position can run a long way and give most of
+it back before a stop measured from a stale peak notices. That is finding 12
+(`peak_from_session_high`, still set `false`) seen from the other side, and it
+is now costing the book its largest open gain rather than protecting it.
+
+- **Proposed change:** none beyond the tag, which is a truth fix. The real
+  decision is finding 12. Note what it is now worth: on the live book, a peak
+  that tracked the session high would have the SDEV stop near 4.40 rather than
+  3.39.
