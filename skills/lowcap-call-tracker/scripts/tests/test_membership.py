@@ -9,6 +9,12 @@ from conftest import FIXTURE_HITS
 
 NOW = datetime(2026, 9, 21, 12, 0, tzinfo=timezone.utc)
 
+# NOW is for the UNIT tests below, which pass an explicit clock to both sides.
+# The bot-path tests must NOT freeze invite creation: telegram_bot redeems at the
+# real current time, so an invite minted at a fixed NOW silently expires as the
+# calendar moves and the suite starts failing for no code reason. They create
+# invites at real time instead, valid for their full window.
+
 
 def _iso(moment: datetime) -> str:
     return moment.isoformat(timespec="seconds")
@@ -297,7 +303,7 @@ def test_start_with_a_valid_code_admits_a_friend(bot_env):
     from call_db import CallDatabase
 
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", now=NOW)
+        invite = ms.create_invite(db, created_by="4242")
     reply = _reply(tb, config, db_path, f"/start {invite['code']}", chat_id="999")
     assert "welcome" in reply.lower()
     assert _reply(tb, config, db_path, "/open", chat_id="999") != "Not authorized."
@@ -320,7 +326,7 @@ def test_only_an_admin_may_mint_an_invite(bot_env):
     from call_db import CallDatabase
 
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", now=NOW)
+        invite = ms.create_invite(db, created_by="4242")
     _reply(tb, config, db_path, f"/start {invite['code']}", chat_id="999")
     assert "admin" in _reply(tb, config, db_path, "/invite", chat_id="999").lower()
 
@@ -351,7 +357,7 @@ def test_an_admin_sees_and_removes_a_member(bot_env):
     from call_db import CallDatabase
 
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", now=NOW)
+        invite = ms.create_invite(db, created_by="4242")
     _reply(tb, config, db_path, f"/start {invite['code']}", chat_id="999")
     assert "999" in _reply(tb, config, db_path, "/members", chat_id="4242")
     assert "removed" in _reply(tb, config, db_path, "/remove 999", chat_id="4242").lower()
@@ -363,7 +369,7 @@ def test_a_member_may_leave_on_their_own(bot_env):
     from call_db import CallDatabase
 
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", now=NOW)
+        invite = ms.create_invite(db, created_by="4242")
     _reply(tb, config, db_path, f"/start {invite['code']}", chat_id="999")
     assert _reply(tb, config, db_path, "/stop", chat_id="999")
     with CallDatabase(db_path) as db:
@@ -381,7 +387,7 @@ def test_help_shows_admin_commands_only_to_admins(bot_env):
     from call_db import CallDatabase
 
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", now=NOW)
+        invite = ms.create_invite(db, created_by="4242")
     _reply(tb, config, db_path, f"/start {invite['code']}", chat_id="999")
     assert "/invite" in _reply(tb, config, db_path, "/help", chat_id="4242")
     assert "/invite" not in _reply(tb, config, db_path, "/help", chat_id="999")
@@ -393,7 +399,7 @@ def test_a_member_cannot_run_a_cycle(bot_env):
     from call_db import CallDatabase
 
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", now=NOW)
+        invite = ms.create_invite(db, created_by="4242")
     _reply(tb, config, db_path, f"/start {invite['code']}", chat_id="999")
     command, args = tb.parse_command("/run")
     reply = tb.handle_command(
@@ -419,9 +425,9 @@ def test_a_notification_reaches_every_member(bot_env):
         return {"message_id": len(sent)}
 
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", max_uses=5, now=NOW)
-        ms.redeem_invite(db, invite["code"], chat_id="777", now=NOW)
-        ms.redeem_invite(db, invite["code"], chat_id="888", now=NOW)
+        invite = ms.create_invite(db, created_by="4242", max_uses=5)
+        ms.redeem_invite(db, invite["code"], chat_id="777")
+        ms.redeem_invite(db, invite["code"], chat_id="888")
 
     result = tb.notify(config, "hello", db_path=db_path, transport=transport)
     assert result["sent"] is True
@@ -442,9 +448,9 @@ def test_one_blocked_member_does_not_stop_the_others(bot_env):
         return {"message_id": len(sent)}
 
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", max_uses=5, now=NOW)
-        ms.redeem_invite(db, invite["code"], chat_id="777", now=NOW)
-        ms.redeem_invite(db, invite["code"], chat_id="888", now=NOW)
+        invite = ms.create_invite(db, created_by="4242", max_uses=5)
+        ms.redeem_invite(db, invite["code"], chat_id="777")
+        ms.redeem_invite(db, invite["code"], chat_id="888")
 
     result = tb.notify(config, "hello", db_path=db_path, transport=transport)
     assert result["delivered"] == 2
@@ -464,8 +470,8 @@ def test_a_transient_failure_does_not_unsubscribe_anyone(bot_env):
         return {"message_id": 1}
 
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", now=NOW)
-        ms.redeem_invite(db, invite["code"], chat_id="777", now=NOW)
+        invite = ms.create_invite(db, created_by="4242")
+        ms.redeem_invite(db, invite["code"], chat_id="777")
 
     result = tb.notify(config, "hello", db_path=db_path, transport=transport)
     assert result["failed"] == ["777"]
@@ -521,8 +527,8 @@ def test_the_committed_snapshot_carries_no_codes_or_chat_ids(tmp_path):
 
     path = tmp_path / "snap.json"
     with CallDatabase(tmp_path / "a.db") as db:
-        invite = ms.create_invite(db, created_by="4242", max_uses=5, now=NOW)
-        ms.redeem_invite(db, invite["code"], chat_id="777", display_name="Robin", now=NOW)
+        invite = ms.create_invite(db, created_by="4242", max_uses=5)
+        ms.redeem_invite(db, invite["code"], chat_id="777", display_name="Robin")
         snapshot = export_snapshot(db, path)
 
     assert "subscribers" not in snapshot["tables"]
@@ -538,8 +544,8 @@ def test_members_and_invites_survive_their_own_round_trip(tmp_path):
 
     path = tmp_path / "members.json"
     with CallDatabase(tmp_path / "a.db") as db:
-        invite = ms.create_invite(db, created_by="4242", max_uses=5, now=NOW)
-        ms.redeem_invite(db, invite["code"], chat_id="777", display_name="Robin", now=NOW)
+        invite = ms.create_invite(db, created_by="4242", max_uses=5)
+        ms.redeem_invite(db, invite["code"], chat_id="777", display_name="Robin")
         exported = export_members(db, path)
 
     assert exported["counts"]["subscribers"] == 1
@@ -557,13 +563,13 @@ def test_importing_members_does_not_clobber_a_live_member_list(tmp_path):
 
     path = tmp_path / "members.json"
     with CallDatabase(tmp_path / "a.db") as db:
-        invite = ms.create_invite(db, created_by="4242", now=NOW)
-        ms.redeem_invite(db, invite["code"], chat_id="777", now=NOW)
+        invite = ms.create_invite(db, created_by="4242")
+        ms.redeem_invite(db, invite["code"], chat_id="777")
         export_members(db, path)
 
     with CallDatabase(tmp_path / "b.db") as db:
-        other = ms.create_invite(db, created_by="4242", now=NOW)
-        ms.redeem_invite(db, other["code"], chat_id="888", now=NOW)
+        other = ms.create_invite(db, created_by="4242")
+        ms.redeem_invite(db, other["code"], chat_id="888")
         result = import_members(db, path)
         assert result["imported"] is False
         assert ms.subscriber(db, "888") is not None
@@ -619,8 +625,8 @@ def test_cli_lists_members(monkeypatch, tmp_path, capsys):
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "4242")
     db_path = tmp_path / "cli.db"
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", now=NOW)
-        ms.redeem_invite(db, invite["code"], chat_id="777", display_name="Robin", now=NOW)
+        invite = ms.create_invite(db, created_by="4242")
+        ms.redeem_invite(db, invite["code"], chat_id="777", display_name="Robin")
 
     assert tb.main(["--db", str(db_path), "--members"]) == 0
     out = capsys.readouterr().out
@@ -648,8 +654,8 @@ def test_a_cycle_keeps_members_out_of_the_committed_snapshot(tmp_path, config, m
     }
     db_path = tmp_path / "cycle.db"
     with CallDatabase(db_path) as db:
-        invite = ms.create_invite(db, created_by="4242", now=NOW)
-        ms.redeem_invite(db, invite["code"], chat_id="777", display_name="Robin", now=NOW)
+        invite = ms.create_invite(db, created_by="4242")
+        ms.redeem_invite(db, invite["code"], chat_id="777", display_name="Robin")
 
     run_cycle(
         config,

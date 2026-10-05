@@ -20,6 +20,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from call_db import CallDatabase, pnl_pct
+from market_hours import session_state
 from option_contract import days_to_expiry, is_expired
 
 from config import load_config, resolve_path
@@ -229,11 +230,13 @@ def update_open_calls(
     *,
     prices: dict[str, float] | None = None,
     today: str | None = None,
+    regular_hours: bool | None = None,
 ) -> dict[str, Any]:
     """Price every open call, apply the close rule, and summarize the result.
 
-    ``today`` is the Eastern date a mark is judged fresh against; it resolves
-    itself in production and is only passed by tests.
+    ``today`` is the Eastern date a mark is judged fresh against, and
+    ``regular_hours`` whether the main session is open. Both resolve themselves
+    in production and are only passed by tests.
     """
     raw_threshold = config["tracker"].get("close_threshold_pct")
     threshold = None if raw_threshold is None else float(raw_threshold)
@@ -246,6 +249,8 @@ def update_open_calls(
     # The market's calendar day, not the server's: a mark is "today's" only if
     # its bar belongs to the Eastern session now in progress.
     today = today or datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d")
+    if regular_hours is None:
+        regular_hours = bool(session_state(config).get("regular_hours"))
     open_calls = db.open_calls()
     tickers = [row["ticker"] for row in open_calls]
     # An explicitly empty mapping means "offline, no prices" — not "go fetch".
@@ -273,8 +278,12 @@ def update_open_calls(
         )
         # Zero volume is a quote, not a trade. It may move the mark; it may not
         # close a position. This is the MEDS 5.16 failure wired into the stop.
+        # ...but only OUTSIDE regular hours. During the session a five-minute
+        # bar can report no volume on a thin name while its price is a real
+        # last trade from earlier in the day, and deferring a stop on that
+        # holds open a position that should have closed.
         ext_volume = (point or {}).get("extended_volume")
-        untraded = extended_mark and not (ext_volume or 0)
+        untraded = extended_mark and not regular_hours and not (ext_volume or 0)
         if extended_mark:
             price, as_of = ext_price, ext_as_of
         # A price from an earlier session than the one already recorded is a
@@ -372,6 +381,7 @@ def update_open_calls(
         "pre_entry_bars": pre_entry_bars,
         "prior_session_marks": [u["ticker"] for u in updates if u.get("prior_session")],
         "extended_marks": [u["ticker"] for u in updates if u.get("extended")],
+        "regular_hours": regular_hours,
         "today": today,
         "updates": updates,
         "threshold_pct": threshold,

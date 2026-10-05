@@ -5,8 +5,10 @@ previous close: at 05:38 ET on 6 October SDEV traded 10.39 while the book
 showed Friday's 7.48 (+133.8% against a real +224.7%). The operator asked for
 pre-market numbers to count, so `extended_price` is now folded in.
 
-One guard comes with it. The mark drives the trailing stop, and a pre-market
-quote on a thin microcap can print with ZERO volume — which is exactly how the
+One guard comes with it, and it applies OUTSIDE regular hours only, so every
+test here that exercises it states the session explicitly rather than inheriting
+the wall clock. The mark drives the trailing stop, and a pre-market quote on a
+thin microcap can print with ZERO volume — which is exactly how the
 MEDS 5.16 entry was taken at the top of a 6am spike nobody traded. An
 untraded extended print therefore moves the mark, the PnL and the peak, but it
 cannot fire the stop. A traded one can.
@@ -167,6 +169,7 @@ def test_an_untraded_extended_print_cannot_fire_the_stop(tmp_db, config):
             }
         },
         today="2026-10-05",
+        regular_hours=False,
     )
     row = tmp_db.call(call_id)
     assert row["status"] == STATUS_OPEN
@@ -238,6 +241,7 @@ def test_an_untraded_mark_is_named_in_the_report(tmp_db, config):
             }
         },
         today="2026-10-05",
+        regular_hours=False,
     )
     assert "EXT (untraded)" in format_updates(result)
 
