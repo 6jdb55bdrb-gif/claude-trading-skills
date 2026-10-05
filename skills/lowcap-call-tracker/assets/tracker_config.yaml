@@ -69,6 +69,18 @@ tracker:
   # +224.7% showing as +133.8%. With this on, the newest pre/post-market print
   # becomes the mark whenever it is newer than the daily close, and the report
   # tags it EXT.
+  # WHICH CALLS THE ACCOUNT FUNDS.
+  #
+  # all (default): every call the screener surfaced, whatever the Judge said.
+  #   This is the operator's actual behaviour — they take the hits — so this is
+  #   the real account PnL.
+  # take_only: only calls the Judge said TAKE, i.e. what following the Judge
+  #   would have returned.
+  #
+  # Both are always computed and reported; this only decides which one is
+  # labelled the account. Anything other than take_only funds everything, so a
+  # typo cannot silently shrink the account to a single call.
+  account_funds: all
   mark_extended_hours: true
   # Whether an extended print with ZERO volume may CLOSE a position.
   #

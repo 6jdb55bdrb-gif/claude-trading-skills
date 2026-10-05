@@ -6,19 +6,23 @@ they would have been worth. A fixed dollar slice goes into every call at entry
 (``tracker.position_pct`` of ``tracker.account_size``), the position then moves
 with the underlying, and whatever is not in a position is cash.
 
-There are two books, and conflating them flatters the account badly:
+Two books are kept, and WHICH ONE IS THE ACCOUNT is the operator's call, set by
+``tracker.account_funds``:
 
-* ``portfolio_state`` — **the account**. Only calls the Judge said TAKE are
-  funded, because those are the only ones anyone would have bought. This is
-  what following the system is worth.
-* ``shadow_state`` — **the screener's book**. Every call at a notional slice,
-  SKIPs included. This is what the screener found, regardless of verdict.
+* ``all`` (the default) — every call the screener surfaced is funded, whatever
+  the Judge said. This is the operator's actual behaviour: they take the hits.
+* ``take_only`` — only calls the Judge said TAKE. What following the Judge
+  would have returned.
 
-Funding both from one pot is what made the headline wrong: on the first ten
-calls it read +11.57%, which was the return of a portfolio that bought all ten
-hits — nine of them names the Judge had rejected. Following the system gave
--1.90%, because the whole gain came from one SKIP that ran (SDEV +175.8%) while
-the single TAKE lost money.
+``portfolio_state`` is whichever of those the setting names; ``take_only_state``
+is always the TAKE-only figure, because the gap between the two is the only
+thing that prices the Judge's selectivity.
+
+I originally hard-coded the account to TAKE-only, on the assumption that nobody
+would buy a call the Judge rejected. That was wrong, and it understated the
+account badly: on the first eleven calls TAKE-only read -1.90% while every-call
+read +21.38%, and almost all of that difference is one SKIP that ran (SDEV
++175.8%). Do not re-derive the account from a verdict again — ask.
 
 Four rules keep the numbers honest:
 
@@ -28,8 +32,9 @@ Four rules keep the numbers honest:
   spent or lost for good and cannot be marked again.
 * **A voided call never touched the cash.** It could not have been executed, so
   no money was ever committed to it.
-* **Only a TAKE spends the account's cash.** A stretch of SKIPs used to consume
-  the whole balance and leave a genuine TAKE with a starved slice or none.
+* **Only a funded call spends the account's cash.** Which calls those are
+  follows ``tracker.account_funds``, so the cash line always matches the book
+  it belongs to.
 """
 
 from __future__ import annotations
@@ -65,18 +70,37 @@ def _value(allocation: float, pnl_pct: float | None) -> float:
     return round(allocation * (1.0 + (pnl_pct or 0.0) / 100.0), 2)
 
 
+def account_funds_all(config: dict[str, Any]) -> bool:
+    """True when the account funds every call, not just the TAKEs.
+
+    Anything other than an explicit ``take_only`` funds everything: a typo in
+    this setting must not silently shrink the account to a single call.
+    """
+    raw = str(config["tracker"].get("account_funds", "all") or "all").strip().lower()
+    return raw != "take_only"
+
+
 def portfolio_state(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
-    """The real account: cash, open positions and value, TAKE calls only."""
+    """The account: cash, open positions and value, per ``account_funds``."""
+    return _book(db, config, taken_only=not account_funds_all(config))
+
+
+def take_only_state(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
+    """The same account restricted to TAKE calls — the Judge's scorecard.
+
+    Always computed, whichever book the account uses, because the gap between
+    the two is what says whether the Judge is adding anything.
+    """
     return _book(db, config, taken_only=True)
 
 
-def shadow_state(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
-    """The screener's book: every call at a notional slice, verdict ignored.
-
-    Not an account. Nobody would have bought the SKIPs; this says what the
-    screener surfaced, so the Judge's selectivity can be priced against it.
-    """
+def every_call_state(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
+    """The same account over every call, whatever the verdict."""
     return _book(db, config, taken_only=False)
+
+
+# Kept so older callers and reports do not break on the rename.
+shadow_state = every_call_state
 
 
 def _book(db: CallDatabase, config: dict[str, Any], *, taken_only: bool) -> dict[str, Any]:
@@ -93,8 +117,8 @@ def _book(db: CallDatabase, config: dict[str, Any], *, taken_only: bool) -> dict
         if row["status"] == STATUS_VOID:
             continue  # never executed, so never funded
         if taken_only and row["kind"] != KIND_ACTIVE:
-            # A shadow or unjudged call was never bought. Funding it here is
-            # what let a rejected name's +175.8% read as account profit.
+            # TAKE-only view: a shadow or unjudged call is left out, so this
+            # figure answers "what would following the Judge have returned".
             continue
         allocation = row["allocation_usd"]
         if not allocation:

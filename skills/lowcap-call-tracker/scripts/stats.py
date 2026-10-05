@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from statistics import mean
 from typing import Any
 
-from allocation import money, portfolio_state, shadow_state
+from allocation import account_funds_all, money, portfolio_state, take_only_state
 from call_db import (
     KIND_ACTIVE,
     KIND_SHADOW,
@@ -269,10 +269,10 @@ def compute_stats(
         },
         # An unjudged call chose no instrument, so it belongs in no bucket.
         "account": portfolio_state(db, config),
-        # The screener's book, kept beside the account rather than merged into
-        # it. Merging them is what made the headline read +11.57% when
-        # following the system was worth -1.90%.
-        "shadow_book": shadow_state(db, config),
+        # Always alongside: the same account restricted to the Judge's TAKEs.
+        # The gap between the two is what prices the Judge's selectivity.
+        "take_only_book": take_only_state(db, config),
+        "account_funds_all": account_funds_all(config),
         "by_instrument": _by([row for row in rows if row["instrument"]], "instrument"),
         "voided": [
             {
@@ -384,16 +384,18 @@ def render_markdown(stats: dict[str, Any]) -> str:
     lines += [
         format_backend_line(backend),
         "",
-        f"**Account (TAKE calls only):** {money(stats['account']['portfolio_value_usd'])} "
+        f"**Account ({'every call' if stats.get('account_funds_all') else 'TAKE calls only'}):** "
+        f"{money(stats['account']['portfolio_value_usd'])} "
         f"({_signed(stats['account']['total_return_pct'])} on "
         f"{money(stats['account']['account_usd'])}) · "
         f"{stats['account']['allocated_pct']}% allocated · "
         f"cash {money(stats['account']['cash_usd'])}",
         "",
-        f"**Shadow book (every hit, SKIPs included):** "
-        f"{money(stats['shadow_book']['portfolio_value_usd'])} "
-        f"({_signed(stats['shadow_book']['total_return_pct'])}). This is what the "
-        f"screener surfaced, not an account — nobody would have bought the SKIPs.",
+        f"**TAKE only (the Judge's scorecard):** "
+        f"{money(stats['take_only_book']['portfolio_value_usd'])} "
+        f"({_signed(stats['take_only_book']['total_return_pct'])}). What following the "
+        f"Judge's verdicts alone would have returned — the gap against the account "
+        f"above is what the Judge's selectivity is worth.",
         "",
         f"**Total PnL:** {_signed(stats['portfolio']['total_pnl_pct'])} "
         f"— equal weight across all {stats['portfolio']['calls_counted']} priced call(s)",
@@ -565,7 +567,7 @@ def render_text(stats: dict[str, Any]) -> str:
     take = stats["take_vs_skip"]
     backend = stats.get("backend") or {}
     account = stats.get("account") or {}
-    shadow = stats.get("shadow_book") or {}
+    judge = stats.get("take_only_book") or {}
     lines = [
         "=" * 72,
         "CALL STATISTICS",
@@ -577,11 +579,12 @@ def render_text(stats: dict[str, Any]) -> str:
         f"  total={overall['total']}  open={overall['open']}  right={overall['right']}  "
         f"wrong={overall['wrong']}  neutral={overall['neutral']}  "
         f"hit_rate={_pct(overall['hit_rate_pct'])}",
-        f"  ACCOUNT (TAKE only) {money(account['portfolio_value_usd'])} "
+        f"  ACCOUNT ({'every call' if stats.get('account_funds_all') else 'TAKE only'}) "
+        f"{money(account['portfolio_value_usd'])} "
         f"({_signed(account['total_return_pct'])} on {money(account['account_usd'])})  ·  "
         f"{account['allocated_pct']}% allocated  ·  cash {money(account['cash_usd'])}",
-        f"  SHADOW BOOK (every hit, incl. SKIPs) {money(shadow['portfolio_value_usd'])} "
-        f"({_signed(shadow['total_return_pct'])})  —  not an account: nobody bought the SKIPs",
+        f"  TAKE only (the Judge's scorecard) {money(judge['portfolio_value_usd'])} "
+        f"({_signed(judge['total_return_pct'])})",
         f"  TOTAL PnL (equal weight, all {stats['portfolio']['calls_counted']} calls)="
         f"{_signed(stats['portfolio']['total_pnl_pct'])}"
         + (
