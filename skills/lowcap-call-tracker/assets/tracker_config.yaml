@@ -63,6 +63,21 @@ tracker:
   # high would have banked +20.6% — better than holding. That is one data point
   # against a 6-call replay, and not enough to settle it.
   peak_from_session_high: false
+  # MARK ON EXTENDED HOURS. A daily bar does not exist until the regular session
+  # makes one, so before the open the book held the previous close: at 05:38 ET
+  # on 5 October SDEV traded 10.39 while the mark read Friday's 7.48, a real
+  # +224.7% showing as +133.8%. With this on, the newest pre/post-market print
+  # becomes the mark whenever it is newer than the daily close, and the report
+  # tags it EXT.
+  mark_extended_hours: true
+  # Whether an extended print with ZERO volume may CLOSE a position.
+  #
+  # It is a quote nobody traded, not a price. Letting one act is how the MEDS
+  # 5.16 entry was taken at the top of a 6am spike on bars reporting no volume
+  # at all. Left false, an untraded print still moves the mark, the PnL and the
+  # peak — so the number you see is current — but the trailing stop waits for a
+  # price somebody actually paid. Set true to let it close positions as well.
+  stop_on_untraded_extended: false
   # Contract defaults the RISK MANAGER may override per setup.
   options:
     # Days to expiration when nothing about the setup argues otherwise.

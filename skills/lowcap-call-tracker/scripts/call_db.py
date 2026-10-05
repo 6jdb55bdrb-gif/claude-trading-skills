@@ -717,8 +717,15 @@ class CallDatabase:
         as_of: str | None = None,
         trailing_stop_pct: float | None = None,
         session_high: float | None = None,
+        allow_stop: bool = True,
     ) -> dict[str, Any]:
         """Record a price observation, recompute PnL, and close at the threshold.
+
+        ``allow_stop=False`` records the observation and moves the peak but will
+        not close the call. The caller uses it for a mark it does not trust to
+        act on — an extended-hours quote that printed with no volume. Nulling
+        the trail cannot express this, because the distance stored on the call
+        deliberately outranks the caller's.
 
         ``session_high`` lets the high-water mark ratchet on the session's High
         rather than on the price this scan happened to sample. A scan sees a
@@ -745,7 +752,7 @@ class CallDatabase:
         # never silently re-stops positions that are already open.
         trail = _positive(row["trail_pct"]) or _positive(trailing_stop_pct)
         stopped = False
-        if trail and row["status"] == STATUS_OPEN and peak > 0:
+        if allow_stop and trail and row["status"] == STATUS_OPEN and peak > 0:
             drop_pct = (float(price) - peak) / peak * 100.0
             stopped = drop_pct <= -trail
         if stopped:

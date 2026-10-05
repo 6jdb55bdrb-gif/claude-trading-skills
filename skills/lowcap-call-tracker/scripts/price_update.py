@@ -104,6 +104,48 @@ def _download_closes(tickers: list[str]) -> dict[str, list[tuple[str, float, flo
     return series
 
 
+def _download_extended(tickers: list[str]) -> dict[str, dict[str, Any]]:
+    """The newest pre/post-market print per ticker.
+
+    A daily bar does not exist until the regular session makes one, so before
+    the open the book would otherwise hold the previous close — SDEV traded
+    10.39 pre-market while the mark read Friday's 7.48. Intraday bars with
+    ``prepost=True`` carry the extended session, so the newest one becomes the
+    mark.
+
+    ``volume`` rides along because it decides whether the stop may act: a thin
+    microcap quotes pre-market with ZERO volume, and that is a quote nobody
+    traded, not a price. See ``update_open_calls``.
+    """
+    if not tickers or not HAS_YFINANCE:
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for ticker in sorted(set(tickers)):
+        try:
+            frame = yfinance.Ticker(ticker).history(
+                period="2d", interval="5m", prepost=True, auto_adjust=False
+            )
+        except Exception:  # pragma: no cover - network/provider failure
+            continue
+        if frame is None or getattr(frame, "empty", True):
+            continue
+        try:
+            frame = frame.dropna(subset=["Close"])
+            if frame.empty:
+                continue
+            index = frame.index[-1]
+            row = frame.iloc[-1]
+            out[ticker] = {
+                "price": float(row["Close"]),
+                "as_of": str(index.date()),
+                "volume": _maybe_float(row.get("Volume")) or 0.0,
+                "high": _maybe_float(row.get("High")),
+            }
+        except (KeyError, IndexError, TypeError, AttributeError):  # pragma: no cover
+            continue
+    return out
+
+
 def _maybe_float(value: Any) -> float | None:
     """A float, or None for a missing or NaN figure. Never raises."""
     if value is None:
@@ -130,6 +172,16 @@ def fetch_price_points(tickers: list[str]) -> dict[str, dict[str, Any]]:
                 continue
             points[ticker] = {"price": float(close), "as_of": as_of, "high": high}
             break
+    # The extended print is attached, never substituted here: whether it is used
+    # is the caller's policy (tracker.mark_extended_hours), and the daily close
+    # stays available as the fallback.
+    extended = _download_extended(tickers) if points else {}
+    for ticker, point in points.items():
+        ext = extended.get(ticker) or {}
+        point["extended_price"] = ext.get("price")
+        point["extended_as_of"] = ext.get("as_of")
+        point["extended_volume"] = ext.get("volume")
+        point["extended_high"] = ext.get("high")
     return points
 
 
@@ -148,13 +200,26 @@ def _as_points(prices: dict[str, Any]) -> dict[str, dict[str, Any]]:
     for ticker, value in (prices or {}).items():
         if isinstance(value, dict):
             high = value.get("high")
+            ext = value.get("extended_price")
             points[ticker] = {
                 "price": float(value["price"]),
                 "as_of": value.get("as_of"),
                 "high": None if high is None else float(high),
+                "extended_price": None if ext is None else float(ext),
+                "extended_as_of": value.get("extended_as_of"),
+                "extended_volume": value.get("extended_volume"),
+                "extended_high": value.get("extended_high"),
             }
         else:
-            points[ticker] = {"price": float(value), "as_of": None, "high": None}
+            points[ticker] = {
+                "price": float(value),
+                "as_of": None,
+                "high": None,
+                "extended_price": None,
+                "extended_as_of": None,
+                "extended_volume": None,
+                "extended_high": None,
+            }
     return points
 
 
@@ -176,6 +241,8 @@ def update_open_calls(
     raw_trail = config["tracker"].get("trailing_stop_pct")
     trailing = None if raw_trail is None else float(raw_trail)
     use_session_high = bool(config["tracker"].get("peak_from_session_high", False))
+    mark_extended = bool(config["tracker"].get("mark_extended_hours", True))
+    stop_on_untraded = bool(config["tracker"].get("stop_on_untraded_extended", False))
     # The market's calendar day, not the server's: a mark is "today's" only if
     # its bar belongs to the Eastern session now in progress.
     today = today or datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d")
@@ -193,6 +260,23 @@ def update_open_calls(
         point = resolved.get(row["ticker"])
         price = point["price"] if point else None
         as_of = (point or {}).get("as_of")
+        # Prefer the extended print when it is NEWER than the daily close. Before
+        # the open there is no bar for today, so without this the book marks a
+        # position at the previous session while it trades somewhere else.
+        ext_price = (point or {}).get("extended_price")
+        ext_as_of = (point or {}).get("extended_as_of")
+        extended_mark = bool(
+            mark_extended
+            and ext_price is not None
+            and ext_as_of
+            and (not as_of or ext_as_of >= as_of)
+        )
+        # Zero volume is a quote, not a trade. It may move the mark; it may not
+        # close a position. This is the MEDS 5.16 failure wired into the stop.
+        ext_volume = (point or {}).get("extended_volume")
+        untraded = extended_mark and not (ext_volume or 0)
+        if extended_mark:
+            price, as_of = ext_price, ext_as_of
         # A price from an earlier session than the one already recorded is a
         # regression, not an update: the provider is offering yesterday's close
         # because today's bar has not settled. Keep the newer mark.
@@ -242,22 +326,28 @@ def update_open_calls(
                     "pre_entry": pre_entry,
                     "prior_session": bool(row["price_as_of"] and row["price_as_of"] < today),
                     "price_as_of": row["price_as_of"],
+                    "extended": False,
+                    "untraded": False,
                     "last_price_at": row["last_price_at"],
                     "stale_days": _age_days(row["last_price_at"], now),
                     **common,
                 }
             )
             continue
+        stop_allowed = not (untraded and not stop_on_untraded)
         result = db.apply_price(
             row["id"],
             float(price),
-            close_threshold_pct=threshold,
+            close_threshold_pct=threshold if stop_allowed else None,
             as_of=as_of,
             trailing_stop_pct=trailing,
             session_high=(point or {}).get("high") if use_session_high else None,
+            allow_stop=stop_allowed,
         )
         result["stale_source"] = False
         result["pre_entry"] = False
+        result["extended"] = extended_mark
+        result["untraded"] = untraded
         # Correct but a day old: no daily bar exists for today until the session
         # makes one, so a pre-market run marks on yesterday's close. Printing
         # that as "now" is how 3.66 was shown while SDEV traded 5.21.
@@ -281,6 +371,7 @@ def update_open_calls(
         "stale_sources": stale_sources,
         "pre_entry_bars": pre_entry_bars,
         "prior_session_marks": [u["ticker"] for u in updates if u.get("prior_session")],
+        "extended_marks": [u["ticker"] for u in updates if u.get("extended")],
         "today": today,
         "updates": updates,
         "threshold_pct": threshold,
@@ -311,6 +402,8 @@ def format_updates(result: dict[str, Any]) -> str:
             tag = f"{update['kind'].upper()} · NO PRICE" + (f" ({stale}d stale)" if stale else "")
         else:
             tag = update["kind"].upper()
+        if update.get("extended"):
+            tag += " · EXT (untraded)" if update.get("untraded") else " · EXT"
         if update.get("prior_session"):
             # Append rather than replace: a stop-out or an expiry is the louder
             # fact, but which session the mark came from must not be lost.
