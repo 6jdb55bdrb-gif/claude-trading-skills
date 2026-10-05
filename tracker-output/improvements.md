@@ -437,3 +437,52 @@ is now costing the book its largest open gain rather than protecting it.
   decision is finding 12. Note what it is now worth: on the live book, a peak
   that tracked the session high would have the SDEV stop near 4.40 rather than
   3.39.
+
+## Correction — 2026-10-05
+
+### Finding 10 was wrong about `etf_momentum` being unfireable
+
+Finding 10 (2 October) called `etf_momentum` "structurally unfireable" because
+`ta_highlow52w_nh` cannot be met in a universe 80-95% off its highs. **That was
+wrong.** On 5 October the variant fired on its own unmodified filters and
+returned **QYLD** — the Global X NASDAQ 100 Covered Call ETF, at a 52-week high
+by 0.1%.
+
+The error was generalising from one day's universe. The microcaps this strategy
+screens are far below their highs; ETFs are not microcaps, and a broad-market
+income fund makes new highs routinely. The same mistake would not have been made
+by checking the ETF universe separately instead of assuming it behaved like the
+stock one.
+
+What survives is the narrower and better-evidenced half of the original
+finding: **what this variant returns is not this strategy.** QYLD shows it more
+cleanly than the inverse-ETF list did —
+
+| | QYLD | this book's other names |
+|---|---|---|
+| monthly volatility | **0.44%** | VEEA 23.2%, MEDS 44.4% |
+| ATR as % of price | **0.48%** | VEEA 26.9%, MEDS 25.1% |
+| assets / float | $8.1bn fund | 1.5-6.7M share floats |
+| short interest | none | 18-77% of float |
+
+A covered-call ETF caps its own upside by writing calls, so it cannot produce
+the moves this book exists to catch. Reviewed and SKIPped at confidence 91.
+
+So **option 3 of finding 10 still stands — drop or re-scope `etf_momentum` —
+but for a different reason**: not "it never fires" but "when it fires it hands
+you an income fund". `momentum_breakout`'s diagnosis is unaffected: that one
+returned the identical stock universe as `squeeze`, which was measured directly
+rather than inferred.
+
+### The Judge's first vindicated SKIP
+
+SDEV was offered back at 7.58 immediately after the win was banked, and SKIPped
+at confidence 94 on the 212.9M-share resale registration. The shadow call then
+stopped out at **-36.2%**, so the verdict saved $36.20 on a $100 slice.
+
+That is the first SKIP in this book with a measured, favourable outcome. Set
+against the two SDEV SKIPs at 1.04 and 3.20 that the book rode anyway, the
+Judge's record is now: wrong twice on substance-correct dilution objections that
+were ~600% early, right once when the dilution actually arrived as a filing. The
+difference between those cases is evidence, not conviction — the 94 was backed
+by a document, the earlier SKIPs by a worry.
