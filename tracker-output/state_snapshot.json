@@ -2,11 +2,11 @@
  "counts": {
   "calls": 13,
   "llm_usage": 0,
-  "price_history": 205,
+  "price_history": 213,
   "role_verdicts": 60,
-  "runs": 72
+  "runs": 74
  },
- "exported_at": "2026-10-04T21:24:19+00:00",
+ "exported_at": "2026-10-05T09:40:15+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -315,7 +315,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP \u2014 Skeptic objection not explicitly answered",
     "kind": "shadow",
-    "last_price_at": "2026-10-04T21:24:10+00:00",
+    "last_price_at": "2026-10-05T09:39:01+00:00",
     "notes": "backend down at call time: ANTHROPIC_API_KEY is not set",
     "peak_price": 7.480000019073486,
     "pnl_pct": 133.75,
@@ -438,7 +438,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at low conviction (42). In favour: the first filed, dated, same-day catalyst in this book; the best technicals logged so far (113x relative volume, bought through the open); and an extreme squeeze structure, 76.5% of a 1.59M float. Against, and decisive: a 27% ATR against our fixed 15% trailing stop means ordinary noise very likely closes this regardless of whether the thesis is right \u2014 MEDS realised exactly that failure mode this morning. The catalyst is also non-binding, and a term sheet on a company with $887k of cash can reverse on a single 8-K. Bias check: VEEA looks attractive partly because it has the catalyst the rest of the book lacked. That is a genuine signal, not a bias, but it must not override the stop geometry. Stated plainly: if the trailing stop were ATR-scaled rather than fixed at 15%, this would be a TAKE.",
     "kind": "shadow",
-    "last_price_at": "2026-10-04T21:24:10+00:00",
+    "last_price_at": "2026-10-05T09:39:01+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 3.4700000286102295,
     "pnl_pct": 4.0625,
@@ -479,7 +479,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at high conviction (88). Catalysts are press releases, not filings; the stock is 85% above its 50-day; squeeze fuel is absent at short ratio 0.08; the balance sheet is $2.46M cash against $32.6M debt; and this is a third call on a name that stopped out twice this week, offered above the live tape. The one point in its favour, from_open +10.5%, is the same signal that justified the 5.16 entry at 06:18 this morning, and that entry is already a realised -19.0%. Logged explicitly: the Technician signal that persuaded me last time has now been falsified once on this exact ticker, so I am weighting it down.",
     "kind": "shadow",
-    "last_price_at": "2026-10-04T21:24:10+00:00",
+    "last_price_at": "2026-10-05T09:39:01+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 4.3,
     "pnl_pct": -14.4186,
@@ -520,7 +520,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "TAKE at 62. Taken on risk geometry and trend structure, NOT on catalyst \u2014 the named catalyst is an annual-meeting vote and I am scoring it as such. What earns it: the only name in this book above its 200-day; the first whose daily range (6.3% ATR) fits our 15% stop rather than demanding a 40% trail; the first with real days-to-cover (short ratio 2.26); the highest institutional ownership logged (12.7%); and bought through the session rather than gapped and faded. The objections are about extension and narrative, not about executability or solvency \u2014 unlike the prior SKIPs, which were mostly $2M cash against $32M debt with no squeeze fuel. None of that applies here. Bias check, both directions. I have SKIPped nine of ten and SDEV, rejected twice, is now +102% from the second entry and +521% from the first; there is real pressure on me to take the next thing simply to stop being the Judge that rejects every winner, and that pressure is not evidence. Against that: the reason I like this one is the single objection that has bound almost every previous SKIP. On VEEA I wrote that if the trail were ATR-scaled this would be a TAKE; BIRD is the inverse case, where no widening is needed because the ATR already fits. That is a pre-registered reason, not a post-hoc one. How this loses: a mean-reversion snap from RSI 81 back to the 20-day is roughly -31%, and the 15% stop cuts that well before it completes. Risk $15 on a $100 slice, 1.5% of the account.",
     "kind": "active",
-    "last_price_at": "2026-10-04T21:24:10+00:00",
+    "last_price_at": "2026-10-05T09:39:01+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 3.66,
     "pnl_pct": -8.0601,
@@ -1978,6 +1978,62 @@
     "call_id": 13,
     "id": 210,
     "observed_at": "2026-10-04T21:24:10+00:00",
+    "pnl_pct": -8.0601,
+    "price": 3.365000009536743
+   },
+   {
+    "call_id": 8,
+    "id": 211,
+    "observed_at": "2026-10-05T07:41:23+00:00",
+    "pnl_pct": 133.75,
+    "price": 7.480000019073486
+   },
+   {
+    "call_id": 11,
+    "id": 212,
+    "observed_at": "2026-10-05T07:41:23+00:00",
+    "pnl_pct": 4.0625,
+    "price": 3.3299999237060547
+   },
+   {
+    "call_id": 12,
+    "id": 213,
+    "observed_at": "2026-10-05T07:41:23+00:00",
+    "pnl_pct": -14.4186,
+    "price": 3.680000066757202
+   },
+   {
+    "call_id": 13,
+    "id": 214,
+    "observed_at": "2026-10-05T07:41:23+00:00",
+    "pnl_pct": -8.0601,
+    "price": 3.365000009536743
+   },
+   {
+    "call_id": 8,
+    "id": 215,
+    "observed_at": "2026-10-05T09:39:01+00:00",
+    "pnl_pct": 133.75,
+    "price": 7.480000019073486
+   },
+   {
+    "call_id": 11,
+    "id": 216,
+    "observed_at": "2026-10-05T09:39:01+00:00",
+    "pnl_pct": 4.0625,
+    "price": 3.3299999237060547
+   },
+   {
+    "call_id": 12,
+    "id": 217,
+    "observed_at": "2026-10-05T09:39:01+00:00",
+    "pnl_pct": -14.4186,
+    "price": 3.680000066757202
+   },
+   {
+    "call_id": 13,
+    "id": 218,
+    "observed_at": "2026-10-05T09:39:01+00:00",
     "pnl_pct": -8.0601,
     "price": 3.365000009536743
    }
@@ -3748,6 +3804,40 @@
     "screening_ran": 0,
     "session_reason": "weekend \u2014 US market closed",
     "started_at": "2026-10-04T21:24:08+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-05T07:41:23+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 the 'anthropic' package is not installed",
+    "priced": 4,
+    "reviewed": 0,
+    "run_id": "run_20261005T074121Z",
+    "screening_ran": 0,
+    "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
+    "started_at": "2026-10-05T07:41:21+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-05T09:39:24+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 the 'anthropic' package is not installed",
+    "priced": 4,
+    "reviewed": 0,
+    "run_id": "run_20261005T093900Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-10-05T09:39:00+00:00"
    }
   ]
  }
