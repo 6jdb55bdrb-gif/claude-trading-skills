@@ -542,9 +542,19 @@ def test_notify_override_forces_a_report_on_a_quiet_run(config, tmp_path, monkey
         db_path=str(tmp_path / "cycle.db"),
         now=datetime(2026, 9, 19, 15, 0, tzinfo=timezone.utc),  # a Saturday: no screening
     )
-    default = run_cycle(config, **quiet)
-    assert default["telegram"]["sent"] is False  # notify_when=changes, nothing changed
+    # Both modes are pinned explicitly. Asserting the SHIPPED default here is
+    # what broke this test when the operator asked for every scan to report:
+    # the test was describing a config value rather than the behaviour.
+    suppressed = run_cycle(config, notify_when="changes", **quiet)
+    assert suppressed["telegram"]["sent"] is False  # nothing changed this run
 
     forced = run_cycle(config, notify_when="always", **quiet)
     assert forced["telegram"]["sent"] is True
     assert "Lowcap tracker" in sent[-1]["text"]
+
+
+def test_the_shipped_config_reports_every_run():
+    """The operator asked for every scan to reach Telegram, quiet ones included."""
+    from config import load_config
+
+    assert load_config()["telegram"]["notify_when"] == "always"

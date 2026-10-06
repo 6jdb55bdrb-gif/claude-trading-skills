@@ -311,6 +311,34 @@ def _stale_note(update: dict[str, Any]) -> str:
     return " ⏸ <i>no price</i>"
 
 
+def _signed_money(value: Any) -> str:
+    """+$199.16 / -$18.99, or an em dash. Realized PnL reads better signed."""
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "—"
+    return f"{'+' if number >= 0 else '-'}${abs(number):,.2f}"
+
+
+def _stop_note(update: dict[str, Any]) -> str:
+    """Where this call's stop sits, and how far the price is above it.
+
+    The most actionable fact about an open position, and the one the message
+    used to leave out — it was being added by hand to every send, which is not
+    a thing that keeps happening once the cycle sends for itself.
+    """
+    trail = update.get("trail_pct")
+    peak = update.get("peak_price") or update.get("entry_price")
+    if not trail or not peak:
+        return " · stop off"
+    stop = float(peak) * (1 - float(trail) / 100.0)
+    note = f" · stop {stop:.2f}"
+    price = update.get("price")
+    if price and stop > 0:
+        note += f" ({(float(price) / stop - 1) * 100:+.1f}%)"
+    return note
+
+
 def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> str:
     """Render the per-run push message."""
     telegram = config.get("telegram") or {}
@@ -369,7 +397,7 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
                 f"{str(update.get('instrument') or update['direction']).upper()} "
                 f"{_num(update['entry_price'])} → {_num(update['price'])} "
                 f"<b>{_pnl_tag(update.get('pnl_pct'))}</b>{kind}{expiry_note}{age_note}"
-                f"{_stale_note(update)}"
+                f"{_stale_note(update)}{_stop_note(update)}"
             )
         if len(open_updates) > 10:
             lines.append(f"  …and {len(open_updates) - 10} more")
@@ -460,10 +488,19 @@ def format_stats_message(stats: dict[str, Any], *, compact: bool = False) -> str
         f"right {overall.get('right')} · wrong {overall.get('wrong')} · "
         f"neutral {overall.get('neutral')} · hit rate "
         f"{_num(overall.get('hit_rate_pct'), '.1f', '%')}",
-        f"<b>Portfolio {money(account.get('portfolio_value_usd'))}</b> "
+        f"<b>Account ({'every call' if stats.get('account_funds_all', True) else 'TAKE only'}) "
+        f"{money(account.get('portfolio_value_usd'))}</b> "
         f"({_signed(account.get('total_return_pct'))} on "
         f"{money(account.get('account_usd'))})",
-        f"{account.get('allocated_pct', 0)}% allocated · cash {money(account.get('cash_usd'))}",
+        f"{account.get('allocated_pct', 0)}% allocated · cash {money(account.get('cash_usd'))}"
+        + (
+            f" · realized {_signed_money(account.get('realized_usd'))}"
+            if account.get("realized_usd")
+            else ""
+        ),
+        f"<i>TAKE only (the Judge's scorecard) "
+        f"{money((stats.get('take_only_book') or {}).get('portfolio_value_usd'))} "
+        f"({_signed((stats.get('take_only_book') or {}).get('total_return_pct'))})</i>",
         f"<b>Total PnL {_signed(portfolio.get('total_pnl_pct'))}</b> "
         f"<i>(equal weight, all {portfolio.get('calls_counted', 0)} calls)</i>",
         f"avg PnL {_num(overall.get('avg_pnl_pct'), '.2f', '%')} · portfolio "

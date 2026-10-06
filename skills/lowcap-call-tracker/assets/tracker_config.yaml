@@ -337,7 +337,11 @@ telegram:
   enabled: true
   # always  -> a message after every run, including quiet weekend runs
   # changes -> only when something happened (new calls, a close, an error)
-  notify_when: changes
+  #
+  # Set to always at the operator's instruction: every scan reports, including
+  # the quiet overnight ones where nothing opened or closed. silent_when_quiet
+  # below still suppresses the phone notification sound on those.
+  notify_when: always
   # Attach the statistics block to the run notification.
   include_stats: true
   # Attach the per-role verdict lines for each new call. On by default: while
