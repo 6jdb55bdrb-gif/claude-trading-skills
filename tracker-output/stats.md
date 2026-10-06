@@ -6,35 +6,35 @@
 > New screener hits are recorded UNREVIEWED and will be judged on the
 > next healthy run. No decision below was made while the backend was down.
 
-**Backend:** DOWN · reviewed 13 / unreviewed 0 · TAKE/SKIP 2/11 (15.4% TAKE)
+**Backend:** DOWN · reviewed 14 / unreviewed 0 · TAKE/SKIP 2/12 (14.3% TAKE)
 
-**Account (every call):** $1,235.18 (+23.52% on $1,000.00) · 40.0% allocated · cash $799.16
+**Account (every call):** $1,225.77 (+22.58% on $1,000.00) · 50.0% allocated · cash $699.16
 
-**TAKE only (the Judge's scorecard):** $974.28 (-2.57%). What following the Judge's verdicts alone would have returned — the gap against the account above is what the Judge's selectivity is worth.
+**TAKE only (the Judge's scorecard):** $971.72 (-2.83%). What following the Judge's verdicts alone would have returned — the gap against the account above is what the Judge's selectivity is worth.
 
-**Total PnL:** +18.09% — equal weight across all 13 priced call(s)
+**Total PnL:** +16.13% — equal weight across all 14 priced call(s)
 
-**Generated:** 2026-10-06T06:43:13+00:00  
+**Generated:** 2026-10-06T10:06:05+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
 
 | Metric | Value |
 |---|---|
-| Total calls | 13 |
-| Reviewed calls | 13 |
+| Total calls | 14 |
+| Reviewed calls | 14 |
 | UNREVIEWED calls | 0 |
 | Voided (not executable) | 2 |
 | TAKE calls | 2 |
-| Shadow (SKIP) calls | 11 |
-| Open | 4 |
+| Shadow (SKIP) calls | 12 |
+| Open | 5 |
 | Right | 5 |
 | Wrong | 6 |
-| Neutral | 2 |
-| Hit rate % | 38.5 |
-| **Total PnL % (equal weight, all calls)** | +18.09% |
-| Average PnL % per call | 18.09 |
-| Portfolio PnL % (equal weight, TAKE only) | -12.86 |
+| Neutral | 3 |
+| Hit rate % | 35.7 |
+| **Total PnL % (equal weight, all calls)** | +16.13% |
+| Average PnL % per call | 16.13 |
+| Portfolio PnL % (equal weight, TAKE only) | -14.14 |
 
 **Best call:** SDEV (long, squeeze, shadow) +175.82% — entry 1.04 → 2.868499994277954
 **Worst call:** SDEV (long, squeeze, shadow) -36.21% — entry 7.58 → 4.835000038146973
@@ -43,39 +43,39 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 13 | 4 | 5 | 6 | 2 | 38.5 | 18.09 |
+| call | 14 | 5 | 5 | 6 | 3 | 35.7 | 16.13 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| etf | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.11 |
-| stock | 12 | 3 | 4 | 6 | 2 | 33.3 | 19.59 |
+| etf | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.16 |
+| stock | 13 | 4 | 4 | 6 | 3 | 30.8 | 17.35 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| etf_momentum | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.11 |
-| squeeze | 12 | 3 | 4 | 6 | 2 | 33.3 | 19.59 |
+| etf_momentum | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.16 |
+| squeeze | 13 | 4 | 4 | 6 | 3 | 30.8 | 17.35 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| TAKE | 2 | 1 | 0 | 1 | 1 | 0.0 | -12.86 |
-| SKIP (shadow) | 11 | 3 | 5 | 5 | 1 | 45.5 | 23.72 |
+| TAKE | 2 | 1 | 0 | 1 | 1 | 0.0 | -14.14 |
+| SKIP (shadow) | 12 | 4 | 5 | 5 | 2 | 41.7 | 21.17 |
 
-**Judge edge (avg PnL TAKE − avg PnL shadow):** -36.58 → Judge is not adding value
+**Judge edge (avg PnL TAKE − avg PnL shadow):** -35.31 → Judge is not adding value
 
 ### Per-role accuracy
 
 | Role | Avg score (winners) | Avg score (others) | Edge | Corr(score, PnL) | n | Polarity |
 |---|---|---|---|---|---|---|
-| researcher | 4.5 | 4.75 | -0.25 | -0.188 | 13 | quality (higher is better) |
-| technician | 4.1 | 4.75 | -0.65 | 0.087 | 13 | quality (higher is better) |
-| skeptic | 7.9 | 7.44 | 0.46 | 0.326 | 13 | severity (lower is better) |
-| risk_manager | 4.7 | 4.31 | 0.39 | 0.261 | 13 | quality (higher is better) |
+| researcher | 4.5 | 4.39 | 0.11 | -0.156 | 14 | quality (higher is better) |
+| technician | 4.1 | 4.78 | -0.68 | 0.064 | 14 | quality (higher is better) |
+| skeptic | 7.9 | 7.67 | 0.23 | 0.303 | 14 | severity (lower is better) |
+| risk_manager | 4.7 | 4.06 | 0.64 | 0.266 | 14 | quality (higher is better) |
 
 ### Confidence buckets
 
@@ -83,8 +83,8 @@
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | 0-40 | 2 | 0 | 1 | 1 | 0 | 50.0 | 61.35 |
-| 40-70 | 8 | 2 | 3 | 4 | 1 | 37.5 | 21.59 |
-| 70-100 | 3 | 2 | 1 | 1 | 1 | 33.3 | -20.1 |
+| 40-70 | 8 | 2 | 3 | 4 | 1 | 37.5 | 20.38 |
+| 70-100 | 4 | 3 | 1 | 1 | 2 | 25.0 | -15.0 |
 
 
 ### Voided calls
@@ -102,9 +102,9 @@ anything.
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20261006T064311Z | 2026-10-06T06:43:11+00:00 | no | — | — | — |
+| run_20261006T100352Z | 2026-10-06T10:03:52+00:00 | yes | 1 | 0 | 0.0 |
+| run_20261006T073818Z | 2026-10-06T07:38:18+00:00 | no | 0 | 0 | 0.0 |
+| run_20261006T064311Z | 2026-10-06T06:43:11+00:00 | no | 0 | 0 | 0.0 |
 | run_20261006T064035Z | 2026-10-06T06:40:36+00:00 | no | 0 | 0 | 0.0 |
 | run_20261006T055218Z | 2026-10-06T05:52:18+00:00 | no | 0 | 0 | 0.0 |
-| run_20261005T195427Z | 2026-10-05T19:54:27+00:00 | yes | 0 | 0 | 0.0 |
-| run_20261005T153822Z | 2026-10-05T15:38:22+00:00 | yes | 0 | 0 | 0.0 |
 

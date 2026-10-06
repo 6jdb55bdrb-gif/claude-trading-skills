@@ -1,12 +1,12 @@
 {
  "counts": {
-  "calls": 15,
+  "calls": 16,
   "llm_usage": 0,
-  "price_history": 246,
-  "role_verdicts": 70,
-  "runs": 82
+  "price_history": 263,
+  "role_verdicts": 75,
+  "runs": 86
  },
- "exported_at": "2026-10-06T05:52:37+00:00",
+ "exported_at": "2026-10-06T10:06:05+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -428,7 +428,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 42,
-    "current_price": 5.3385,
+    "current_price": 5.11,
     "direction": "long",
     "entry_price": 3.2,
     "expiry_date": null,
@@ -438,12 +438,12 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at low conviction (42). In favour: the first filed, dated, same-day catalyst in this book; the best technicals logged so far (113x relative volume, bought through the open); and an extreme squeeze structure, 76.5% of a 1.59M float. Against, and decisive: a 27% ATR against our fixed 15% trailing stop means ordinary noise very likely closes this regardless of whether the thesis is right \u2014 MEDS realised exactly that failure mode this morning. The catalyst is also non-binding, and a term sheet on a company with $887k of cash can reverse on a single 8-K. Bias check: VEEA looks attractive partly because it has the catalyst the rest of the book lacked. That is a genuine signal, not a bias, but it must not override the stop geometry. Stated plainly: if the trailing stop were ATR-scaled rather than fixed at 15%, this would be a TAKE.",
     "kind": "shadow",
-    "last_price_at": "2026-10-06T05:52:20+00:00",
+    "last_price_at": "2026-10-06T10:03:55+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 5.939899921417236,
-    "pnl_pct": 66.8281,
+    "pnl_pct": 59.6875,
     "position_usd": null,
-    "price_as_of": "2026-10-05",
+    "price_as_of": "2026-10-06",
     "researcher_score": 6.5,
     "review_run_id": "run_20261001T135115Z_manual",
     "reviewed_at": "2026-10-01T13:55:34+00:00",
@@ -469,7 +469,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 88,
-    "current_price": 3.26,
+    "current_price": 3.27,
     "direction": "long",
     "entry_price": 4.3,
     "expiry_date": null,
@@ -479,12 +479,12 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at high conviction (88). Catalysts are press releases, not filings; the stock is 85% above its 50-day; squeeze fuel is absent at short ratio 0.08; the balance sheet is $2.46M cash against $32.6M debt; and this is a third call on a name that stopped out twice this week, offered above the live tape. The one point in its favour, from_open +10.5%, is the same signal that justified the 5.16 entry at 06:18 this morning, and that entry is already a realised -19.0%. Logged explicitly: the Technician signal that persuaded me last time has now been falsified once on this exact ticker, so I am weighting it down.",
     "kind": "shadow",
-    "last_price_at": "2026-10-06T05:52:20+00:00",
+    "last_price_at": "2026-10-06T10:03:55+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 4.3,
-    "pnl_pct": -24.186,
+    "pnl_pct": -23.9535,
     "position_usd": null,
-    "price_as_of": "2026-10-05",
+    "price_as_of": "2026-10-06",
     "researcher_score": 4.0,
     "review_run_id": "run_20261001T135115Z_manual",
     "reviewed_at": "2026-10-01T13:55:34+00:00",
@@ -510,7 +510,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 62,
-    "current_price": 3.4135,
+    "current_price": 3.32,
     "direction": "long",
     "entry_price": 3.66,
     "expiry_date": null,
@@ -520,12 +520,12 @@
     "judge_decision": "TAKE",
     "judge_reason": "TAKE at 62. Taken on risk geometry and trend structure, NOT on catalyst \u2014 the named catalyst is an annual-meeting vote and I am scoring it as such. What earns it: the only name in this book above its 200-day; the first whose daily range (6.3% ATR) fits our 15% stop rather than demanding a 40% trail; the first with real days-to-cover (short ratio 2.26); the highest institutional ownership logged (12.7%); and bought through the session rather than gapped and faded. The objections are about extension and narrative, not about executability or solvency \u2014 unlike the prior SKIPs, which were mostly $2M cash against $32M debt with no squeeze fuel. None of that applies here. Bias check, both directions. I have SKIPped nine of ten and SDEV, rejected twice, is now +102% from the second entry and +521% from the first; there is real pressure on me to take the next thing simply to stop being the Judge that rejects every winner, and that pressure is not evidence. Against that: the reason I like this one is the single objection that has bound almost every previous SKIP. On VEEA I wrote that if the trail were ATR-scaled this would be a TAKE; BIRD is the inverse case, where no widening is needed because the ATR already fits. That is a pre-registered reason, not a post-hoc one. How this loses: a mean-reversion snap from RSI 81 back to the 20-day is roughly -31%, and the 15% stop cuts that well before it completes. Risk $15 on a $100 slice, 1.5% of the account.",
     "kind": "active",
-    "last_price_at": "2026-10-06T05:52:20+00:00",
+    "last_price_at": "2026-10-06T10:03:55+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 3.66,
-    "pnl_pct": -6.735,
+    "pnl_pct": -9.2896,
     "position_usd": null,
-    "price_as_of": "2026-10-05",
+    "price_as_of": "2026-10-06",
     "researcher_score": 5.0,
     "review_run_id": "run_20261002T153210Z_manual",
     "reviewed_at": "2026-10-02T15:34:04+00:00",
@@ -592,7 +592,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 91,
-    "current_price": 18.6560001373291,
+    "current_price": 18.68,
     "direction": "long",
     "entry_price": 18.65,
     "expiry_date": null,
@@ -602,12 +602,12 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at 91 \u2014 not because anything is wrong with QYLD but because it is the wrong instrument for this book. A covered-call ETF caps its own upside and 0.44% monthly volatility cannot produce what this strategy is built to catch. A correction I owe: three days ago I diagnosed etf_momentum as 'structurally unfireable' because ta_highlow52w_nh cannot be met in a universe 80-95% off its highs. That was wrong, and QYLD is the proof \u2014 the variant fired on its own unmodified filters. My error was generalising from one day's universe: the microcaps are far from their highs, but ETFs are not microcaps, and a broad-market income fund makes new highs routinely. What survives is the narrower, better-evidenced half of that finding \u2014 what this variant returns is not this strategy \u2014 and QYLD shows it more cleanly than the inverse-ETF list did. It strengthens the case for dropping or re-scoping etf_momentum, and it changes the reason: not 'it never fires' but 'when it fires it hands you an income fund'.",
     "kind": "shadow",
-    "last_price_at": "2026-10-05T19:54:30+00:00",
+    "last_price_at": "2026-10-06T10:03:55+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
-    "peak_price": 18.6560001373291,
-    "pnl_pct": 0.0322,
+    "peak_price": 18.68,
+    "pnl_pct": 0.1609,
     "position_usd": null,
-    "price_as_of": "2026-10-05",
+    "price_as_of": "2026-10-06",
     "researcher_score": 3.0,
     "review_run_id": "run_20261005T142600Z_manual",
     "reviewed_at": "2026-10-05T14:27:48+00:00",
@@ -624,6 +624,47 @@
     "technician_score": 1.0,
     "ticker": "QYLD",
     "trail_pct": 15.0
+   },
+   {
+    "allocation_usd": 100.0,
+    "asset_type": "stock",
+    "backend": "claude-opus-5 (manual, script backend DOWN)",
+    "call_date": "2026-10-06T10:04:18+00:00",
+    "close_reason": null,
+    "closed_at": null,
+    "confidence": 96,
+    "current_price": 4.57,
+    "direction": "long",
+    "entry_price": 4.57,
+    "expiry_date": null,
+    "hit_json": "{\"ticker\": \"SDEV\", \"company\": \"Stablecoin Development Corp\", \"sector\": \"Financial\", \"industry\": \"Asset Management\", \"country\": \"USA\", \"market_cap\": 236500000.0, \"price\": 4.57, \"change_pct\": 15.99, \"volume\": 23221898.0, \"shares_outstanding\": 50590000.0, \"float_shares\": 1830000.0, \"insider_trans_pct\": -0.15, \"inst_own_pct\": 3.25, \"short_float_pct\": 66.24, \"short_ratio\": 0.12, \"avg_volume\": 9900000.0, \"perf_week_pct\": 39.75, \"perf_month_pct\": 413.47, \"perf_quarter_pct\": 204.66, \"perf_half_pct\": 168.82, \"perf_ytd_pct\": -83.79, \"perf_year_pct\": -25.08, \"volatility_week_pct\": 92.79, \"volatility_month_pct\": 32.48, \"rel_volume\": 46.93, \"beta\": 0.04, \"atr\": 1.23, \"sma20_pct\": 126.57, \"sma50_pct\": 223.02, \"sma200_pct\": -29.23, \"high52w_pct\": -95.42, \"low52w_pct\": 485.21, \"rsi\": 61.93, \"from_open_pct\": 36.01, \"gap_pct\": -14.72, \"asset_type\": \"stock\", \"variant\": \"squeeze\", \"screen_mode\": \"public\", \"filters\": \"cap_smallunder,sh_price_1to20,sh_avgvol_o500,sh_relvol_o2,ta_perf_dup,ta_sma20_pa,ta_sma50_pa,ind_stocksonly,geo_usa,sh_float_u20,sh_short_o15\"}",
+    "id": 16,
+    "instrument": "call",
+    "judge_decision": "SKIP",
+    "judge_reason": "SKIP at 96 \u2014 higher than yesterday's 94, because yesterday I had a registration statement and today I have a date: the next warrant tranche unlocks 16 October, 167.5M shares against 50.6M outstanding. What I am NOT doing: dismissing the setup to stay consistent. The Technician is right that this is a different shape \u2014 gapped down and bought back +36% from the open is the opposite of yesterday's gap-and-fade, and I scored it 5.0 for that reason. If the only objection were extension, I would be considering this. But the objection is a supply event with a date attached, and no intraday reclaim prices that. The company is also a single-token holding vehicle at ~1.3x the NAV of a position it cannot exit without moving the token it owns 10% of the supply of. On the record, stated against myself: this book made +175.8% and +136.9% on SDEV from SKIPs it rode anyway, and -36.2% on the one call taken after my first well-evidenced SKIP. The pattern is not 'the Judge is wrong about SDEV'. It is that the Judge was wrong while the objection was a worry, and right once it became a document. It is now a document with a date on it.",
+    "kind": "shadow",
+    "last_price_at": "2026-10-06T10:04:18+00:00",
+    "notes": "backend down at call time: the 'anthropic' package is not installed",
+    "peak_price": 4.57,
+    "pnl_pct": 0.0,
+    "position_usd": null,
+    "price_as_of": null,
+    "researcher_score": 1.5,
+    "review_run_id": "run_20261006T100352Z_manual",
+    "reviewed_at": "2026-10-06T10:05:54+00:00",
+    "risk_manager_score": 2.0,
+    "risk_usd": null,
+    "run_id": "run_20261006T100352Z",
+    "screen_variant": "squeeze",
+    "shares": null,
+    "skeptic_score": 9.5,
+    "status": "OPEN",
+    "stop_price": null,
+    "strike": null,
+    "target_price": null,
+    "technician_score": 5.0,
+    "ticker": "SDEV",
+    "trail_pct": 40.4
    }
   ],
   "llm_usage": [],
@@ -2349,6 +2390,125 @@
     "observed_at": "2026-10-06T05:52:20+00:00",
     "pnl_pct": -6.735,
     "price": 3.4135
+   },
+   {
+    "call_id": 11,
+    "id": 252,
+    "observed_at": "2026-10-06T06:40:37+00:00",
+    "pnl_pct": 66.8281,
+    "price": 5.3385
+   },
+   {
+    "call_id": 12,
+    "id": 253,
+    "observed_at": "2026-10-06T06:40:37+00:00",
+    "pnl_pct": -24.186,
+    "price": 3.26
+   },
+   {
+    "call_id": 13,
+    "id": 254,
+    "observed_at": "2026-10-06T06:40:37+00:00",
+    "pnl_pct": -6.735,
+    "price": 3.4135
+   },
+   {
+    "call_id": 15,
+    "id": 255,
+    "observed_at": "2026-10-06T06:40:37+00:00",
+    "pnl_pct": 0.1072,
+    "price": 18.67
+   },
+   {
+    "call_id": 11,
+    "id": 256,
+    "observed_at": "2026-10-06T06:43:13+00:00",
+    "pnl_pct": 66.8281,
+    "price": 5.3385
+   },
+   {
+    "call_id": 12,
+    "id": 257,
+    "observed_at": "2026-10-06T06:43:13+00:00",
+    "pnl_pct": -24.186,
+    "price": 3.26
+   },
+   {
+    "call_id": 13,
+    "id": 258,
+    "observed_at": "2026-10-06T06:43:13+00:00",
+    "pnl_pct": -6.735,
+    "price": 3.4135
+   },
+   {
+    "call_id": 15,
+    "id": 259,
+    "observed_at": "2026-10-06T06:43:13+00:00",
+    "pnl_pct": 0.1072,
+    "price": 18.67
+   },
+   {
+    "call_id": 11,
+    "id": 260,
+    "observed_at": "2026-10-06T07:38:20+00:00",
+    "pnl_pct": 66.8281,
+    "price": 5.3385
+   },
+   {
+    "call_id": 12,
+    "id": 261,
+    "observed_at": "2026-10-06T07:38:20+00:00",
+    "pnl_pct": -24.186,
+    "price": 3.26
+   },
+   {
+    "call_id": 13,
+    "id": 262,
+    "observed_at": "2026-10-06T07:38:20+00:00",
+    "pnl_pct": -6.735,
+    "price": 3.4135
+   },
+   {
+    "call_id": 15,
+    "id": 263,
+    "observed_at": "2026-10-06T07:38:20+00:00",
+    "pnl_pct": 0.1072,
+    "price": 18.67
+   },
+   {
+    "call_id": 11,
+    "id": 264,
+    "observed_at": "2026-10-06T10:03:55+00:00",
+    "pnl_pct": 59.6875,
+    "price": 5.11
+   },
+   {
+    "call_id": 12,
+    "id": 265,
+    "observed_at": "2026-10-06T10:03:55+00:00",
+    "pnl_pct": -23.9535,
+    "price": 3.27
+   },
+   {
+    "call_id": 13,
+    "id": 266,
+    "observed_at": "2026-10-06T10:03:55+00:00",
+    "pnl_pct": -9.2896,
+    "price": 3.32
+   },
+   {
+    "call_id": 15,
+    "id": 267,
+    "observed_at": "2026-10-06T10:03:55+00:00",
+    "pnl_pct": 0.1609,
+    "price": 18.68
+   },
+   {
+    "call_id": 16,
+    "id": 268,
+    "observed_at": "2026-10-06T10:04:18+00:00",
+    "pnl_pct": 0.0,
+    "price": 4.57
    }
   ],
   "role_verdicts": [
@@ -2981,6 +3141,51 @@
     "role": "judge",
     "score": null,
     "verdict_json": "{\"score\": null, \"backend\": \"claude-opus-5 (manual)\", \"reason\": \"SKIP at 91 \\u2014 not because anything is wrong with QYLD but because it is the wrong instrument for this book. A covered-call ETF caps its own upside and 0.44% monthly volatility cannot produce what this strategy is built to catch. A correction I owe: three days ago I diagnosed etf_momentum as 'structurally unfireable' because ta_highlow52w_nh cannot be met in a universe 80-95% off its highs. That was wrong, and QYLD is the proof \\u2014 the variant fired on its own unmodified filters. My error was generalising from one day's universe: the microcaps are far from their highs, but ETFs are not microcaps, and a broad-market income fund makes new highs routinely. What survives is the narrower, better-evidenced half of that finding \\u2014 what this variant returns is not this strategy \\u2014 and QYLD shows it more cleanly than the inverse-ETF list did. It strengthens the case for dropping or re-scoping etf_momentum, and it changes the reason: not 'it never fires' but 'when it fires it hands you an income fund'.\"}"
+   },
+   {
+    "backend": "claude-opus-5 (manual)",
+    "call_id": 16,
+    "created_at": "2026-10-06T10:05:54+00:00",
+    "id": 71,
+    "role": "researcher",
+    "score": 1.5,
+    "verdict_json": "{\"score\": 1.5, \"backend\": \"claude-opus-5 (manual)\", \"searched\": true, \"queries\": [\"Stablecoin Development SDEV news October 6 2026\"], \"catalyst\": \"A dated supply event. Warrants over 167.5M shares continue to unlock, with the NEXT TRANCHE DUE 16 OCTOBER, against 50.6M common shares outstanding as of 30 June. Separately, Fugazi Research published on the structure, alleging asset concentration and investor ties to company leadership.\", \"notes\": \"The company's entire asset is ~2,321,910,691 SKY tokens \\u2014 about 10% of total SKY supply \\u2014 a preliminary Digital Asset NAV of ~$180.2M at 30 Sept on a SKY price of $0.07764. Market cap reads $236.5M, roughly 1.3x the NAV of a single concentrated small-cap token position. The stock fell 32% on Monday. The research is not thin; it is damning.\"}"
+   },
+   {
+    "backend": "claude-opus-5 (manual)",
+    "call_id": 16,
+    "created_at": "2026-10-06T10:05:54+00:00",
+    "id": 72,
+    "role": "technician",
+    "score": 5.0,
+    "verdict_json": "{\"score\": 5.0, \"backend\": \"claude-opus-5 (manual)\", \"notes\": \"Genuinely different from yesterday, which deserves acknowledging rather than dismissing to stay consistent with my own prior verdict. Yesterday: gap +29.8% with from_open -21.9%, a gap-and-fade. Today: gap -14.7% with from_open +36.0% \\u2014 gapped DOWN and bought back hard through the session on 46.9x relative volume, 23.2M shares against a 9.9M average. RSI 61.9 against yesterday's 89.5. Against it: now -29.2% BELOW the 200-day (yesterday +15.9% above), -95.4% from the 52-week high, still +223% above the 50-day. A violent intraday reclaim inside a broken trend is a bounce, not a base.\"}"
+   },
+   {
+    "backend": "claude-opus-5 (manual)",
+    "call_id": 16,
+    "created_at": "2026-10-06T10:05:54+00:00",
+    "id": 73,
+    "role": "skeptic",
+    "score": 9.5,
+    "verdict_json": "{\"score\": 9.5, \"backend\": \"claude-opus-5 (manual)\", \"objections\": [\"The objection is no longer a worry, an inference, or even a registration statement \\u2014 it is a CALENDAR DATE. 167.5M warrant shares unlocking against 50.6M outstanding, next tranche 16 October. Buying today is buying ten days ahead of that.\", \"A single-asset crypto holding vehicle trading at roughly 1.3x the NAV of a token it owns 10% of the supply of \\u2014 it cannot realise that mark without moving the token.\", \"short_ratio 0.12: the 66% short float is still not fuel. The shorts are long gone.\", \"An active short report alleging insider ties to the financing.\"], \"not_objections\": [\"'It bounced today' is not an objection \\u2014 that IS the setup, and the Technician is right that the shape changed from yesterday.\"]}"
+   },
+   {
+    "backend": "claude-opus-5 (manual)",
+    "call_id": 16,
+    "created_at": "2026-10-06T10:05:54+00:00",
+    "id": 74,
+    "role": "risk_manager",
+    "score": 2.0,
+    "verdict_json": "{\"score\": 2.0, \"backend\": \"claude-opus-5 (manual)\", \"instrument\": \"none\", \"short_suppressed\": false, \"notes\": \"ATR 1.23 on 4.57 is 26.9%, so the trail resolves to 40.4% \\u2014 a $40 risk on a $100 slice, into a dated dilution event ten days out. Monthly volatility 32.5%. The book's record on this ticker is now four calls: +175.8%, +136.9%, void, -36.2%. The last was taken against my highest-conviction SKIP and lost 36%. A fifth entry ten days before 167.5M shares unlock is familiarity, not a thesis.\"}"
+   },
+   {
+    "backend": "claude-opus-5 (manual)",
+    "call_id": 16,
+    "created_at": "2026-10-06T10:05:54+00:00",
+    "id": 75,
+    "role": "judge",
+    "score": null,
+    "verdict_json": "{\"score\": null, \"backend\": \"claude-opus-5 (manual)\", \"reason\": \"SKIP at 96 \\u2014 higher than yesterday's 94, because yesterday I had a registration statement and today I have a date: the next warrant tranche unlocks 16 October, 167.5M shares against 50.6M outstanding. What I am NOT doing: dismissing the setup to stay consistent. The Technician is right that this is a different shape \\u2014 gapped down and bought back +36% from the open is the opposite of yesterday's gap-and-fade, and I scored it 5.0 for that reason. If the only objection were extension, I would be considering this. But the objection is a supply event with a date attached, and no intraday reclaim prices that. The company is also a single-token holding vehicle at ~1.3x the NAV of a position it cannot exit without moving the token it owns 10% of the supply of. On the record, stated against myself: this book made +175.8% and +136.9% on SDEV from SKIPs it rode anyway, and -36.2% on the one call taken after my first well-evidenced SKIP. The pattern is not 'the Judge is wrong about SDEV'. It is that the Judge was wrong while the objection was a worry, and right once it became a document. It is now a document with a date on it.\"}"
    }
   ],
   "runs": [
@@ -4377,6 +4582,74 @@
     "screening_ran": 0,
     "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
     "started_at": "2026-10-06T05:52:18+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-06T06:40:37+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 the 'anthropic' package is not installed",
+    "priced": 4,
+    "reviewed": 0,
+    "run_id": "run_20261006T064035Z",
+    "screening_ran": 0,
+    "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
+    "started_at": "2026-10-06T06:40:36+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-06T06:43:13+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 the 'anthropic' package is not installed",
+    "priced": 4,
+    "reviewed": 0,
+    "run_id": "run_20261006T064311Z",
+    "screening_ran": 0,
+    "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
+    "started_at": "2026-10-06T06:43:11+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-06T07:38:20+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 the 'anthropic' package is not installed",
+    "priced": 4,
+    "reviewed": 0,
+    "run_id": "run_20261006T073818Z",
+    "screening_ran": 0,
+    "session_reason": "overnight \u2014 outside 04:00-20:00 ET, no live tape to screen",
+    "started_at": "2026-10-06T07:38:18+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-06T10:04:18+00:00",
+    "hits": 1,
+    "llm_cost_usd": 0.0,
+    "new_calls": 1,
+    "new_shadows": 1,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 the 'anthropic' package is not installed",
+    "priced": 4,
+    "reviewed": 1,
+    "run_id": "run_20261006T100352Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-10-06T10:03:52+00:00"
    }
   ]
  }
