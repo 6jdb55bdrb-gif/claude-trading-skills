@@ -114,6 +114,14 @@ CREATE TABLE IF NOT EXISTS calls (
     -- from trail_pct: this line never moves, and the outcome tracker checks
     -- each day's LOW against it.
     sl_price REAL,
+    -- The v2 explosion-signals sheet: the layer's net effect on the Judge's
+    -- confidence, the whole sheet as JSON (so the outcome report can ask which
+    -- signals predicted a run), and the hard-skip filter that fired, if any.
+    -- NULL means the call carried no sheet at all, which is not the same fact
+    -- as a sheet that scored zero.
+    signal_bonus REAL,
+    signals_json TEXT,
+    hard_skip_reason TEXT,
     -- Outcome tracking, filled in later by outcome_tracker.py.
     ret_1d REAL,
     ret_3d REAL,
@@ -325,6 +333,9 @@ class CallDatabase:
             ),
             ("stopped_out_date", "ALTER TABLE calls ADD COLUMN stopped_out_date TEXT"),
             ("outcome_updated_at", "ALTER TABLE calls ADD COLUMN outcome_updated_at TEXT"),
+            ("signal_bonus", "ALTER TABLE calls ADD COLUMN signal_bonus REAL"),
+            ("signals_json", "ALTER TABLE calls ADD COLUMN signals_json TEXT"),
+            ("hard_skip_reason", "ALTER TABLE calls ADD COLUMN hard_skip_reason TEXT"),
         ):
             if column not in existing:
                 self.conn.execute(ddl)
@@ -464,6 +475,11 @@ class CallDatabase:
         stamp = now or utc_now()
         hit = review.get("hit") or {}
         version = screener_version or hit.get("screener_version")
+        # NULL rather than 0 when there is no sheet: "no signals layer" and
+        # "the layer scored nothing" are different facts about a call.
+        signals = review.get("explosion_signals") or {}
+        has_signals = bool(signals.get("enabled"))
+        hard_skips = signals.get("hard_skips") or []
         # Computed against the entry that is actually stored, which may be the
         # Risk Manager's level or the screener price it fell back to.
         sl_price = calculate_stop_loss(entry, sl_pct=sl_pct)
@@ -478,8 +494,8 @@ class CallDatabase:
                 stop_price, target_price, shares, position_usd, risk_usd,
                 status, current_price, pnl_pct, last_price_at, run_id, backend, notes,
                 reviewed_at, hit_json, allocation_usd, peak_price, trail_pct,
-                screener_version, sl_price
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                screener_version, sl_price, signal_bonus, signals_json, hard_skip_reason
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 ticker,
@@ -528,6 +544,9 @@ class CallDatabase:
                 ),
                 version,
                 sl_price,
+                int(signals.get("bonus", 0)) if has_signals else None,
+                json.dumps(signals, default=str) if has_signals else None,
+                "; ".join(hard_skips)[:300] or None,
             ),
         )
         call_id = int(cursor.lastrowid)

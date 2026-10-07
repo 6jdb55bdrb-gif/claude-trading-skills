@@ -75,6 +75,19 @@ up today, above the SMA20 and SMA50:
 | `squeeze` | stocks | market cap under $2B, float under 50M, average volume over 300K, RelVol over 2 — **no** short-float filter |
 | `momentum_breakout` | stocks | market cap under $2B, within 5% of the 52-week high, RelVol over 2 — no float filter |
 
+v2 also runs an **explosion-signals** layer on every hit after the filters and
+before the Judge: nine measured bonuses (float rotation, catalyst recency,
+squeeze pressure, volatility contraction, premarket gap, VWAP position, insider
+buying, thin institutions, sector sympathy), capped at +30 net, and four hard
+skips that no score can outvote (recent dilution filings, a reverse split
+inside six months, under six months of cash, a third halt in one session).
+Every value goes to the Researcher, Skeptic and Judge, onto the call record and
+into the Telegram message. A source that cannot be read reports `n/a` and
+scores nothing — never a 0, which would claim it looked. EDGAR-backed signals
+stay `n/a` until a contact is configured (`explosion_signals.edgar.user_agent`
+or `EDGAR_USER_AGENT`), because SEC fair access requires one and the client
+refuses to send anonymous requests. See `references/screener_versions.md`.
+
 What v2 stopped filtering on it now weighs after the fetch, because a FinViz
 filter can only ever narrow a screen:
 
@@ -336,8 +349,12 @@ Prices come from yfinance — free, no key.
   cost, the guards that replaced the hard filters, the fixed stop, and the
   outcome scorecard
 - `scripts/outcome_tracker.py` — +1/+3/+5-session returns and stop checks for
-  every call; `scripts/outcome_report.py` — the v1-vs-v2 scorecard and its
-  (never-applied) threshold proposals
+  every call; `scripts/outcome_report.py` — the v1-vs-v2 scorecard, the
+  per-signal edge table and its (never-applied) threshold proposals
+- `scripts/explosion_signals.py` — the v2 signal scoring (pure, offline);
+  `scripts/signal_providers.py` — the measurements behind it (yfinance, FinViz
+  movers, Nasdaq halts, iBorrowDesk); `scripts/edgar_client.py` — the
+  fair-access EDGAR client that will not go anonymous
 - `references/screener_variants.md` — filter-code tables per variant, ETF data
   gaps, OTC exclusion, tuning notes
 - `references/role_review_protocol.md` — the five roles, JSON schemas, score

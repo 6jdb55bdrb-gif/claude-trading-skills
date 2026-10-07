@@ -33,10 +33,12 @@ from urllib.parse import quote
 from screener_guards import apply_change_cap
 from screener_variants import (
     VIEW_CODES,
+    build_url,
     build_variant_urls,
     elite_mode,
     get_variant,
     screener_version,
+    validate_token,
     variant_filters,
     variant_names,
     variant_views,
@@ -327,6 +329,43 @@ def fetch_view_rows(
             if len(page_rows) < ROWS_PER_PAGE:
                 break
     return rows
+
+
+def fetch_rows_for_filters(
+    config: dict[str, Any],
+    *,
+    filters: list[str],
+    view: str = "overview",
+    order: str | None = None,
+    mode: str | None = None,
+) -> list[dict[str, Any]]:
+    """Fetch and normalize one ad-hoc screen, outside the variant machinery.
+
+    The sector-sympathy signal needs a single screen of today's big movers,
+    shared by every hit in the cycle. Going through a variant for that would
+    mean inventing a variant that is not a strategy.
+    """
+    resolved = (mode or config["screener"].get("mode", "auto")).lower()
+    if resolved == "auto":
+        resolved = "elite" if elite_mode(config) else "public"
+    if resolved == "fixture":
+        return []
+    tokens = [validate_token(token) for token in filters]
+    delay = float(config["screener"].get("request_delay_seconds", 1.5))
+    rows: list[dict[str, Any]] = []
+    if resolved == "elite":
+        rows = parse_export_csv(_http_get(_export_url(config, tokens, view, order)))
+    else:
+        for page in range(int(config["screener"].get("max_pages", 2))):
+            url = build_url(tokens, elite=False, view=view, order=order) + (
+                f"&r={page * ROWS_PER_PAGE + 1}" if page else ""
+            )
+            page_rows = parse_screener_html(_http_get(url))
+            rows.extend(page_rows)
+            time.sleep(delay)
+            if len(page_rows) < ROWS_PER_PAGE:
+                break
+    return [normalize_row(row) for row in rows]
 
 
 def merge_rows(row_sets: list[list[dict[str, Any]]]) -> dict[str, dict[str, Any]]:

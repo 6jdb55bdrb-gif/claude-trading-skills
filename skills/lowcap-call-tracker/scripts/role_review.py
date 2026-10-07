@@ -29,8 +29,11 @@ from pathlib import Path
 from typing import Any
 
 import heuristic_roles as heuristic
+from explosion_signals import evaluate as evaluate_signals
+from explosion_signals import signal_summary, signals_enabled
 from llm_client import LLMClient, LLMUnavailable
 from screener_guards import apply_short_float_bonus
+from signal_providers import gather_signal_data
 from skill_adapters import fetch_daily_bars, run_episodic_pivot, run_position_sizer
 from skill_adapters import run_weekly_price_action as weekly_adapter
 
@@ -116,6 +119,18 @@ def build_user_message(role: str, hit: dict[str, Any], context: dict[str, Any]) 
     payload: dict[str, Any] = {"screener_hit": _compact(hit)}
     if role == "researcher" and context.get("episodic_pivot"):
         payload["episodic_pivot"] = context["episodic_pivot"]
+    # The Researcher, Skeptic and Judge argue about why a name moves, so they
+    # get the measured sheet. The Technician reads price and the Risk Manager
+    # sizes the plan; handing either the catalyst score invites double-counting
+    # what the Researcher already weighed.
+    signals = context.get("explosion_signals") or {}
+    if signals.get("enabled") and role in {"researcher", "skeptic", "judge"}:
+        payload["explosion_signals"] = {
+            "bonus_applied_to_judge_confidence": signals["bonus"],
+            "capped": signals.get("capped", False),
+            "hard_skips": signals.get("hard_skips", []),
+            "signals": signals.get("signals", {}),
+        }
     if role == "technician" and context.get("weekly_price_action"):
         payload["weekly_price_action"] = context["weekly_price_action"]
     if role in {"skeptic", "risk_manager", "judge"}:
@@ -264,15 +279,50 @@ def apply_catalyst_penalty(
     return judge_verdict
 
 
+def apply_signal_bonus(judge_verdict: dict[str, Any], signals: dict[str, Any]) -> dict[str, Any]:
+    """Move the Judge's confidence by the signal sheet's net score.
+
+    Applied before the gate, so a coiled float-rotating name with a 2-hour-old
+    8-K can carry itself over the threshold and a name trading under VWAP can
+    fall below it. The sheet moves the number and records what moved it; the
+    gate still decides TAKE vs SKIP.
+    """
+    if not signals.get("enabled") or not signals.get("bonus"):
+        return judge_verdict
+    before = int(judge_verdict.get("confidence") or 0)
+    judge_verdict["confidence"] = max(0, min(100, before + int(signals["bonus"])))
+    judge_verdict["explosion_signals"] = {
+        "bonus": int(signals["bonus"]),
+        "raw_bonus": int(signals.get("raw_bonus", signals["bonus"])),
+        "capped": bool(signals.get("capped")),
+        "confidence_before": before,
+        "confidence_after": judge_verdict["confidence"],
+        "signals": signals.get("signals", {}),
+        "hard_skips": signals.get("hard_skips", []),
+        "summary": signal_summary(signals),
+    }
+    return judge_verdict
+
+
 def enforce_judge_gate(
     judge_verdict: dict[str, Any],
     verdicts: dict[str, Any],
     config: dict[str, Any],
+    *,
+    signals: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Apply the non-negotiable Judge rules, whichever backend produced it."""
     policy = config["roles"].get("judge", {})
     minimum = int(policy.get("min_confidence_to_take", 55))
     overrides: list[str] = []
+
+    # A hard skip is not a score. Dilution filed last week, a reverse split, a
+    # company with two months of cash or a third halt in one session each make
+    # the move untradeable whatever the rest of the sheet says — so this runs
+    # before the confidence test and cannot be outvoted by a perfect score.
+    for reason in (signals or {}).get("hard_skips") or []:
+        judge_verdict["decision"] = "SKIP"
+        overrides.append(reason)
 
     if judge_verdict["decision"] == "TAKE":
         direction = (verdicts.get("risk_manager") or {}).get("direction")
@@ -366,13 +416,30 @@ def review_hit(
     llm: LLMClient | None = None,
     prompts: dict[str, str] | None = None,
     offline: bool = False,
+    signal_data: dict[str, Any] | None = None,
+    movers: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Run all five roles for one hit and return the assembled review.
 
     Raises :class:`ReviewUnavailable` when a role in ``roles.llm_only`` cannot
     be answered by the LLM backend.
+
+    *signal_data* supplies the measured explosion-signal facts instead of
+    fetching them, which is how the tests stay offline. *movers* is the shared
+    big-mover scan for the sector-sympathy count.
     """
     context = gather_context(hit, config, offline=offline)
+    # Signals are measured once per hit, after the FinViz filters and before
+    # any role speaks, so all five argue about the same sheet.
+    if signals_enabled(config, hit.get("screener_version")):
+        facts = (
+            signal_data
+            if signal_data is not None
+            else gather_signal_data(hit, config, offline=offline, movers=movers)
+        )
+        context["explosion_signals"] = evaluate_signals(hit, config, data=facts)
+        for note in (facts or {}).get("notes") or []:
+            context["adapter_notes"].append(note)
     prompts = prompts or {}
     use_llm = backend == "llm" or (backend == "auto" and llm is not None and llm.available())
     strict = llm_only_roles(config) if backend != "heuristic" else set()
@@ -420,17 +487,25 @@ def review_hit(
 
     context["verdicts"]["risk_manager"] = run_role("risk_manager")
     judge_verdict = run_role("judge")
-    judge_verdict = apply_catalyst_penalty(judge_verdict, context["verdicts"], config)
-    # Both adjustments land before the gate, so a crowded short can carry a
-    # name over the threshold and a missing catalyst can drop one under it.
+    signals = context.get("explosion_signals") or {}
+    if not signals.get("enabled"):
+        # v1 keeps the role-level catalyst charge it was measured with. In v2
+        # the signals layer owns that charge and makes it once, against the
+        # filing and news record rather than against a role's opinion of it.
+        judge_verdict = apply_catalyst_penalty(judge_verdict, context["verdicts"], config)
+    # Every adjustment lands before the gate, so a crowded short or a coiled
+    # float-rotating setup can carry a name over the threshold, and a thin
+    # tape or a VWAP failure can drop one under it.
     judge_verdict = apply_short_float_bonus(judge_verdict, hit, config)
-    judge_verdict = enforce_judge_gate(judge_verdict, context["verdicts"], config)
+    judge_verdict = apply_signal_bonus(judge_verdict, signals)
+    judge_verdict = enforce_judge_gate(judge_verdict, context["verdicts"], config, signals=signals)
     context["verdicts"]["judge"] = judge_verdict
 
     return {
         "ticker": hit["ticker"],
         "asset_type": hit.get("asset_type", "stock"),
         "variant": hit.get("variant"),
+        "explosion_signals": signals,
         "price": hit.get("price"),
         "hit": hit,
         "verdicts": context["verdicts"],
@@ -473,11 +548,35 @@ def review_hits(
     llm: LLMClient | None = None,
     agents_path: str | None = None,
     offline: bool = False,
+    movers: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Review every hit, loading the role prompts once."""
+    """Review every hit, loading the role prompts once.
+
+    The big-mover scan behind the sector-sympathy signal is fetched once for
+    the whole batch: it is the same answer for every hit, and asking per name
+    would be one FinViz request per ticker for it.
+    """
     prompts = load_role_prompts(agents_path, backend=backend)
+    shared_movers = movers
+    if (
+        shared_movers is None
+        and not offline
+        and hits
+        and signals_enabled(config, hits[0].get("screener_version"))
+    ):
+        from signal_providers import fetch_movers
+
+        shared_movers = fetch_movers(config)
     return [
-        review_hit(hit, config, backend=backend, llm=llm, prompts=prompts, offline=offline)
+        review_hit(
+            hit,
+            config,
+            backend=backend,
+            llm=llm,
+            prompts=prompts,
+            offline=offline,
+            movers=shared_movers,
+        )
         for hit in hits
     ]
 

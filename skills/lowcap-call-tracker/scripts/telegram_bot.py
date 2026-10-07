@@ -381,6 +381,13 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
                 # the level that invalidates it is an invitation to improvise.
                 + (f" · SL {_num(call['sl_price'])}" if call.get("sl_price") else "")
             )
+            # The signal sheet that moved this call's confidence, strongest
+            # first. The message is where a TAKE gets acted on, so the reason
+            # it scored travels with it.
+            if call.get("signal_line"):
+                lines.append(f"    <i>{escape_html(str(call['signal_line']))}</i>")
+            if call.get("hard_skip_reason"):
+                lines.append(f"    <i>hard skip — {escape_html(str(call['hard_skip_reason']))}</i>")
             lines.append(f"    <i>{escape_html(call.get('reason') or '')}</i>")
             if telegram.get("include_role_detail"):
                 lines.extend(_role_detail_lines(report, call["ticker"]))

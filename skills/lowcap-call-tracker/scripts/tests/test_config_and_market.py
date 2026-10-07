@@ -162,3 +162,49 @@ def test_extended_hours_allowed_by_default_but_configurable(config):
 def test_is_trading_day_handles_iso_holiday_strings(config):
     assert is_trading_day(config, datetime(2026, 9, 18).date()) is True
     assert is_trading_day(config, datetime(2026, 7, 3).date()) is False
+
+
+@pytest.mark.parametrize(
+    "overlay",
+    [
+        # A cap that is not a number would let the layer run uncapped.
+        {"screener": {"versions": {"v2": {"explosion_signals": {"max_total_bonus": "lots"}}}}},
+        {"screener": {"versions": {"v2": {"explosion_signals": {"max_total_bonus": -5}}}}},
+        # A signal rung without points scores nothing and hides a typo.
+        {
+            "screener": {
+                "versions": {
+                    "v2": {
+                        "explosion_signals": {
+                            "signals": {"float_rotation": {"rungs": [{"min_x": 1.0}]}}
+                        }
+                    }
+                }
+            }
+        },
+        # A rate above SEC's published ceiling is a fair-access breach.
+        {
+            "screener": {
+                "versions": {
+                    "v2": {"explosion_signals": {"edgar": {"max_requests_per_second": 50}}}
+                }
+            }
+        },
+    ],
+)
+def test_an_invalid_signals_block_is_rejected(tmp_path, overlay):
+    path = tmp_path / "bad.yaml"
+    path.write_text(yaml.safe_dump(overlay), encoding="utf-8")
+    with pytest.raises(ConfigError):
+        load_config(path)
+
+
+def test_v1_has_no_signals_block_and_is_not_given_one(config):
+    assert "explosion_signals" not in config["screener"]["versions"]["v1"]
+
+
+def test_the_signals_layer_ships_enabled_with_a_thirty_point_cap(config):
+    block = config["screener"]["versions"]["v2"]["explosion_signals"]
+    assert block["enabled"] is True
+    assert block["max_total_bonus"] == 30
+    assert block["edgar"]["max_requests_per_second"] <= 10

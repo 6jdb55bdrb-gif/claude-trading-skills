@@ -119,6 +119,19 @@ up today, above the SMA20 and SMA50:
 | `squeeze` | stocks | market cap under $2B, float under 50M, average volume over 300K, RelVol over 2 — **no** short-float filter |
 | `momentum_breakout` | stocks | market cap under $2B, within 5% of the 52-week high, RelVol over 2 — no float filter |
 
+v2 also runs an **explosion-signals** layer on every hit after the filters and
+before the Judge: nine measured bonuses (float rotation, catalyst recency,
+squeeze pressure, volatility contraction, premarket gap, VWAP position, insider
+buying, thin institutions, sector sympathy), capped at +30 net, and four hard
+skips that no score can outvote (recent dilution filings, a reverse split
+inside six months, under six months of cash, a third halt in one session).
+Every value goes to the Researcher, Skeptic and Judge, onto the call record and
+into the Telegram message. A source that cannot be read reports `n/a` and
+scores nothing — never a 0, which would claim it looked. EDGAR-backed signals
+stay `n/a` until a contact is configured (`explosion_signals.edgar.user_agent`
+or `EDGAR_USER_AGENT`), because SEC fair access requires one and the client
+refuses to send anonymous requests. See `references/screener_versions.md`.
+
 What v2 stopped filtering on it now weighs after the fetch, because a FinViz
 filter can only ever narrow a screen:
 
@@ -306,6 +319,8 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - `skills/lowcap-call-tracker/scripts/allocation.py`
 - `skills/lowcap-call-tracker/scripts/call_db.py`
 - `skills/lowcap-call-tracker/scripts/config.py`
+- `skills/lowcap-call-tracker/scripts/edgar_client.py`
+- `skills/lowcap-call-tracker/scripts/explosion_signals.py`
 - `skills/lowcap-call-tracker/scripts/fetch_screener.py`
 - `skills/lowcap-call-tracker/scripts/heuristic_roles.py`
 - `skills/lowcap-call-tracker/scripts/learning_loop.py`
@@ -321,6 +336,7 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - `skills/lowcap-call-tracker/scripts/run_cycle.py`
 - `skills/lowcap-call-tracker/scripts/screener_guards.py`
 - `skills/lowcap-call-tracker/scripts/screener_variants.py`
+- `skills/lowcap-call-tracker/scripts/signal_providers.py`
 - `skills/lowcap-call-tracker/scripts/skill_adapters.py`
 - `skills/lowcap-call-tracker/scripts/state_snapshot.py`
 - `skills/lowcap-call-tracker/scripts/stats.py`

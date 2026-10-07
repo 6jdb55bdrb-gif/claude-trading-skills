@@ -256,6 +256,110 @@ screener:
       earliest_run:
         timezone: Europe/Zurich
         time: "16:30"
+      # --- Explosion signals (v2 only) -----------------------------------
+      # Run on every surviving hit AFTER the FinViz filters and BEFORE the
+      # Judge, so the roles argue with the numbers in front of them. Each
+      # signal is independent: when its source is unavailable the signal
+      # records "n/a", scores nothing, and the cycle carries on. A signal that
+      # silently scored 0 on missing data would be indistinguishable from a
+      # signal that looked and found nothing.
+      explosion_signals:
+        enabled: true
+        # The whole layer can only add this much. Nine signals at full marks
+        # would be +58, which would carry a 20-confidence setup over any
+        # threshold — signals are meant to rank good setups, not manufacture
+        # them.
+        max_total_bonus: 30
+        # SEC fair access: EDGAR requires a declared User-Agent naming a real
+        # contact, and 10 requests/second is its published ceiling. Without a
+        # User-Agent every EDGAR-backed signal reports n/a rather than sending
+        # an anonymous request. Set it here or in EDGAR_USER_AGENT.
+        edgar:
+          user_agent: null        # e.g. "lowcap-tracker you@example.com"
+          max_requests_per_second: 8
+          timeout_seconds: 15
+        signals:
+          # Today's volume divided by the free float. One full rotation means
+          # the entire tradeable supply changed hands in a session.
+          float_rotation:
+            enabled: true
+            rungs:
+              - { min_x: 1.0, points: 10 }
+              - { min_x: 0.5, points: 5 }
+          # An 8-K or material news inside 24h. For v2 this REPLACES the
+          # role-level no_catalyst_penalty: the charge is made here, once,
+          # against the filing record rather than against a role's score.
+          catalyst_recency:
+            enabled: true
+            window_hours: 24
+            points: 10
+            no_catalyst_penalty: 15
+            # 8-K is the material-event form; the amendment carries the same
+            # weight. 6-K is the foreign-issuer equivalent.
+            form_types: ["8-K", "8-K/A", "6-K"]
+          # Days to cover is FinViz's short ratio. A high borrow fee says the
+          # same thing the ratio does, from the lending side.
+          short_squeeze_pressure:
+            enabled: true
+            min_days_to_cover: 3.0
+            min_borrow_fee_pct: 20.0
+            points: 5
+          # A range in the bottom fifth of its own 60-day history, with volume
+          # arriving: coiled, and being hit.
+          volatility_contraction:
+            enabled: true
+            lookback_days: 60
+            range_days: 10
+            percentile: 20.0
+            min_rel_volume: 2.0
+            points: 10
+          premarket_gap:
+            enabled: true
+            min_gap_pct: 10.0
+            min_volume_pct_of_adv: 20.0
+            points: 5
+          # The one signal that can go negative on its own: below VWAP means
+          # every buyer today is underwater, which is where supply comes from.
+          vwap_position:
+            enabled: true
+            above_points: 5
+            below_points: -10
+          insider_buying:
+            enabled: true
+            window_days: 30
+            points: 5
+            # Form 4 transaction code P is an open-market purchase. An award
+            # (A) or an option exercise (M) is not someone spending money.
+            transaction_codes: ["P"]
+          institutional_ownership:
+            enabled: true
+            max_pct: 20.0
+            points: 3
+          sector_sympathy:
+            enabled: true
+            min_peers: 2
+            peer_min_change_pct: 10.0
+            points: 5
+        # Non-negotiable. Each of these is a reason the move cannot be trusted
+        # whatever the rest of the sheet says, so the Judge returns SKIP and
+        # names the filter. They are checked for every hit, not only the ones
+        # the Judge likes.
+        hard_skips:
+          dilution_filings:
+            enabled: true
+            window_days: 90
+            # A shelf, an ATM prospectus or fresh warrants are the mechanism by
+            # which a lowcap run becomes an exit for the company, not for you.
+            form_types: ["S-3", "S-3/A", "S-1", "S-1/A", "424B3", "424B4", "424B5", "F-3"]
+          reverse_split:
+            enabled: true
+            window_days: 180
+          cash_runway:
+            enabled: true
+            min_months: 6.0
+          intraday_halts:
+            enabled: true
+            max_halts: 2        # a third halt in one session is the SKIP
       variants:
         squeeze:
           asset_type: stock

@@ -75,6 +75,114 @@ rejecting is now **weighed** after the fetch (`scripts/screener_guards.py`):
   unusual. An earlier run logs the skip and **still prices the open book**:
   skipping the stop checks would be the more expensive failure.
 
+## Explosion signals (v2 only)
+
+Runs on every surviving hit **after** the FinViz filters and **before** the
+Judge, so all five roles argue about the same measured sheet. Every value is
+passed to the Researcher, Skeptic and Judge, stored on the call
+(`calls.signals_json`, `calls.signal_bonus`), and the key ones ride along in
+the Telegram message. v1 has no signals layer.
+
+Two rules run through the whole thing:
+
+- **A source that failed is not evidence.** Each signal reports `ok` (it
+  looked; here is what it found) or `n/a` (it could not look). An `n/a` scores
+  nothing. Collapsing the two would make "EDGAR was unreachable"
+  indistinguishable from "this company has filed nothing", and those lead to
+  opposite decisions.
+- **Signals rank setups; they do not manufacture them.** Hence the cap, and
+  hence the hard skips that no score can outvote.
+
+### Bonuses
+
+| Signal | Rule | Points | Source |
+|---|---|---|---|
+| Float rotation | today's volume ÷ float ≥ 0.5× / ≥ 1.0× | +5 / +10 | screener row |
+| Catalyst recency | 8-K, 8-K/A, 6-K or news inside 24h | +10 | EDGAR, FinViz tape |
+| — no catalyst | looked, found nothing | **−15** | EDGAR, FinViz tape |
+| Squeeze pressure | days to cover ≥ 3 **or** borrow fee ≥ 20% | +5 | FinViz short ratio, iBorrowDesk |
+| Volatility contraction | 10-session range in the bottom 20% of 60 sessions **and** RelVol ≥ 2 | +10 | yfinance daily |
+| Premarket gap | gap ≥ 10% **and** premarket volume ≥ 20% of ADV | +5 | yfinance prepost |
+| VWAP position | at or above VWAP / below it | +5 / **−10** | yfinance intraday |
+| Insider buying | Form 4 open-market purchase inside 30 days | +5 | EDGAR |
+| Thin institutions | institutional ownership < 20% | +3 | screener row (ownership view) |
+| Sector sympathy | ≥ 2 other names in the industry up > 10% today | +5 | one FinViz movers screen per cycle |
+
+The **cap is +30 on the layer's net effect**, and only on the upside. Every
+signal firing at once is +58, which would carry a 20-confidence setup over any
+threshold. There is deliberately no floor: the VWAP charge and the
+missing-catalyst charge are the layer's whole point on a weak sheet, and a
+signal sheet is allowed to argue a name down as far as it likes. A charge that
+was netted off still appears per-signal — "signals +30" hiding a VWAP failure
+inside it is the kind of number that gets a call bought.
+
+In v2 the catalyst signal **replaces** `roles.judge.no_catalyst_penalty`: the
+charge is made once, here, against the filing and news record rather than
+against a role's opinion of it. v1 keeps the role-level penalty it was measured
+with. Both never fire together.
+
+### Hard skips
+
+The Judge returns SKIP and names the filter. Checked for every hit, before the
+confidence test, and not outvotable by a perfect score:
+
+| Filter | Rule | Source |
+|---|---|---|
+| Dilution | S-3, S-1, 424B3/4/5, F-3 (or amendments) inside 90 days | EDGAR |
+| Reverse split | split ratio < 1 inside 180 days | yfinance splits |
+| Cash runway | cash ÷ (quarterly operating burn ÷ 3) < 6 months | EDGAR XBRL |
+| Repeated halts | more than 2 halts in today's session | Nasdaq Trader feed |
+
+**Missing data never skips.** A hard skip is an accusation, and an unreachable
+source does not get to make one.
+
+### SEC fair access
+
+EDGAR needs no key, but it has conditions: a declared User-Agent naming a real
+contact, and at most 10 requests/second. Both are enforced in `edgar_client`:
+
+- **With no User-Agent the client sends nothing at all** — not "sends and
+  fails". An anonymous request is a policy breach even when it would work, and
+  a tracker that quietly breached it would get the operator's IP blocked
+  mid-run. Every EDGAR-backed signal then reports `n/a`.
+- A User-Agent without an `@` is refused too: `python-requests` is exactly what
+  the policy exists to stop.
+- One rate limiter sits in front of every request (config asks for 8/second),
+  and the ticker map is cached per run instead of re-fetched per hit.
+
+Turn the EDGAR signals on with one line:
+
+```yaml
+screener:
+  versions:
+    v2:
+      explosion_signals:
+        edgar:
+          user_agent: "lowcap-tracker you@example.com"
+```
+
+or `export EDGAR_USER_AGENT="lowcap-tracker you@example.com"`.
+
+### Source availability, measured 2026-10-07
+
+| Source | Status here |
+|---|---|
+| yfinance intraday (VWAP, premarket) | working |
+| yfinance daily (range percentile) | working |
+| yfinance splits (reverse split) | working |
+| Nasdaq Trader halt feed | working |
+| FinViz movers screen (sympathy) | working |
+| SEC EDGAR | reachable (HTTP 200), **awaiting a configured contact** |
+| iBorrowDesk | **HTTP 403 from this host** — borrow fee reports n/a; days-to-cover still covers the signal |
+
+### Which signals actually work
+
+`outcome_report.py` scores each signal the same way it scores the versions:
+the calls it fired on against the calls it did not, with the edge between
+them. Calls carrying no sheet at all (every v1 call) are in neither column —
+counting them as "without" would credit each signal with v1's whole record.
+After 30 calls the table says which signals to keep.
+
 ## The fixed stop
 
 `tracker.sl_pct: 20.0` and `scripts/stop_loss.py`:

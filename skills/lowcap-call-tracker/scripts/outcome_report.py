@@ -108,6 +108,7 @@ def measured_calls(db: CallDatabase, config: dict[str, Any]) -> tuple[list[dict[
         """
         SELECT id, ticker, call_date, screener_version, screen_variant, judge_decision,
                confidence, researcher_score, entry_price, sl_price, ret_1d, ret_3d, ret_5d,
+               signal_bonus, signals_json, hard_skip_reason,
                COALESCE(stopped_out, 0) AS stopped_out
           FROM calls
          WHERE status <> 'VOID'
@@ -136,9 +137,31 @@ def measured_calls(db: CallDatabase, config: dict[str, Any]) -> tuple[list[dict[
                 "variant": str(row["screen_variant"] or "unknown"),
                 "decision": str(row["judge_decision"] or "unknown"),
                 "bucket": bucket_for(row["confidence"]),
+                "signal_points": _signal_points(row.get("signals_json")),
             }
         )
     return rows, pending
+
+
+def _signal_points(raw: Any) -> dict[str, int]:
+    """Which signals scored on a call, from its stored sheet.
+
+    A call with no sheet contributes to neither side of a signal's comparison:
+    v1 calls predate the layer, and counting them as "without" would credit
+    the signal with v1's entire record.
+    """
+    if not raw:
+        return {}
+    try:
+        sheet = json.loads(raw)
+    except (TypeError, ValueError):
+        return {}
+    signals = (sheet or {}).get("signals") or {}
+    out = {}
+    for name, entry in signals.items():
+        if isinstance(entry, dict) and entry.get("status") == "ok":
+            out[name] = int(entry.get("points") or 0)
+    return out
 
 
 def build_report(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
@@ -152,6 +175,7 @@ def build_report(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
         "telegram_ready": len(rows) >= TELEGRAM_MIN_CALLS,
         "versions": {},
         "buckets": _group(rows, "bucket") if rows else {},
+        "signals": _signal_table(rows),
         "catalyst": {
             "with": _slice([row for row in rows if row["catalyst"]]),
             "without": _slice([row for row in rows if not row["catalyst"]]),
@@ -179,6 +203,33 @@ def _bucket_by(rows: list[dict[str, Any]], key: str) -> dict[str, list[dict[str,
     for row in rows:
         out.setdefault(row[key], []).append(row)
     return out
+
+
+def _signal_table(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Per signal: how the calls it fired on did against the ones it did not.
+
+    This is the question the whole layer has to answer — not "did the signal
+    appear" but "did the names it appeared on run". A signal whose edge is
+    negative after enough calls is costing confidence, and the operator can
+    see that here and switch it off.
+    """
+    scored = [row for row in rows if row.get("signal_points")]
+    if not scored:
+        return {}
+    names: set[str] = set()
+    for row in scored:
+        names.update(row["signal_points"])
+    table: dict[str, Any] = {}
+    for name in sorted(names):
+        fired = [row for row in scored if row["signal_points"].get(name)]
+        quiet = [row for row in scored if not row["signal_points"].get(name)]
+        with_stats = _slice(fired)
+        without_stats = _slice(quiet)
+        edge = None
+        if with_stats["avg_return_pct"] is not None and without_stats["avg_return_pct"] is not None:
+            edge = round(with_stats["avg_return_pct"] - without_stats["avg_return_pct"], 2)
+        table[name] = {"with": with_stats, "without": without_stats, "edge_pct": edge}
+    return table
 
 
 def recommendations(report: dict[str, Any], config: dict[str, Any]) -> list[dict[str, Any]]:
@@ -315,6 +366,19 @@ def render_report(report: dict[str, Any], *, config: dict[str, Any] | None = Non
         lines.append("  by decision:")
         for name, stats in block["decisions"].items():
             lines.append(_row_line(name, stats))
+
+    signals = report.get("signals") or {}
+    if signals:
+        lines += ["", "SIGNALS — did the names each one fired on actually run?"]
+        for name, block in signals.items():
+            edge = block["edge_pct"]
+            lines.append(
+                f"  {name:<24} fired n={block['with']['calls']:<3} "
+                f"hit={_pct(block['with']['hit_rate_pct'])} avg={_signed(block['with']['avg_return_pct'])}"
+                f"  |  quiet n={block['without']['calls']:<3} "
+                f"hit={_pct(block['without']['hit_rate_pct'])} avg={_signed(block['without']['avg_return_pct'])}"
+                f"  edge={_signed(edge)}" + ("" if block["with"]["enough_samples"] else "  (thin)")
+            )
 
     catalyst = report.get("catalyst") or {}
     if catalyst:

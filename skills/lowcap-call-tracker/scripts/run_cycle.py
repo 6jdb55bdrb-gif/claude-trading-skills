@@ -27,6 +27,7 @@ from typing import Any
 
 from allocation import portfolio_state, slice_usd
 from call_db import DECISION_UNREVIEWED, KIND_ACTIVE, KIND_UNREVIEWED, CallDatabase
+from explosion_signals import telegram_signal_line
 from fetch_screener import FetchError, screen_all
 from llm_client import LLMClient, current_month
 from market_hours import session_state
@@ -436,6 +437,11 @@ def _call_line(review: dict[str, Any], *, stop_pct: float | None = None) -> dict
             review.get("entry") or review.get("price"), sl_pct=stop_pct
         ),
         "screener_version": (review.get("hit") or {}).get("screener_version"),
+        "signal_line": telegram_signal_line(review.get("explosion_signals") or {}),
+        "hard_skip_reason": "; ".join(
+            (review.get("explosion_signals") or {}).get("hard_skips") or []
+        )
+        or None,
         "reason": (review["verdicts"].get("judge") or {}).get("reason")
         or (review.get("notes") or [None])[0],
         "kind": KIND_UNREVIEWED
@@ -469,6 +475,10 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
                 f"entry={call['entry']} stop={call['stop'] or '—'} "
                 f"SL={call.get('sl_price') or '—'} [{call['variant']}]"
             )
+            if call.get("signal_line"):
+                lines.append(f"       {call['signal_line']}")
+            if call.get("hard_skip_reason"):
+                lines.append(f"       HARD SKIP — {call['hard_skip_reason']}")
             if call["reason"]:
                 lines.append(f"       {call['reason']}")
     else:
@@ -522,6 +532,28 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
     for error in report["errors"]:
         lines.append(f"  ERROR: {error}")
     if verbose:
+        signal_rows = [
+            (review["ticker"], review["explosion_signals"])
+            for review in report["reviews"]
+            if (review.get("explosion_signals") or {}).get("enabled")
+        ]
+        if signal_rows:
+            lines += ["", "EXPLOSION SIGNALS"]
+            for ticker, sheet in signal_rows:
+                lines.append(
+                    f"  {ticker}  net {sheet['bonus']:+d}"
+                    + (f" (raw {sheet['raw_bonus']:+d}, capped)" if sheet.get("capped") else "")
+                )
+                for name, entry in sheet["signals"].items():
+                    mark = "n/a" if entry["status"] == "n/a" else f"{entry['points']:+d}"
+                    lines.append(f"      {name:<26} {mark:>4}  {entry['detail']}")
+                for name, check in (sheet.get("hard_skip_checks") or {}).items():
+                    flag = (
+                        "SKIP"
+                        if check.get("skip")
+                        else ("n/a" if check["status"] == "n/a" else "ok")
+                    )
+                    lines.append(f"      [{flag:>4}] {name:<19}       {check['detail']}")
         lines += ["", "ROLE VERDICTS"]
         for review in report["reviews"]:
             lines.append(format_review(review))

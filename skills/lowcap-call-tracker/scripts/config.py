@@ -158,6 +158,45 @@ def _validate_screener_versions(config: dict[str, Any]) -> None:
                     f"screener version '{version}': each guards.short_float_bonus entry "
                     "needs min_pct and bonus"
                 )
+        _validate_explosion_signals(version, block.get("explosion_signals"))
+
+
+# SEC fair access publishes 10 requests/second as the ceiling.
+EDGAR_MAX_RATE = 10
+
+
+def _validate_explosion_signals(version: str, block: Any) -> None:
+    """Check the signals layer of one version, if it has one."""
+    if block is None:
+        return
+    where = f"screener version '{version}': explosion_signals"
+    if not isinstance(block, dict):
+        raise ConfigError(f"{where} must be a mapping")
+
+    cap = block.get("max_total_bonus")
+    if cap is not None and (not isinstance(cap, (int, float)) or cap <= 0):
+        raise ConfigError(
+            f"{where}.max_total_bonus must be a positive number of confidence points, "
+            "or absent to let the layer score without a ceiling"
+        )
+
+    rate = (block.get("edgar") or {}).get("max_requests_per_second")
+    if rate is not None and (not isinstance(rate, (int, float)) or not 0 < rate <= EDGAR_MAX_RATE):
+        raise ConfigError(
+            f"{where}.edgar.max_requests_per_second must be between 0 and "
+            f"{EDGAR_MAX_RATE}: SEC fair access publishes {EDGAR_MAX_RATE}/second as the ceiling"
+        )
+
+    for name, spec in (block.get("signals") or {}).items():
+        if not isinstance(spec, dict):
+            raise ConfigError(f"{where}.signals.{name} must be a mapping")
+        for rung in spec.get("rungs") or []:
+            if not isinstance(rung, dict) or "min_x" not in rung or "points" not in rung:
+                raise ConfigError(f"{where}.signals.{name}: each rung needs min_x and points")
+
+    for name, spec in (block.get("hard_skips") or {}).items():
+        if not isinstance(spec, dict):
+            raise ConfigError(f"{where}.hard_skips.{name} must be a mapping")
 
 
 def _validate(config: dict[str, Any]) -> None:
