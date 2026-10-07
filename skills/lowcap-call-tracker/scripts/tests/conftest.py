@@ -16,9 +16,22 @@ FIXTURE_HITS = Path(__file__).resolve().parents[1] / "fixtures" / "dry_run_hits.
 
 
 @pytest.fixture()
-def config():
-    """The packaged default configuration."""
-    return load_config()
+def config(tmp_path):
+    """The packaged default configuration, writing into a temporary directory.
+
+    The real paths resolve against the repository root, so a test that runs a
+    full cycle would otherwise overwrite the committed ``tracker-output/``
+    files — the suite would dirty the working tree and a hook would then
+    "fix" a generated artefact. A test that wants the real path sets it back
+    explicitly.
+    """
+    loaded = load_config()
+    output = tmp_path / "tracker-output"
+    output.mkdir(exist_ok=True)
+    loaded["tracker"]["stats_file"] = str(output / "stats.md")
+    loaded["tracker"]["improvements_file"] = str(output / "improvements.md")
+    loaded["tracker"]["reports_dir"] = str(tmp_path / "reports")
+    return loaded
 
 
 @pytest.fixture()
