@@ -8,13 +8,13 @@
 
 **Backend:** DOWN · reviewed 14 / unreviewed 0 · TAKE/SKIP 2/12 (14.3% TAKE)
 
-**Account (every call):** $1,184.21 (+18.42% on $1,000.00) · 50.0% allocated · cash $699.16
+**Account (every call):** $1,181.73 (+18.17% on $1,000.00) · 50.0% allocated · cash $699.16
 
-**TAKE only (the Judge's scorecard):** $967.35 (-3.26%). What following the Judge's verdicts alone would have returned — the gap against the account above is what the Judge's selectivity is worth.
+**TAKE only (the Judge's scorecard):** $967.62 (-3.24%). What following the Judge's verdicts alone would have returned — the gap against the account above is what the Judge's selectivity is worth.
 
-**Total PnL:** +13.16% — equal weight across all 14 priced call(s)
+**Total PnL:** +12.98% — equal weight across all 14 priced call(s)
 
-**Generated:** 2026-10-07T07:13:49+00:00  
+**Generated:** 2026-10-07T09:06:45+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -32,9 +32,9 @@
 | Wrong | 6 |
 | Neutral | 3 |
 | Hit rate % | 35.7 |
-| **Total PnL % (equal weight, all calls)** | +13.16% |
-| Average PnL % per call | 13.16 |
-| Portfolio PnL % (equal weight, TAKE only) | -16.33 |
+| **Total PnL % (equal weight, all calls)** | +12.98% |
+| Average PnL % per call | 12.98 |
+| Portfolio PnL % (equal weight, TAKE only) | -16.19 |
 
 **Best call:** SDEV (long, squeeze, shadow) +175.82% — entry 1.04 → 2.868499994277954
 **Worst call:** SDEV (long, squeeze, shadow) -36.21% — entry 7.58 → 4.835000038146973
@@ -43,39 +43,39 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 14 | 5 | 5 | 6 | 3 | 35.7 | 13.16 |
+| call | 14 | 5 | 5 | 6 | 3 | 35.7 | 12.98 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | etf | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.16 |
-| stock | 13 | 4 | 4 | 6 | 3 | 30.8 | 14.16 |
+| stock | 13 | 4 | 4 | 6 | 3 | 30.8 | 13.97 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | etf_momentum | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.16 |
-| squeeze | 13 | 4 | 4 | 6 | 3 | 30.8 | 14.16 |
+| squeeze | 13 | 4 | 4 | 6 | 3 | 30.8 | 13.97 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| TAKE | 2 | 1 | 0 | 1 | 1 | 0.0 | -16.33 |
-| SKIP (shadow) | 12 | 4 | 5 | 5 | 2 | 41.7 | 18.07 |
+| TAKE | 2 | 1 | 0 | 1 | 1 | 0.0 | -16.19 |
+| SKIP (shadow) | 12 | 4 | 5 | 5 | 2 | 41.7 | 17.84 |
 
-**Judge edge (avg PnL TAKE − avg PnL shadow):** -34.4 → Judge is not adding value
+**Judge edge (avg PnL TAKE − avg PnL shadow):** -34.03 → Judge is not adding value
 
 ### Per-role accuracy
 
 | Role | Avg score (winners) | Avg score (others) | Edge | Corr(score, PnL) | n | Polarity |
 |---|---|---|---|---|---|---|
-| researcher | 4.5 | 4.39 | 0.11 | -0.122 | 14 | quality (higher is better) |
-| technician | 4.1 | 4.78 | -0.68 | 0.037 | 14 | quality (higher is better) |
-| skeptic | 7.9 | 7.67 | 0.23 | 0.282 | 14 | severity (lower is better) |
-| risk_manager | 4.7 | 4.06 | 0.64 | 0.293 | 14 | quality (higher is better) |
+| researcher | 4.5 | 4.39 | 0.11 | -0.134 | 14 | quality (higher is better) |
+| technician | 4.1 | 4.78 | -0.68 | 0.03 | 14 | quality (higher is better) |
+| skeptic | 7.9 | 7.67 | 0.23 | 0.296 | 14 | severity (lower is better) |
+| risk_manager | 4.7 | 4.06 | 0.64 | 0.291 | 14 | quality (higher is better) |
 
 ### Confidence buckets
 
@@ -83,8 +83,8 @@
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | 0-40 | 2 | 0 | 1 | 1 | 0 | 50.0 | 61.35 |
-| 40-70 | 8 | 2 | 3 | 4 | 1 | 37.5 | 18.91 |
-| 70-100 | 4 | 3 | 1 | 1 | 2 | 25.0 | -22.45 |
+| 40-70 | 8 | 2 | 3 | 4 | 1 | 37.5 | 18.27 |
+| 70-100 | 4 | 3 | 1 | 1 | 2 | 25.0 | -21.78 |
 
 
 ### Voided calls
@@ -102,9 +102,9 @@ anything.
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
+| run_20261007T090607Z | 2026-10-07T09:06:07+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261007T071332Z | 2026-10-07T07:13:32+00:00 | no | 0 | 0 | 0.0 |
 | run_20261006T193823Z | 2026-10-06T19:38:23+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261006T145300Z | 2026-10-06T14:53:00+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261006T134542Z | 2026-10-06T13:45:42+00:00 | yes | 0 | 0 | 0.0 |
-| run_20261006T125109Z | 2026-10-06T12:51:09+00:00 | yes | 0 | 0 | 0.0 |
 
