@@ -25,6 +25,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from call_db import KIND_UNREVIEWED, CallDatabase
+from screener_variants import find_variant_spec
 from stats import ROLES, compute_stats
 from telegram_bot import notify
 
@@ -228,7 +229,7 @@ def analyse(db: CallDatabase, config: dict[str, Any]) -> dict[str, Any]:
 
 
 def _variant_proposal(variant: str, config: dict[str, Any]) -> str:
-    spec = config["screener"]["variants"].get(variant, {})
+    spec = find_variant_spec(config, variant)
     if variant == "squeeze":
         return (
             "Tighten the squeeze universe: raise short float to `sh_short_o20`, "

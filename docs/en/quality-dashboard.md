@@ -19,7 +19,7 @@ Snapshot as of: `2026-09-12T00:00:00Z`
 
 | Total | production | beta | Knowledge-only | Executable | With tests | Without tests |
 |---:|---:|---:|---:|---:|---:|---:|
-| 74 | 58 | 16 | 3 | 71 | 71 | 0 |
+| 75 | 58 | 17 | 3 | 72 | 72 | 0 |
 
 ## Test coverage
 
@@ -36,7 +36,7 @@ Snapshot as of: `2026-09-12T00:00:00Z`
 | Provider | Count |
 |---|---:|
 | FMP | 29 |
-| FINVIZ | 4 |
+| FINVIZ | 5 |
 | ALPACA | 2 |
 | other external provider | 8 |
 | offline (no external data source) | 35 |
@@ -50,6 +50,7 @@ Snapshot as of: `2026-09-12T00:00:00Z`
 | `drawdown-circuit-breaker` | not yet measured |
 | `futures-position-sizer` | not yet measured |
 | `fxmacrodata-calendar` | not yet measured |
+| `lowcap-call-tracker` | not yet measured |
 | `manifoldbt-backtester` | not yet measured |
 | `mt5-robot-tester` | not yet measured |
 | `pre-trade-discipline-gate` | not yet measured |
@@ -98,6 +99,7 @@ Snapshot as of: `2026-09-12T00:00:00Z`
 | **Kanchi Dividend Review Monitor** (`kanchi-dividend-review-monitor`) | production | yes | yes | not yet measured |
 | **Kanchi Dividend SOP** (`kanchi-dividend-sop`) | production | yes | yes | not yet measured |
 | **Kanchi Dividend US Tax Accounting** (`kanchi-dividend-us-tax-accounting`) | production | yes | yes | not yet measured |
+| **Lowcap Call Tracker** (`lowcap-call-tracker`) | beta | yes | yes | not yet measured |
 | **Macro Regime Detector** (`macro-regime-detector`) | production | yes | yes | not yet measured |
 | **manifoldbt Backtester** (`manifoldbt-backtester`) | beta | yes | yes | not yet measured |
 | **Market Breadth Analyzer** (`market-breadth-analyzer`) | production | yes | yes | not yet measured |

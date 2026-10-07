@@ -39,6 +39,8 @@ from role_review import (
     review_hits,
     short_allowed,
 )
+from screener_guards import earliest_run_block
+from screener_variants import screener_version as active_version
 from state_snapshot import (
     export_members,
     export_snapshot,
@@ -48,6 +50,7 @@ from state_snapshot import (
     snapshot_path,
 )
 from stats import compute_stats, render_text, write_stats_file
+from stop_loss import calculate_stop_loss, sl_pct
 from telegram_bot import notify_run
 
 from config import load_config, load_dotenv, resolve_path
@@ -191,25 +194,46 @@ def run_cycle(
     telegram: bool = True,
     snapshot: str | None = None,
     notify_when: str | None = None,
+    screener_version: str | None = None,
 ) -> dict[str, Any]:
     """Execute one cycle and return a structured report."""
     run_id = make_run_id(now)
+    if screener_version:
+        # One run, one generation. Overriding here rather than editing the file
+        # keeps v2 runnable without changing what a scheduled v1 run screens.
+        config = {
+            **config,
+            "screener": {**config["screener"], "screener_version": screener_version},
+        }
     if notify_when:
         # An on-demand report should arrive even when the run changed nothing.
         config = {**config, "telegram": {**config.get("telegram", {}), "notify_when": notify_when}}
     session = session_state(config, now)
     screening_allowed = session["screening_allowed"] or force_screen
+    version = active_version(config)
+    # A version may refuse to screen at this hour: v2 ranks on relative volume,
+    # which in the first hour after the US open ranks whatever opened first.
+    gate = earliest_run_block(config, now=now)
+    if gate:
+        screening_allowed = False
     report: dict[str, Any] = {
         "run_id": run_id,
         "session": session,
+        "screener_version": version,
         "screening_ran": False,
         "dry_run": dry_run,
         "new_calls": [],
         "duplicates_skipped": [],
         "reviews": [],
         "price_update": {"priced": 0, "closed": 0, "updates": [], "missing_prices": []},
+        "guard_skips": [],
         "errors": [],
     }
+    if gate:
+        # Logged, not raised: the open book still has to be priced and its
+        # stops checked, whatever the clock says about screening.
+        report["screen_skipped"] = gate
+        print(f"SKIP: {gate}", file=sys.stderr)
 
     resolved_db_path = db_path or resolve_path(config, "db_path")
     with CallDatabase(resolved_db_path) as db:
@@ -262,7 +286,13 @@ def run_cycle(
         # 3. Screen + review.
         if screening_allowed:
             try:
-                hits = screen_all(config, mode=screen_mode, fixture=fixture, variants=variants)
+                hits = screen_all(
+                    config,
+                    mode=screen_mode,
+                    fixture=fixture,
+                    variants=variants,
+                    guard_skips=report["guard_skips"],
+                )
             except FetchError as exc:
                 hits = []
                 report["errors"].append(f"screening failed: {exc}")
@@ -288,7 +318,9 @@ def run_cycle(
             report["screening_ran"] = True
             for review in reviews:
                 if dry_run:
-                    report["new_calls"].append({**_call_line(review), "call_id": None})
+                    report["new_calls"].append(
+                        {**_call_line(review, stop_pct=sl_pct(config)), "call_id": None}
+                    )
                     continue
                 cash = portfolio_state(db, config)["cash_usd"]
                 call_id = db.insert_call(
@@ -298,11 +330,15 @@ def run_cycle(
                     allocation_usd=slice_usd(config, cash_available=cash),
                     trail_floor_pct=config["tracker"].get("trailing_stop_pct"),
                     trail_atr_mult=config["tracker"].get("trailing_stop_atr_mult"),
+                    screener_version=version,
+                    sl_pct=sl_pct(config),
                 )
                 if call_id is None:
                     report["duplicates_skipped"].append(review["ticker"])
                     continue
-                report["new_calls"].append({**_call_line(review), "call_id": call_id})
+                report["new_calls"].append(
+                    {**_call_line(review, stop_pct=sl_pct(config)), "call_id": call_id}
+                )
         else:
             report["hits"] = 0
 
@@ -367,7 +403,7 @@ def _backend_line(report: dict[str, Any]) -> str:
     )
 
 
-def _call_line(review: dict[str, Any]) -> dict[str, Any]:
+def _call_line(review: dict[str, Any], *, stop_pct: float | None = None) -> dict[str, Any]:
     return {
         "ticker": review["ticker"],
         "asset_type": review["asset_type"],
@@ -377,6 +413,12 @@ def _call_line(review: dict[str, Any]) -> dict[str, Any]:
         "confidence": review["confidence"],
         "entry": review.get("entry"),
         "stop": review.get("stop"),
+        # The fixed stop, kept beside the Risk Manager's level: the hard floor
+        # every call is held to, whatever the roles argued for.
+        "sl_price": calculate_stop_loss(
+            review.get("entry") or review.get("price"), sl_pct=stop_pct
+        ),
+        "screener_version": (review.get("hit") or {}).get("screener_version"),
         "reason": (review["verdicts"].get("judge") or {}).get("reason")
         or (review.get("notes") or [None])[0],
         "kind": KIND_UNREVIEWED
@@ -394,10 +436,12 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
         "=" * 72,
         f"Session: {session['as_of']} — {session['reason']}"
         + ("" if report["screening_ran"] else "  → screening skipped, price update only"),
+        f"Screener: {report.get('screener_version', 'v1')}",
         _backend_line(report),
-        "",
-        "NEW CALLS",
     ]
+    if report.get("screen_skipped"):
+        lines.append(f"  ! {report['screen_skipped']}")
+    lines += ["", "NEW CALLS"]
     if report["new_calls"]:
         for call in report["new_calls"]:
             confidence = call["confidence"]
@@ -405,7 +449,8 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
                 f"  {call['decision']:<10} {call['ticker']:<6} {call['asset_type']:<5} "
                 f"{call['direction'] or '-':<5} "
                 f"conf={'—' if confidence is None else confidence:<3} "
-                f"entry={call['entry']} stop={call['stop'] or '—'} [{call['variant']}]"
+                f"entry={call['entry']} stop={call['stop'] or '—'} "
+                f"SL={call.get('sl_price') or '—'} [{call['variant']}]"
             )
             if call["reason"]:
                 lines.append(f"       {call['reason']}")
@@ -413,6 +458,8 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
         lines.append("  (none)")
     if report["duplicates_skipped"]:
         lines.append(f"  already open, not duplicated: {', '.join(report['duplicates_skipped'])}")
+    for skip in report.get("guard_skips") or []:
+        lines.append(f"  guard skip: {skip['ticker']} — {skip['reason']}")
 
     lines += ["", "OPEN CALLS — PRICE UPDATE", format_updates(report["price_update"])]
     closed = [update for update in report["price_update"]["updates"] if update["closed"]]
@@ -474,6 +521,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fixture", help="Screen from a JSON fixture instead of the network")
     parser.add_argument("--screen-mode", choices=["auto", "elite", "public", "fixture"])
     parser.add_argument("--variant", action="append", dest="variants")
+    parser.add_argument(
+        "--screener-version",
+        help="Run one screener generation for this cycle (v1, v2) instead of "
+        "screener.screener_version from the config",
+    )
     parser.add_argument("--prices-json", help="Offline ticker -> price mapping for the update")
     parser.add_argument("--agents-dir", help="Directory holding lowcap-*.md role prompts")
     parser.add_argument("--force-screen", action="store_true", help="Screen even when closed")
@@ -531,6 +583,7 @@ def main(argv: list[str] | None = None) -> int:
         telegram=not args.no_telegram,
         snapshot=args.snapshot,
         notify_when=args.notify,
+        screener_version=args.screener_version,
     )
 
     if args.json:

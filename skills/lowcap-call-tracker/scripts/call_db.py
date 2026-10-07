@@ -26,6 +26,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from stop_loss import calculate_stop_loss
+
 STATUS_OPEN = "OPEN"
 STATUS_CLOSED_WRONG = "CLOSED_WRONG"  # legacy stop-out, only when a threshold is configured
 STATUS_EXPIRED = "EXPIRED"  # the contract reached its expiration date
@@ -103,7 +105,22 @@ CREATE TABLE IF NOT EXISTS calls (
     -- at entry from the instrument's own ATR (see resolve_trail_pct) and then
     -- fixed: a stop that moves with the data is not a stop. Stored per call so
     -- a book written under one setting keeps its geometry when the config moves.
-    trail_pct REAL
+    trail_pct REAL,
+    -- Which screener generation produced this call ("v1", "v2", ...). Recorded
+    -- on every row so switching the config never makes the history ambiguous
+    -- and v1 can be compared with v2 on outcomes rather than on opinion.
+    screener_version TEXT,
+    -- The FIXED stop set at entry (stop_loss.calculate_stop_loss). Distinct
+    -- from trail_pct: this line never moves, and the outcome tracker checks
+    -- each day's LOW against it.
+    sl_price REAL,
+    -- Outcome tracking, filled in later by outcome_tracker.py.
+    ret_1d REAL,
+    ret_3d REAL,
+    ret_5d REAL,
+    stopped_out INTEGER NOT NULL DEFAULT 0,
+    stopped_out_date TEXT,
+    outcome_updated_at TEXT
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_calls_open_ticker
@@ -297,6 +314,17 @@ class CallDatabase:
             ("allocation_usd", "ALTER TABLE calls ADD COLUMN allocation_usd REAL"),
             ("peak_price", "ALTER TABLE calls ADD COLUMN peak_price REAL"),
             ("trail_pct", "ALTER TABLE calls ADD COLUMN trail_pct REAL"),
+            ("screener_version", "ALTER TABLE calls ADD COLUMN screener_version TEXT"),
+            ("sl_price", "ALTER TABLE calls ADD COLUMN sl_price REAL"),
+            ("ret_1d", "ALTER TABLE calls ADD COLUMN ret_1d REAL"),
+            ("ret_3d", "ALTER TABLE calls ADD COLUMN ret_3d REAL"),
+            ("ret_5d", "ALTER TABLE calls ADD COLUMN ret_5d REAL"),
+            (
+                "stopped_out",
+                "ALTER TABLE calls ADD COLUMN stopped_out INTEGER NOT NULL DEFAULT 0",
+            ),
+            ("stopped_out_date", "ALTER TABLE calls ADD COLUMN stopped_out_date TEXT"),
+            ("outcome_updated_at", "ALTER TABLE calls ADD COLUMN outcome_updated_at TEXT"),
         ):
             if column not in existing:
                 self.conn.execute(ddl)
@@ -386,6 +414,13 @@ class CallDatabase:
         # time — which is how `trailing_stop_pct: null` keeps disabling the stop.
         trail_floor_pct: float | None = None,
         trail_atr_mult: float | None = None,
+        # Defaults to the tag the screener wrote onto the hit, because that is
+        # a fact about this row rather than a policy choice.
+        screener_version: str | None = None,
+        # No default: the fixed stop is config policy (``tracker.sl_pct``), and
+        # a database that invented 20% would keep stopping calls out after the
+        # operator set that key to null.
+        sl_pct: float | None = None,
     ) -> int | None:
         """Insert a call from a review. Returns the id, or None when a duplicate.
 
@@ -427,6 +462,11 @@ class CallDatabase:
                 f"{ticker}: a short/put call cannot be stored while roles.allow_short is false"
             )
         stamp = now or utc_now()
+        hit = review.get("hit") or {}
+        version = screener_version or hit.get("screener_version")
+        # Computed against the entry that is actually stored, which may be the
+        # Risk Manager's level or the screener price it fell back to.
+        sl_price = calculate_stop_loss(entry, sl_pct=sl_pct)
 
         cursor = self.conn.execute(
             """
@@ -437,8 +477,9 @@ class CallDatabase:
                 researcher_score, technician_score, skeptic_score, risk_manager_score,
                 stop_price, target_price, shares, position_usd, risk_usd,
                 status, current_price, pnl_pct, last_price_at, run_id, backend, notes,
-                reviewed_at, hit_json, allocation_usd, peak_price, trail_pct
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                reviewed_at, hit_json, allocation_usd, peak_price, trail_pct,
+                screener_version, sl_price
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 ticker,
@@ -473,7 +514,7 @@ class CallDatabase:
                 review.get("backend"),
                 "; ".join(review.get("notes", []))[:500] or None,
                 None if unreviewed else stamp,
-                json.dumps(review.get("hit"), default=str) if review.get("hit") else None,
+                json.dumps(hit, default=str) if hit else None,
                 allocation_usd,
                 float(entry),
                 # Resolved here, from the ATR on the screener row, and never
@@ -481,10 +522,12 @@ class CallDatabase:
                 # distance it is managed with.
                 resolve_trail_pct(
                     entry,
-                    (review.get("hit") or {}).get("atr"),
+                    hit.get("atr"),
                     floor_pct=trail_floor_pct,
                     atr_mult=trail_atr_mult,
                 ),
+                version,
+                sl_price,
             ),
         )
         call_id = int(cursor.lastrowid)

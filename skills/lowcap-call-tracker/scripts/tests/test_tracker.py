@@ -320,7 +320,10 @@ def test_learning_loop_proposes_nothing_automatically(tmp_db, config):
     assert "Nothing here is applied automatically" in markdown
     assert "**Approve?**" in markdown
     # The config on disk is untouched by the loop.
-    assert config["screener"]["variants"]["squeeze"]["filters"][0] == "cap_smallunder"
+    assert (
+        config["screener"]["versions"]["v1"]["variants"]["squeeze"]["filters"][0]
+        == "cap_smallunder"
+    )
 
 
 def test_is_due_is_true_without_a_previous_file(config, tmp_path):

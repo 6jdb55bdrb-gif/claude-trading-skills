@@ -30,12 +30,15 @@ import time
 from typing import Any
 from urllib.parse import quote
 
+from screener_guards import apply_change_cap
 from screener_variants import (
     VIEW_CODES,
     build_variant_urls,
     elite_mode,
     get_variant,
+    screener_version,
     variant_filters,
+    variant_names,
     variant_views,
 )
 
@@ -396,11 +399,16 @@ def screen_variant(
         ]
         hits = list(merge_rows(row_sets).values())
 
+    version = screener_version(config)
     out = []
     for hit in hits:
         hit.setdefault("asset_type", spec["asset_type"])
         hit["variant"] = variant
         hit["screen_mode"] = resolved
+        # Tagged here, at the only point that knows which generation of filters
+        # produced this row. Every downstream guard, call record and report
+        # reads it rather than re-deriving it from the active config.
+        hit["screener_version"] = version
         hit.setdefault("filters", ",".join(variant_filters(config, variant)))
         if _exchange_allowed(config, hit):
             out.append(hit)
@@ -414,9 +422,16 @@ def screen_all(
     fixture: str | None = None,
     variants: list[str] | None = None,
     verbose: bool = False,
+    guard_skips: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Screen every configured variant, de-duplicated by (ticker, variant)."""
-    names = variants or list(config["screener"]["variants"])
+    """Screen every configured variant, de-duplicated by (ticker, variant).
+
+    Version guards are applied here, after the fetch: a FinViz filter can only
+    narrow a screen, so the cap on the day's move has to be enforced on the
+    rows that come back. Capped names are appended to *guard_skips* when one is
+    given, so the run report can say what was refused and why.
+    """
+    names = variants or variant_names(config)
     seen: set[tuple[str, str]] = set()
     hits: list[dict[str, Any]] = []
     for name in names:
@@ -426,7 +441,10 @@ def screen_all(
                 continue
             seen.add(key)
             hits.append(hit)
-    return hits
+    kept, skipped = apply_change_cap(hits, config)
+    if guard_skips is not None:
+        guard_skips.extend(skipped)
+    return kept
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -30,6 +30,7 @@ from typing import Any
 
 import heuristic_roles as heuristic
 from llm_client import LLMClient, LLMUnavailable
+from screener_guards import apply_short_float_bonus
 from skill_adapters import fetch_daily_bars, run_episodic_pivot, run_position_sizer
 from skill_adapters import run_weekly_price_action as weekly_adapter
 
@@ -420,6 +421,9 @@ def review_hit(
     context["verdicts"]["risk_manager"] = run_role("risk_manager")
     judge_verdict = run_role("judge")
     judge_verdict = apply_catalyst_penalty(judge_verdict, context["verdicts"], config)
+    # Both adjustments land before the gate, so a crowded short can carry a
+    # name over the threshold and a missing catalyst can drop one under it.
+    judge_verdict = apply_short_float_bonus(judge_verdict, hit, config)
     judge_verdict = enforce_judge_gate(judge_verdict, context["verdicts"], config)
     context["verdicts"]["judge"] = judge_verdict
 

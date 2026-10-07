@@ -112,15 +112,76 @@ def exchange_filter_sets(config: dict[str, Any]) -> list[list[str]]:
     return [[]]
 
 
+DEFAULT_VERSION = "v1"
+
+
+def screener_version(config: dict[str, Any]) -> str:
+    """Which screener generation is active, e.g. "v1" or "v2"."""
+    return str(config["screener"].get("screener_version", DEFAULT_VERSION)).strip().lower()
+
+
+def version_block(config: dict[str, Any], version: str | None = None) -> dict[str, Any]:
+    """The whole config block for one screener version.
+
+    Versions live side by side so a historical call stays explainable: v1's
+    filters are preserved exactly, and every call records the version that
+    produced it. A pre-versions config (plain ``screener.variants``) still
+    loads, and reads as v1.
+    """
+    name = (version or screener_version(config)).strip().lower()
+    versions = config["screener"].get("versions")
+    if not versions:
+        if name not in {DEFAULT_VERSION, ""}:
+            raise VariantError(
+                f"screener_version {name!r} requested but this config has no "
+                "screener.versions block"
+            )
+        return {"variants": config["screener"]["variants"]}
+    if name not in versions:
+        raise VariantError(
+            f"unknown screener_version {name!r}; available: {', '.join(sorted(versions))}"
+        )
+    return versions[name]
+
+
+def version_variants(config: dict[str, Any], version: str | None = None) -> dict[str, Any]:
+    return version_block(config, version)["variants"]
+
+
+def version_guards(config: dict[str, Any], version: str | None = None) -> dict[str, Any]:
+    """Post-screen guards for this version — a FinViz filter can only narrow."""
+    return version_block(config, version).get("guards") or {}
+
+
+def find_variant_spec(config: dict[str, Any], name: str) -> dict[str, Any]:
+    """The spec for *name* from any version, active one first, or ``{}``.
+
+    A historical call carries the variant that produced it, and that variant may
+    have been retired from the active generation (``etf_momentum`` lives in v1
+    only). Reporting on such a call must still be able to quote its filters, so
+    this searches every version instead of failing.
+    """
+    names = [screener_version(config)]
+    names += [other for other in (config["screener"].get("versions") or {}) if other not in names]
+    for version in names:
+        try:
+            variants = version_variants(config, version)
+        except (VariantError, KeyError):
+            continue
+        if name in variants:
+            return variants[name]
+    return {}
+
+
 def get_variant(config: dict[str, Any], name: str) -> dict[str, Any]:
-    variants = config["screener"]["variants"]
+    variants = version_variants(config)
     if name not in variants:
         raise VariantError(f"unknown variant {name!r}; available: {', '.join(sorted(variants))}")
     return variants[name]
 
 
 def variant_names(config: dict[str, Any]) -> list[str]:
-    return list(config["screener"]["variants"])
+    return list(version_variants(config))
 
 
 def variant_filters(config: dict[str, Any], name: str) -> list[str]:

@@ -1,7 +1,7 @@
 # Lowcap Call Tracker — Proposed Improvements
 
-**Generated:** 2026-10-01T13:57:12+00:00  
-**Window:** last 90 days — 12 calls, 12 priced  
+**Generated:** 2026-10-01T13:57:12+00:00
+**Window:** last 90 days — 12 calls, 12 priced
 **Minimum samples before a conclusion:** 10
 
 > Nothing here is applied automatically. Each item names the file or config key to change; approve the ones you want and edit them yourself (or ask Claude to apply a specific numbered item).

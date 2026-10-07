@@ -20,8 +20,10 @@ from screener_variants import (
     build_variant_urls,
     describe_variants,
     exchange_filter_sets,
+    find_variant_spec,
     validate_token,
     variant_filters,
+    variant_names,
     variant_views,
 )
 
@@ -85,12 +87,14 @@ def test_etf_variant_omits_float_short_float_and_market_cap(config):
 
 
 def test_short_float_floor_is_available_as_an_opt_in(config):
-    config["screener"]["variants"]["momentum_breakout"]["enable_optional"] = ["short_float_filter"]
+    config["screener"]["versions"]["v1"]["variants"]["momentum_breakout"]["enable_optional"] = [
+        "short_float_filter"
+    ]
     assert "sh_short_o15" in variant_filters(config, "momentum_breakout")
 
 
 def test_enable_optional_rejects_an_unknown_key(config):
-    config["screener"]["variants"]["squeeze"]["enable_optional"] = ["nope"]
+    config["screener"]["versions"]["v1"]["variants"]["squeeze"]["enable_optional"] = ["nope"]
     with pytest.raises(VariantError):
         variant_filters(config, "squeeze")
 
@@ -420,3 +424,26 @@ def test_ticker_falls_back_to_the_row_link_then_to_text():
     </table>
     """
     assert [row["ticker"] for row in parse_screener_html(plain)] == ["EFGH"]
+
+
+def test_a_retired_variant_is_still_describable(config):
+    """etf_momentum lives in v1 only. A v2 run reporting on an older v1 call
+    must still be able to quote that call's filters."""
+    config["screener"]["screener_version"] = "v2"
+    assert "etf_momentum" not in variant_names(config)
+    spec = find_variant_spec(config, "etf_momentum")
+    assert spec["asset_type"] == "etf"
+    assert spec["filters"]
+
+
+def test_the_active_version_wins_when_both_define_a_variant(config):
+    """squeeze exists in both generations; v2's widened float filter must be
+    the one a v2 run reports."""
+    config["screener"]["screener_version"] = "v2"
+    assert "sh_float_u50" in find_variant_spec(config, "squeeze")["filters"]
+    config["screener"]["screener_version"] = "v1"
+    assert "sh_float_u20" in find_variant_spec(config, "squeeze")["filters"]
+
+
+def test_an_unknown_variant_reports_as_empty_rather_than_raising(config):
+    assert find_variant_spec(config, "no_such_variant") == {}

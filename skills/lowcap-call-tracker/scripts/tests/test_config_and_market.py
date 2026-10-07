@@ -9,9 +9,21 @@ from market_hours import is_trading_day, session_state
 from config import ConfigError, load_config, repo_root, resolve_path
 
 
-def test_default_config_defines_three_variants(config):
-    variants = config["screener"]["variants"]
+def test_v1_defines_three_variants(config):
+    variants = config["screener"]["versions"]["v1"]["variants"]
     assert set(variants) == {"squeeze", "momentum_breakout", "etf_momentum"}
+
+
+def test_v2_drops_the_etf_variant(config):
+    """etf_momentum stays in v1 only; v2 is stocks-only by design."""
+    variants = config["screener"]["versions"]["v2"]["variants"]
+    assert set(variants) == {"squeeze", "momentum_breakout"}
+
+
+def test_v1_is_the_active_version_until_deliberately_switched(config):
+    """Flipping the default changes what the live book screens, so it is a
+    conscious edit, not something a v2 patch does on the way past."""
+    assert config["screener"]["screener_version"] == "v1"
 
 
 def test_calls_close_at_contract_expiry_by_default(config):
@@ -61,16 +73,48 @@ def test_overlay_is_deep_merged(tmp_path):
     assert merged["tracker"]["close_threshold_pct"] == -50.0
     # Untouched keys survive the merge.
     assert merged["tracker"]["account_size"] == 1000.0
-    assert set(merged["screener"]["variants"]) == {"squeeze", "momentum_breakout", "etf_momentum"}
+    assert set(merged["screener"]["versions"]["v1"]["variants"]) == {
+        "squeeze",
+        "momentum_breakout",
+        "etf_momentum",
+    }
+    assert set(merged["screener"]["versions"]["v2"]["variants"]) == {
+        "squeeze",
+        "momentum_breakout",
+    }
 
 
 @pytest.mark.parametrize(
     "overlay",
     [
         {"tracker": {"close_threshold_pct": 80.0}},
-        {"screener": {"variants": None}},  # a non-mapping replaces, an empty dict merges
-        {"screener": {"variants": {"bad": {"asset_type": "crypto", "filters": ["x"]}}}},
-        {"screener": {"variants": {"bad": {"asset_type": "stock", "filters": []}}}},
+        {"tracker": {"sl_pct": 0}},
+        {"tracker": {"sl_pct": 100}},
+        # A non-mapping replaces, an empty dict merges.
+        {"screener": {"versions": {"v1": {"variants": None}}}},
+        {
+            "screener": {
+                "versions": {
+                    "v1": {"variants": {"bad": {"asset_type": "crypto", "filters": ["x"]}}}
+                }
+            }
+        },
+        {
+            "screener": {
+                "versions": {"v1": {"variants": {"bad": {"asset_type": "stock", "filters": []}}}}
+            }
+        },
+        # A broken *dormant* version has to fail now, not when the switch flips.
+        {
+            "screener": {
+                "versions": {"v2": {"variants": {"bad": {"asset_type": "etf", "filters": []}}}}
+            }
+        },
+        {"screener": {"screener_version": "v3"}},
+        {"screener": {"versions": {"v2": {"guards": {"max_change_pct": 0}}}}},
+        {"screener": {"versions": {"v2": {"guards": {"short_float_bonus": [{"min_pct": 10.0}]}}}}},
+        # Both blocks set: the top-level one would be silently ignored.
+        {"screener": {"variants": {"squeeze": {"asset_type": "stock", "filters": ["geo_usa"]}}}},
     ],
 )
 def test_invalid_config_is_rejected(tmp_path, overlay):
