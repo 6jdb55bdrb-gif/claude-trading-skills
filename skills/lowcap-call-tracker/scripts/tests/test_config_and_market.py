@@ -20,10 +20,13 @@ def test_v2_drops_the_etf_variant(config):
     assert set(variants) == {"squeeze", "momentum_breakout"}
 
 
-def test_v1_is_the_active_version_until_deliberately_switched(config):
-    """Flipping the default changes what the live book screens, so it is a
-    conscious edit, not something a v2 patch does on the way past."""
-    assert config["screener"]["screener_version"] == "v1"
+def test_the_shipped_default_version(config):
+    """Read from disk, not from the fixture: the fixture pins v1 so the suite
+    stays deterministic, and this is the one place that asserts what actually
+    ships. v2 is the standing generation as of 2026-10-07."""
+    assert load_config()["screener"]["screener_version"] == "v2"
+    # Both generations stay loadable whichever one is active.
+    assert set(config["screener"]["versions"]) == {"v1", "v2"}
 
 
 def test_calls_close_at_contract_expiry_by_default(config):

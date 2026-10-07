@@ -26,6 +26,12 @@ def config(tmp_path):
     explicitly.
     """
     loaded = load_config()
+    # The suite pins the generation it describes. Most tests here run the
+    # three-hit fixture, which includes an etf_momentum row that only v1
+    # screens, so riding on the live default would mean flipping
+    # screener_version silently rewrote 29 tests. A v2 test opts in
+    # explicitly, and test_the_shipped_default_version pins what ships.
+    loaded["screener"]["screener_version"] = "v1"
     output = tmp_path / "tracker-output"
     output.mkdir(exist_ok=True)
     loaded["tracker"]["stats_file"] = str(output / "stats.md")

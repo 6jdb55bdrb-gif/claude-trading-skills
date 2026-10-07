@@ -136,11 +136,11 @@ screener:
   # Every call is tagged with this in the database (calls.screener_version), so
   # switching back and forth never makes the history ambiguous.
   #
-  # Left on v1 deliberately: flipping it changes what the live book screens AND
-  # brings in v2's earliest_run gate, which blocks screening before 16:30
-  # Europe/Zurich. Run v2 explicitly with `run_cycle.py --screener-version v2`
-  # until you want it to be the standing behaviour, then change this line.
-  screener_version: v1
+  # v2 is the standing generation (operator decision, 2026-10-07). This brings
+  # in v2's earliest_run gate: a run before 16:30 Europe/Zurich logs a skip and
+  # prices the open book without screening. v1 stays fully runnable for a
+  # one-off with `run_cycle.py --screener-version v1`.
+  screener_version: v2
   # auto -> elite when FINVIZ_API_KEY is set, else public HTML.
   mode: auto
   # Public HTML pages to walk per view (20 rows per page).
