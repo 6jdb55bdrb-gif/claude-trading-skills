@@ -357,8 +357,13 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
         header,
         f"<i>{escape_html(session.get('as_of', ''))} — {escape_html(session.get('reason', ''))}</i>",
     ]
+    version = report.get("screener_version")
+    if version:
+        lines.append(f"<i>screener {escape_html(str(version))}</i>")
     if not report.get("screening_ran"):
         lines.append("Screening skipped; prices updated.")
+    if report.get("screen_skipped"):
+        lines.append(f"<i>{escape_html(str(report['screen_skipped']))}</i>")
 
     if takes or shadows:
         lines.append("")
@@ -371,10 +376,20 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
                 f"({escape_html(call['asset_type'])}, {escape_html(call['variant'])}) "
                 f"conf {call['confidence']} · entry {_num(call.get('entry'))} "
                 f"· stop {_num(call.get('stop'))}"
+                # The fixed stop goes on every line, TAKE and shadow alike: the
+                # message is where this call gets acted on, and an entry without
+                # the level that invalidates it is an invitation to improvise.
+                + (f" · SL {_num(call['sl_price'])}" if call.get("sl_price") else "")
             )
             lines.append(f"    <i>{escape_html(call.get('reason') or '')}</i>")
             if telegram.get("include_role_detail"):
                 lines.extend(_role_detail_lines(report, call["ticker"]))
+
+    for skip in report.get("guard_skips") or []:
+        lines.append(
+            f"🚫 <b>{escape_html(str(skip.get('ticker') or '?'))}</b> "
+            f"<i>{escape_html(str(skip.get('reason') or 'guard skip'))}</i>"
+        )
 
     open_updates = sorted(
         [update for update in price_update.get("updates", []) if not update.get("closed")],
@@ -428,6 +443,12 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
     if telegram.get("include_stats", True) and report.get("stats"):
         lines.append("")
         lines.append(format_stats_message(report["stats"], compact=True))
+
+    # The v1-vs-v2 scorecard, once the sample is big enough to mean anything.
+    # outcome_report decides that; an absent key means "not yet".
+    if report.get("scorecard"):
+        lines.append("")
+        lines.append(escape_html(str(report["scorecard"])))
 
     cost = report.get("llm_cost") or {}
     if cost.get("cost_usd"):

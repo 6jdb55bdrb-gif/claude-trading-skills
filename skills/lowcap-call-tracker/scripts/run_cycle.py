@@ -30,6 +30,9 @@ from call_db import DECISION_UNREVIEWED, KIND_ACTIVE, KIND_UNREVIEWED, CallDatab
 from fetch_screener import FetchError, screen_all
 from llm_client import LLMClient, current_month
 from market_hours import session_state
+from outcome_report import build_report as build_scorecard
+from outcome_report import telegram_summary as scorecard_summary
+from outcome_tracker import fill_outcomes
 from price_update import format_updates, update_open_calls
 from role_review import (
     ReviewUnavailable,
@@ -184,6 +187,7 @@ def run_cycle(
     fixture: str | None = None,
     screen_mode: str | None = None,
     prices: dict[str, float] | None = None,
+    bars: dict[str, list[dict[str, Any]]] | None = None,
     variants: list[str] | None = None,
     agents_dir: str | None = None,
     force_screen: bool = False,
@@ -342,7 +346,20 @@ def run_cycle(
         else:
             report["hits"] = 0
 
-        # 4. Cost accounting, statistics.
+        # 4. Measure what the older calls did. Cheap, and it is the only
+        #    record the version experiment is settled on.
+        # `offline` means no network in this run, so the measurement waits for
+        # a run that can price it rather than recording a gap as a result.
+        if not dry_run and not offline:
+            report["outcomes"] = fill_outcomes(db, config, bars=bars)
+        if not dry_run:
+            scorecard = build_scorecard(db, config)
+            report["scorecard_report"] = scorecard
+            summary = scorecard_summary(scorecard, config)
+            if summary:
+                report["scorecard"] = summary
+
+        # 5. Cost accounting, statistics.
         cost = (
             llm.persist_run_cost(run_id)
             if (llm and not dry_run)

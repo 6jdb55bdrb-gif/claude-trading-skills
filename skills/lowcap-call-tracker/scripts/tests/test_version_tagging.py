@@ -177,3 +177,69 @@ def test_the_capped_name_is_reported_not_silently_dropped(tmp_path, config):
         prices={},
     )
     assert [skip["ticker"] for skip in report["guard_skips"]] == ["PMPX"]
+
+
+def test_a_cycle_measures_outcomes_and_carries_the_scorecard(tmp_path, config):
+    """The scorecard has to be produced by the run that sends the message, or
+    it will only ever be looked at when someone remembers to ask for it."""
+    from call_db import CallDatabase
+
+    db_path = tmp_path / "calls.db"
+    run_cycle(
+        config,
+        backend="heuristic",
+        screen_mode="fixture",
+        fixture=str(FIXTURE_HITS),
+        force_screen=True,
+        offline=True,
+        db_path=str(db_path),
+        telegram=False,
+        prices={},
+    )
+    # Age the book so there are sessions to measure: a call made today has none.
+    with CallDatabase(db_path) as db:
+        db.conn.execute("UPDATE calls SET call_date = '2026-09-28T20:00:00+00:00'")
+        db.conn.commit()
+        tickers = [row["ticker"] for row in db.conn.execute("SELECT ticker FROM calls")]
+    history = {
+        ticker: [
+            {"date": "2026-09-29", "low": 9.9, "close": 10.0},
+            {"date": "2026-09-30", "low": 9.9, "close": 10.0},
+            {"date": "2026-10-01", "low": 9.9, "close": 10.0},
+        ]
+        for ticker in tickers
+    }
+
+    report = run_cycle(
+        config,
+        backend="heuristic",
+        # The same fixture again: every name is already open, so nothing new is
+        # logged and no request leaves the machine.
+        screen_mode="fixture",
+        fixture=str(FIXTURE_HITS),
+        db_path=str(db_path),
+        telegram=False,
+        prices={},
+        bars=history,
+    )
+    assert report["outcomes"]["updated"] == len(tickers)
+    assert report["scorecard_report"]["total_calls"] == len(tickers)
+    # Three calls is far short of 30, so nothing goes to Telegram yet.
+    assert report.get("scorecard") is None
+
+
+def test_an_offline_run_does_not_pretend_to_measure_anything(tmp_path, config):
+    """No network means the measurement waits, rather than a data gap being
+    written down as a result."""
+    report = run_cycle(
+        config,
+        backend="heuristic",
+        screen_mode="fixture",
+        fixture=str(FIXTURE_HITS),
+        force_screen=True,
+        offline=True,
+        db_path=str(tmp_path / "calls.db"),
+        telegram=False,
+        prices={},
+    )
+    assert "outcomes" not in report

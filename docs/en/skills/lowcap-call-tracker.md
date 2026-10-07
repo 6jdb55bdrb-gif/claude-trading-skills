@@ -98,8 +98,13 @@ python3 skills/lowcap-call-tracker/scripts/screener_variants.py --urls
 python3 skills/lowcap-call-tracker/scripts/screener_variants.py --urls
 ```
 
-Three variants, all US-listed, price $1–$20, average volume over 500K, up today,
-above the SMA20 and SMA50:
+Two generations of filters live side by side under `screener.versions`.
+`screener.screener_version` picks the standing one (**v1** today); run the other
+for a single cycle with `run_cycle.py --screener-version v2`, which leaves a
+scheduled run untouched. Every logged call records the version that produced it.
+
+**v1** — three variants, all US-listed, price $1–$20, average volume over 500K,
+up today, above the SMA20 and SMA50:
 
 | Variant | Asset | Adds |
 |---|---|---|
@@ -107,8 +112,30 @@ above the SMA20 and SMA50:
 | `momentum_breakout` | stocks | market cap under $2B, float under 20M, new 52-week high, RelVol over 3 |
 | `etf_momentum` | ETFs | new 52-week high, RelVol over 2 — no float, short-float or market-cap filter |
 
+**v2** — two variants, widened on purpose because v1 produced almost nothing:
+
+| Variant | Asset | Adds |
+|---|---|---|
+| `squeeze` | stocks | market cap under $2B, float under 50M, average volume over 300K, RelVol over 2 — **no** short-float filter |
+| `momentum_breakout` | stocks | market cap under $2B, within 5% of the 52-week high, RelVol over 2 — no float filter |
+
+What v2 stopped filtering on it now weighs after the fetch, because a FinViz
+filter can only ever narrow a screen:
+
+- **short float** is a confidence bonus (+5 at ≥10%, +10 at ≥20%) instead of a
+  hard floor — FinViz refreshes short interest twice a month, and a stale number
+  must not exclude a live squeeze. Applied before the Judge's gate, so it can
+  carry a name over the threshold; the gate still decides TAKE vs SKIP.
+- **a name already up more than +25% today is skipped** — that is a chase, not
+  an entry. Each skip is named in the report and the Telegram message.
+- **v2 does not screen before 16:30 Europe/Zurich** — it ranks on relative
+  volume, which in the first hour after the US open ranks whatever opened first.
+  An earlier run logs the skip and still prices the open book.
+
 Read `references/screener_variants.md` for the full filter-code tables, the ETF
-data-gap rationale and the OTC-exclusion options.
+data-gap rationale and the OTC-exclusion options, and
+`references/screener_versions.md` for the v1 → v2 changelog, the fixed stop and
+the outcome scorecard.
 
 ### Step 2: Fetch hits
 
@@ -163,7 +190,27 @@ calls, breakdowns by direction / asset type / variant, TAKE vs SKIP (does the
 Judge add value?), per-role accuracy and confidence-bucket hit rates. Written to
 `tracker-output/stats.md`.
 
-### Step 6: Weekly learning loop (proposals only)
+### Step 6: Measure the calls, score the versions
+
+```bash
+python3 skills/lowcap-call-tracker/scripts/outcome_tracker.py --fill --verbose
+python3 skills/lowcap-call-tracker/scripts/outcome_report.py
+```
+
+Every call, TAKE and SKIP, is measured at +1, +3 and +5 **sessions** from the
+call, with each session's low checked against the call's fixed stop
+(`tracker.sl_pct`, 20% below entry, stored per call as `sl_price`). A stopped
+call is out at the stop and no later price is read. The cycle fills outcomes
+itself, so running these by hand is only for a look or a replay.
+
+The report gives hit rate, average return and stop-hit rate per screener
+version, per variant and per confidence bucket (`<50`, `50-59`, `60-69`, `70+`),
+plus the Judge's edge (TAKE average minus SKIP average). It joins the Telegram
+summary once 30 measured calls exist. It **recommends and never applies**:
+`min_confidence_to_take` and `no_catalyst_penalty` proposals carry
+`applied: false` and are the operator's edit to make.
+
+### Step 7: Weekly learning loop (proposals only)
 
 ```bash
 python3 skills/lowcap-call-tracker/scripts/learning_loop.py --write
@@ -173,7 +220,7 @@ Writes `tracker-output/improvements.md` with numbered, approvable proposals for
 role prompts, screener filters and Judge weighting. **Nothing is applied
 automatically** — apply an item only when the user approves it.
 
-### Step 7: Telegram (optional)
+### Step 8: Telegram (optional)
 
 ```bash
 python3 skills/lowcap-call-tracker/scripts/telegram_bot.py --setup-profile  # publish the command menu
@@ -232,7 +279,7 @@ nothing more: the Judge then weighs the structure, the stop and the Skeptic's
 other points, and may still TAKE. Its full `reasoning` is stored with every
 verdict and shown by `/call TICKER`.
 
-### Step 8: Deploy (optional)
+### Step 9: Deploy (optional)
 
 `deploy/VPS_SETUP.md` is a step-by-step guide for a non-coder: create an Ubuntu
 24.04 VPS, SSH in, run `deploy/setup_vps.sh`, check the timers, read the logs.
@@ -250,6 +297,7 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - `skills/lowcap-call-tracker/references/role_review_protocol.md`
 - `skills/lowcap-call-tracker/references/scheduled_runs.md`
 - `skills/lowcap-call-tracker/references/screener_variants.md`
+- `skills/lowcap-call-tracker/references/screener_versions.md`
 - `skills/lowcap-call-tracker/references/telegram_bot.md`
 - `skills/lowcap-call-tracker/references/tracker_schema.md`
 
@@ -265,6 +313,8 @@ pushes `stats.md` / `improvements.md` back to GitHub.
 - `skills/lowcap-call-tracker/scripts/market_hours.py`
 - `skills/lowcap-call-tracker/scripts/membership.py`
 - `skills/lowcap-call-tracker/scripts/option_contract.py`
+- `skills/lowcap-call-tracker/scripts/outcome_report.py`
+- `skills/lowcap-call-tracker/scripts/outcome_tracker.py`
 - `skills/lowcap-call-tracker/scripts/price_update.py`
 - `skills/lowcap-call-tracker/scripts/publish.py`
 - `skills/lowcap-call-tracker/scripts/role_review.py`
