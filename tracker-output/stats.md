@@ -8,7 +8,7 @@
 
 **Total PnL:** +0.00% — equal weight across all 3 priced call(s)
 
-**Generated:** 2026-10-07T19:44:45+00:00
+**Generated:** 2026-10-07T19:50:24+00:00  
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -86,4 +86,5 @@
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20261007T194444Z | 2026-10-07T19:44:44+00:00 | yes | — | — | — |
+| run_20261007T195023Z | 2026-10-07T19:50:23+00:00 | yes | — | — | — |
+

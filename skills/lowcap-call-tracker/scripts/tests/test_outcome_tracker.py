@@ -254,3 +254,13 @@ def test_a_ticker_with_no_bars_is_reported_not_guessed(tmp_db, config):
     result = fill_outcomes(tmp_db, config, bars={}, as_of="2026-10-15")
     assert result["missing"] == ["DARK"]
     assert result["updated"] == 0
+
+
+def test_a_voided_call_is_not_measured(tmp_db, config):
+    """No point spending a price fetch on a row that was reversed by hand."""
+    call_id = _call(tmp_db, "VOIDED")
+    tmp_db.conn.execute("UPDATE calls SET status = 'VOID' WHERE id = ?", (call_id,))
+    tmp_db.conn.commit()
+    result = fill_outcomes(tmp_db, config, bars={"VOIDED": FIVE_UP}, as_of="2026-10-15")
+    assert result["pending"] == 0
+    assert result["updated"] == 0

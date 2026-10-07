@@ -244,3 +244,51 @@ def test_the_rendered_report_compares_the_versions(tmp_db, config):
     assert "v1" in text and "v2" in text
     assert "squeeze" in text
     assert "50-59" in text or "70+" in text
+
+
+# --- calls that never had a stop ----------------------------------------
+
+
+def test_the_stop_hit_rate_is_measured_over_calls_that_had_a_stop(tmp_db, config):
+    """The live book predates the fixed stop. Reporting 0% stopped for those
+    calls would read as "this version never stopped out", which is a different
+    claim from "no stop was set"."""
+    first = add_call(tmp_db, "NOSL1", version="v1", ret=-40.0)
+    second = add_call(tmp_db, "NOSL2", version="v1", ret=-40.0)
+    tmp_db.conn.execute("UPDATE calls SET sl_price = NULL WHERE id IN (?, ?)", (first, second))
+    tmp_db.conn.commit()
+    block = build_report(tmp_db, config)["versions"]["v1"]
+    assert block["calls"] == 2
+    assert block["stop_hit_rate_pct"] is None
+    assert block["calls_with_stop"] == 0
+
+
+def test_a_mixed_group_rates_only_the_calls_that_had_a_stop(tmp_db, config):
+    no_stop = add_call(tmp_db, "OLD1", version="v1", ret=-40.0)
+    tmp_db.conn.execute("UPDATE calls SET sl_price = NULL WHERE id = ?", (no_stop,))
+    tmp_db.conn.commit()
+    add_call(tmp_db, "NEW1", version="v1", ret=-20.0, stopped=True)
+    add_call(tmp_db, "NEW2", version="v1", ret=10.0)
+    block = build_report(tmp_db, config)["versions"]["v1"]
+    assert block["calls_with_stop"] == 2
+    assert block["stop_hit_rate_pct"] == 50.0
+
+
+def test_the_rendered_report_says_when_no_stop_was_set(tmp_db, config):
+    first = add_call(tmp_db, "NOSL1", version="v1", ret=-40.0)
+    tmp_db.conn.execute("UPDATE calls SET sl_price = NULL WHERE id = ?", (first,))
+    tmp_db.conn.commit()
+    text = render_report(build_report(tmp_db, config), config=config)
+    assert "no stop" in text.lower()
+
+
+def test_a_voided_call_is_not_scored(tmp_db, config):
+    """VOID is bookkeeping — a duplicate row reversed by hand. Scoring it
+    would put a clerical error into the Judge's record."""
+    add_call(tmp_db, "REAL", version="v1", ret=10.0)
+    void = add_call(tmp_db, "VOIDED", version="v1", ret=-90.0)
+    tmp_db.conn.execute("UPDATE calls SET status = 'VOID' WHERE id = ?", (void,))
+    tmp_db.conn.commit()
+    report = build_report(tmp_db, config)
+    assert report["total_calls"] == 1
+    assert report["versions"]["v1"]["avg_return_pct"] == 10.0

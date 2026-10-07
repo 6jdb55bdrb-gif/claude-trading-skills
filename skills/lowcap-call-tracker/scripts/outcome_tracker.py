@@ -137,7 +137,12 @@ def _get(row: Any, key: str) -> Any:
 
 
 def pending_calls(db: CallDatabase) -> list[dict[str, Any]]:
-    """Calls still owed a measurement: unfinished and not already stopped out."""
+    """Calls still owed a measurement.
+
+    Unfinished, not already stopped out, and not VOID: a voided row is a
+    duplicate reversed by hand, so measuring it would spend a price fetch on a
+    clerical error and then put it in the Judge's record.
+    """
     cursor = db.conn.execute(
         """
         SELECT id, ticker, call_date, entry_price, sl_price, direction,
@@ -145,6 +150,7 @@ def pending_calls(db: CallDatabase) -> list[dict[str, Any]]:
                researcher_score, ret_1d, ret_3d, ret_5d, stopped_out
           FROM calls
          WHERE COALESCE(stopped_out, 0) = 0
+           AND status <> 'VOID'
            AND (ret_1d IS NULL OR ret_3d IS NULL OR ret_5d IS NULL)
          ORDER BY call_date, id
         """

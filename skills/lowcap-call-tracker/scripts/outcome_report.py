@@ -67,13 +67,18 @@ def _slice(rows: list[dict[str, Any]]) -> dict[str, Any]:
     stopped = sum(1 for row in rows if row["stopped_out"])
     wins = sum(1 for value in returns if value > 0)
     count = len(rows)
+    # The stop-hit rate is measured over the calls that actually carried a
+    # stop. The book predates tracker.sl_pct, and reporting those calls as 0%
+    # stopped would claim the stop was never hit rather than never set.
+    with_stop = sum(1 for row in rows if row.get("sl_price") is not None)
     return {
         "calls": count,
+        "calls_with_stop": with_stop,
         "hit_rate_pct": round(100.0 * wins / count, 1) if count else None,
         "avg_return_pct": round(sum(returns) / count, 2) if count else None,
         "best_return_pct": round(max(returns), 2) if count else None,
         "worst_return_pct": round(min(returns), 2) if count else None,
-        "stop_hit_rate_pct": round(100.0 * stopped / count, 1) if count else None,
+        "stop_hit_rate_pct": round(100.0 * stopped / with_stop, 1) if with_stop else None,
         "enough_samples": count >= MIN_SAMPLES,
     }
 
@@ -88,7 +93,10 @@ def _group(rows: list[dict[str, Any]], key: str) -> dict[str, Any]:
 
 
 def measured_calls(db: CallDatabase, config: dict[str, Any]) -> tuple[list[dict[str, Any]], int]:
-    """Every call with at least one elapsed horizon, plus the pending count.
+    """Every live call with at least one elapsed horizon, plus the pending count.
+
+    VOID rows are excluded: a voided call is a duplicate reversed by hand, and a
+    clerical error does not belong in the Judge's record.
 
     A call is "measured" on the longest horizon that has elapsed, so a
     three-day-old call still counts — on its three-day number.
@@ -102,6 +110,7 @@ def measured_calls(db: CallDatabase, config: dict[str, Any]) -> tuple[list[dict[
                confidence, researcher_score, entry_price, sl_price, ret_1d, ret_3d, ret_5d,
                COALESCE(stopped_out, 0) AS stopped_out
           FROM calls
+         WHERE status <> 'VOID'
          ORDER BY call_date, id
         """
     )
@@ -265,6 +274,7 @@ def _row_line(label: str, stats: dict[str, Any], width: int = 18) -> str:
         f"hit={_pct(stats['hit_rate_pct'])} "
         f"avg={_signed(stats['avg_return_pct'])} "
         f"stopped={_pct(stats['stop_hit_rate_pct'])}"
+        + ("" if stats.get("calls_with_stop") else "  (no stop set)")
         + ("" if stats["enough_samples"] else "  (thin)")
     )
 
