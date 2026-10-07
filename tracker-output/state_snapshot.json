@@ -2,11 +2,11 @@
  "counts": {
   "calls": 16,
   "llm_usage": 0,
-  "price_history": 298,
+  "price_history": 302,
   "role_verdicts": 75,
-  "runs": 93
+  "runs": 94
  },
- "exported_at": "2026-10-07T10:47:19+00:00",
+ "exported_at": "2026-10-07T14:45:43+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -428,7 +428,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 42,
-    "current_price": 4.75,
+    "current_price": 4.690000057220459,
     "direction": "long",
     "entry_price": 3.2,
     "expiry_date": null,
@@ -438,10 +438,10 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at low conviction (42). In favour: the first filed, dated, same-day catalyst in this book; the best technicals logged so far (113x relative volume, bought through the open); and an extreme squeeze structure, 76.5% of a 1.59M float. Against, and decisive: a 27% ATR against our fixed 15% trailing stop means ordinary noise very likely closes this regardless of whether the thesis is right \u2014 MEDS realised exactly that failure mode this morning. The catalyst is also non-binding, and a term sheet on a company with $887k of cash can reverse on a single 8-K. Bias check: VEEA looks attractive partly because it has the catalyst the rest of the book lacked. That is a genuine signal, not a bias, but it must not override the stop geometry. Stated plainly: if the trailing stop were ATR-scaled rather than fixed at 15%, this would be a TAKE.",
     "kind": "shadow",
-    "last_price_at": "2026-10-07T10:46:44+00:00",
+    "last_price_at": "2026-10-07T14:45:05+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 5.939899921417236,
-    "pnl_pct": 48.4375,
+    "pnl_pct": 46.5625,
     "position_usd": null,
     "price_as_of": "2026-10-07",
     "researcher_score": 6.5,
@@ -469,7 +469,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 88,
-    "current_price": 3.16,
+    "current_price": 3.0299999713897705,
     "direction": "long",
     "entry_price": 4.3,
     "expiry_date": null,
@@ -479,10 +479,10 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at high conviction (88). Catalysts are press releases, not filings; the stock is 85% above its 50-day; squeeze fuel is absent at short ratio 0.08; the balance sheet is $2.46M cash against $32.6M debt; and this is a third call on a name that stopped out twice this week, offered above the live tape. The one point in its favour, from_open +10.5%, is the same signal that justified the 5.16 entry at 06:18 this morning, and that entry is already a realised -19.0%. Logged explicitly: the Technician signal that persuaded me last time has now been falsified once on this exact ticker, so I am weighting it down.",
     "kind": "shadow",
-    "last_price_at": "2026-10-07T10:46:44+00:00",
+    "last_price_at": "2026-10-07T14:45:05+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 4.3,
-    "pnl_pct": -26.5116,
+    "pnl_pct": -29.5349,
     "position_usd": null,
     "price_as_of": "2026-10-07",
     "researcher_score": 4.0,
@@ -510,7 +510,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 62,
-    "current_price": 3.17,
+    "current_price": 3.1217000484466553,
     "direction": "long",
     "entry_price": 3.66,
     "expiry_date": null,
@@ -520,10 +520,10 @@
     "judge_decision": "TAKE",
     "judge_reason": "TAKE at 62. Taken on risk geometry and trend structure, NOT on catalyst \u2014 the named catalyst is an annual-meeting vote and I am scoring it as such. What earns it: the only name in this book above its 200-day; the first whose daily range (6.3% ATR) fits our 15% stop rather than demanding a 40% trail; the first with real days-to-cover (short ratio 2.26); the highest institutional ownership logged (12.7%); and bought through the session rather than gapped and faded. The objections are about extension and narrative, not about executability or solvency \u2014 unlike the prior SKIPs, which were mostly $2M cash against $32M debt with no squeeze fuel. None of that applies here. Bias check, both directions. I have SKIPped nine of ten and SDEV, rejected twice, is now +102% from the second entry and +521% from the first; there is real pressure on me to take the next thing simply to stop being the Judge that rejects every winner, and that pressure is not evidence. Against that: the reason I like this one is the single objection that has bound almost every previous SKIP. On VEEA I wrote that if the trail were ATR-scaled this would be a TAKE; BIRD is the inverse case, where no widening is needed because the ATR already fits. That is a pre-registered reason, not a post-hoc one. How this loses: a mean-reversion snap from RSI 81 back to the 20-day is roughly -31%, and the 15% stop cuts that well before it completes. Risk $15 on a $100 slice, 1.5% of the account.",
     "kind": "active",
-    "last_price_at": "2026-10-07T10:46:44+00:00",
+    "last_price_at": "2026-10-07T14:45:05+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 3.66,
-    "pnl_pct": -13.388,
+    "pnl_pct": -14.7076,
     "position_usd": null,
     "price_as_of": "2026-10-07",
     "researcher_score": 5.0,
@@ -592,7 +592,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 91,
-    "current_price": 18.6895,
+    "current_price": 18.65999984741211,
     "direction": "long",
     "entry_price": 18.65,
     "expiry_date": null,
@@ -602,10 +602,10 @@
     "judge_decision": "SKIP",
     "judge_reason": "SKIP at 91 \u2014 not because anything is wrong with QYLD but because it is the wrong instrument for this book. A covered-call ETF caps its own upside and 0.44% monthly volatility cannot produce what this strategy is built to catch. A correction I owe: three days ago I diagnosed etf_momentum as 'structurally unfireable' because ta_highlow52w_nh cannot be met in a universe 80-95% off its highs. That was wrong, and QYLD is the proof \u2014 the variant fired on its own unmodified filters. My error was generalising from one day's universe: the microcaps are far from their highs, but ETFs are not microcaps, and a broad-market income fund makes new highs routinely. What survives is the narrower, better-evidenced half of that finding \u2014 what this variant returns is not this strategy \u2014 and QYLD shows it more cleanly than the inverse-ETF list did. It strengthens the case for dropping or re-scoping etf_momentum, and it changes the reason: not 'it never fires' but 'when it fires it hands you an income fund'.",
     "kind": "shadow",
-    "last_price_at": "2026-10-07T10:46:44+00:00",
+    "last_price_at": "2026-10-07T14:45:05+00:00",
     "notes": "backend down at call time: the 'anthropic' package is not installed",
     "peak_price": 18.6895,
-    "pnl_pct": 0.2118,
+    "pnl_pct": 0.0536,
     "position_usd": null,
     "price_as_of": "2026-10-07",
     "researcher_score": 3.0,
@@ -2754,6 +2754,34 @@
     "observed_at": "2026-10-07T10:46:44+00:00",
     "pnl_pct": -21.0066,
     "price": 3.61
+   },
+   {
+    "call_id": 11,
+    "id": 304,
+    "observed_at": "2026-10-07T14:45:05+00:00",
+    "pnl_pct": 46.5625,
+    "price": 4.690000057220459
+   },
+   {
+    "call_id": 12,
+    "id": 305,
+    "observed_at": "2026-10-07T14:45:05+00:00",
+    "pnl_pct": -29.5349,
+    "price": 3.0299999713897705
+   },
+   {
+    "call_id": 13,
+    "id": 306,
+    "observed_at": "2026-10-07T14:45:05+00:00",
+    "pnl_pct": -14.7076,
+    "price": 3.1217000484466553
+   },
+   {
+    "call_id": 15,
+    "id": 307,
+    "observed_at": "2026-10-07T14:45:05+00:00",
+    "pnl_pct": 0.0536,
+    "price": 18.65999984741211
    }
   ],
   "role_verdicts": [
@@ -5014,6 +5042,23 @@
     "screening_ran": 1,
     "session_reason": "trading day, extended hours",
     "started_at": "2026-10-07T10:46:41+00:00"
+   },
+   {
+    "backend": "auto",
+    "closed": 0,
+    "finished_at": "2026-10-07T14:45:29+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": "ERROR: role backend DOWN \u2014 the 'anthropic' package is not installed",
+    "priced": 4,
+    "reviewed": 0,
+    "run_id": "run_20261007T144502Z",
+    "screening_ran": 1,
+    "session_reason": "regular trading hours",
+    "started_at": "2026-10-07T14:45:02+00:00"
    }
   ]
  }
