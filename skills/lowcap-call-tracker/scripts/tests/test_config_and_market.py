@@ -17,7 +17,8 @@ def test_v1_defines_three_variants(config):
 def test_v2_drops_the_etf_variant(config):
     """etf_momentum stays in v1 only; v2 is stocks-only by design."""
     variants = config["screener"]["versions"]["v2"]["variants"]
-    assert set(variants) == {"squeeze", "momentum_breakout"}
+    assert set(variants) == {"squeeze", "momentum_breakout", "premarket_gap"}
+    assert "etf_momentum" not in variants
 
 
 def test_the_shipped_default_version(config):
@@ -84,6 +85,7 @@ def test_overlay_is_deep_merged(tmp_path):
     assert set(merged["screener"]["versions"]["v2"]["variants"]) == {
         "squeeze",
         "momentum_breakout",
+        "premarket_gap",
     }
 
 

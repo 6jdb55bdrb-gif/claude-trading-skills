@@ -342,3 +342,122 @@ def test_an_offline_v2_cycle_still_scores_what_it_can(tmp_path, config):
     assert call["ticker"] == "SQZX"
     assert call["signal_line"]
     assert "n/a" not in call["signal_line"]
+
+
+def test_the_heuristic_backend_does_not_switch_off_the_signals_layer(tmp_path, config):
+    """Same conflation as the outcome tracker had: the role backend and the
+    role adapters are not the tape. With signals tied to `offline`, a live scan
+    on the heuristic backend scored only the row-derived signals, so VWAP, the
+    catalyst record and the coiled-range check never reached the Judge — and
+    the confidence it published was computed without them.
+    """
+    import run_cycle as module
+
+    captured = {}
+    real = module.run_cycle
+
+    def spy(*args, **kwargs):
+        captured.update(kwargs)
+        return real(*args, **{**kwargs, "telegram": False})
+
+    module.run_cycle = spy
+    try:
+        module.main(
+            [
+                "--config",
+                str(_signal_overlay(tmp_path)),
+                "--backend",
+                "heuristic",
+                "--screen-mode",
+                "fixture",
+                "--fixture",
+                str(FIXTURE_HITS),
+                "--db",
+                str(tmp_path / "calls.db"),
+                "--prices-json",
+                "{}",
+                "--no-telegram",
+            ]
+        )
+    finally:
+        module.run_cycle = real
+    assert captured["offline"] is True
+    assert captured["measure_signals"] is True
+
+
+def test_an_explicit_offline_run_does_not_measure_signals(tmp_path, config):
+    import run_cycle as module
+
+    captured = {}
+    real = module.run_cycle
+
+    def spy(*args, **kwargs):
+        captured.update(kwargs)
+        return real(*args, **{**kwargs, "telegram": False})
+
+    module.run_cycle = spy
+    try:
+        module.main(
+            [
+                "--config",
+                str(_signal_overlay(tmp_path)),
+                "--offline",
+                "--backend",
+                "heuristic",
+                "--screen-mode",
+                "fixture",
+                "--fixture",
+                str(FIXTURE_HITS),
+                "--db",
+                str(tmp_path / "calls.db"),
+                "--prices-json",
+                "{}",
+                "--no-telegram",
+            ]
+        )
+    finally:
+        module.run_cycle = real
+    assert captured["measure_signals"] is False
+
+
+def test_signals_are_gathered_when_the_roles_are_heuristic(v2):
+    """review_hit must reach for the tape even with heuristic roles."""
+    asked = {}
+
+    def fake_gather(hit, config, **kwargs):
+        asked["offline"] = kwargs.get("offline")
+        return {"vwap": 3.90, "catalyst_found": False}
+
+    import role_review
+
+    original = role_review.gather_signal_data
+    role_review.gather_signal_data = fake_gather
+    try:
+        review = role_review.review_hit(
+            hit(), v2, backend="heuristic", offline=True, measure_signals=True
+        )
+    finally:
+        role_review.gather_signal_data = original
+    assert asked["offline"] is False
+    assert (
+        review["verdicts"]["judge"]["explosion_signals"]["signals"]["vwap_position"]["points"] == 5
+    )
+
+
+def _signal_overlay(tmp_path):
+    import yaml
+
+    path = tmp_path / "overlay.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "tracker": {
+                    "stats_file": str(tmp_path / "stats.md"),
+                    "improvements_file": str(tmp_path / "improvements.md"),
+                    "reports_dir": str(tmp_path / "reports"),
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    return path

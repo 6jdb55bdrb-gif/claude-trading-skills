@@ -96,11 +96,24 @@ def session_state(config: dict[str, Any], moment: datetime | None = None) -> dic
     else:
         allowed, reason = False, "outside regular hours and extended hours disabled"
 
+    # Which part of the tape this is. The screener variants declare the phases
+    # they are valid in: relative volume and "up today" do not exist before
+    # the open, and a gap is only a gap before it.
+    if not trading_day or not extended:
+        phase = "closed"
+    elif regular:
+        phase = "regular"
+    elif moment.time() < open_at:
+        phase = "premarket"
+    else:
+        phase = "afterhours"
+
     return {
         "as_of": moment.isoformat(timespec="seconds"),
         "trading_day": trading_day,
         "regular_hours": regular,
         "extended_hours": extended and not regular,
+        "phase": phase,
         "screening_allowed": allowed,
         "reason": reason,
     }

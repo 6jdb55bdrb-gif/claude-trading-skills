@@ -418,6 +418,11 @@ def review_hit(
     offline: bool = False,
     signal_data: dict[str, Any] | None = None,
     movers: list[dict[str, Any]] | None = None,
+    # Deliberately separate from `offline`: that flag is about the role
+    # adapters and is set by the heuristic backend, while the signal sheet is
+    # measured from the tape and has nothing to do with which roles speak.
+    # None means "follow offline", for a caller that really has no network.
+    measure_signals: bool | None = None,
 ) -> dict[str, Any]:
     """Run all five roles for one hit and return the assembled review.
 
@@ -432,10 +437,11 @@ def review_hit(
     # Signals are measured once per hit, after the FinViz filters and before
     # any role speaks, so all five argue about the same sheet.
     if signals_enabled(config, hit.get("screener_version")):
+        measuring = (not offline) if measure_signals is None else bool(measure_signals)
         facts = (
             signal_data
             if signal_data is not None
-            else gather_signal_data(hit, config, offline=offline, movers=movers)
+            else gather_signal_data(hit, config, offline=not measuring, movers=movers)
         )
         context["explosion_signals"] = evaluate_signals(hit, config, data=facts)
         for note in (facts or {}).get("notes") or []:
@@ -549,6 +555,7 @@ def review_hits(
     agents_path: str | None = None,
     offline: bool = False,
     movers: list[dict[str, Any]] | None = None,
+    measure_signals: bool | None = None,
 ) -> list[dict[str, Any]]:
     """Review every hit, loading the role prompts once.
 
@@ -557,10 +564,11 @@ def review_hits(
     would be one FinViz request per ticker for it.
     """
     prompts = load_role_prompts(agents_path, backend=backend)
+    measuring = (not offline) if measure_signals is None else bool(measure_signals)
     shared_movers = movers
     if (
         shared_movers is None
-        and not offline
+        and measuring
         and hits
         and signals_enabled(config, hits[0].get("screener_version"))
     ):
@@ -576,6 +584,7 @@ def review_hits(
             prompts=prompts,
             offline=offline,
             movers=shared_movers,
+            measure_signals=measuring,
         )
         for hit in hits
     ]

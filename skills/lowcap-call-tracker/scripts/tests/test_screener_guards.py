@@ -157,14 +157,17 @@ def _zurich(hour: int, minute: int = 0) -> datetime:
     return datetime(2026, 10, 7, hour, minute, tzinfo=ZoneInfo("Europe/Zurich"))
 
 
-def test_v2_will_not_screen_before_1630_zurich(v2):
-    block = earliest_run_block(v2, now=_zurich(16, 15))
+def test_v2_will_not_screen_before_eight_zurich(v2):
+    block = earliest_run_block(v2, now=_zurich(7, 45))
     assert block is not None
-    assert "16:30" in block
+    assert "08:00" in block
     assert "Europe/Zurich" in block
 
 
-def test_v2_screens_from_1630_zurich(v2):
+def test_v2_screens_from_eight_zurich(v2):
+    """The operator's floor. The market's own extended-hours window is a
+    separate, later constraint, so this alone does not mean a 2am screen."""
+    assert earliest_run_block(v2, now=_zurich(8, 0)) is None
     assert earliest_run_block(v2, now=_zurich(16, 30)) is None
     assert earliest_run_block(v2, now=_zurich(21, 0)) is None
 
@@ -174,17 +177,17 @@ def test_v1_has_no_run_gate(config):
 
 
 def test_the_gate_reads_zurich_not_the_hosts_clock(v2):
-    """A VPS in UTC is an hour behind Zurich in summer: 15:30 UTC is 17:30
-    Zurich and must be allowed."""
-    utc_1530 = datetime(2026, 7, 1, 15, 30, tzinfo=ZoneInfo("UTC"))
-    assert earliest_run_block(v2, now=utc_1530) is None
-    utc_1330 = datetime(2026, 7, 1, 13, 30, tzinfo=ZoneInfo("UTC"))
-    assert earliest_run_block(v2, now=utc_1330) is not None
+    """A VPS in UTC runs two hours behind Zurich in summer: 06:30 UTC is 08:30
+    Zurich and must be allowed, while 07:00 Zurich must not."""
+    assert earliest_run_block(v2, now=datetime(2026, 7, 1, 6, 30, tzinfo=ZoneInfo("UTC"))) is None
+    assert (
+        earliest_run_block(v2, now=datetime(2026, 7, 1, 5, 0, tzinfo=ZoneInfo("UTC"))) is not None
+    )
 
 
 def test_a_naive_timestamp_is_read_as_zurich_local(v2):
-    assert earliest_run_block(v2, now=datetime(2026, 10, 7, 16, 45)) is None
-    assert earliest_run_block(v2, now=datetime(2026, 10, 7, 10, 0)) is not None
+    assert earliest_run_block(v2, now=datetime(2026, 10, 7, 8, 45)) is None
+    assert earliest_run_block(v2, now=datetime(2026, 10, 7, 3, 0)) is not None
 
 
 # --- version attribution --------------------------------------------------

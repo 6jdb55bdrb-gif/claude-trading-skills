@@ -206,6 +206,8 @@ def run_cycle(
     # skipped the tracker. None means "follow offline", which is right for a
     # library caller that really has no network.
     measure_outcomes: bool | None = None,
+    # Same reasoning as measure_outcomes: the signal sheet is tape, not roles.
+    measure_signals: bool | None = None,
 ) -> dict[str, Any]:
     """Execute one cycle and return a structured report."""
     run_id = make_run_id(now)
@@ -303,6 +305,9 @@ def run_cycle(
                     fixture=fixture,
                     variants=variants,
                     guard_skips=report["guard_skips"],
+                    # Which variants are valid right now: the pre-market screen
+                    # before the open, the relative-volume ones after it.
+                    phase=session.get("phase"),
                 )
             except FetchError as exc:
                 hits = []
@@ -320,6 +325,7 @@ def run_cycle(
                     llm=llm,
                     agents_path=agents_dir,
                     offline=offline,
+                    measure_signals=(not offline) if measure_signals is None else measure_signals,
                 )
             else:
                 # Track what the screener found, claim nothing about it.
@@ -638,6 +644,7 @@ def main(argv: list[str] | None = None) -> int:
         # outcomes; only an explicit --offline turns the measurement off.
         offline=args.offline or args.backend == "heuristic",
         measure_outcomes=not args.offline,
+        measure_signals=not args.offline,
         db_path=args.db,
         telegram=not args.no_telegram,
         snapshot=args.snapshot,

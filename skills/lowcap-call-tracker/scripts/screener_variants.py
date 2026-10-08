@@ -180,8 +180,30 @@ def get_variant(config: dict[str, Any], name: str) -> dict[str, Any]:
     return variants[name]
 
 
-def variant_names(config: dict[str, Any]) -> list[str]:
-    return list(version_variants(config))
+def variant_sessions(config: dict[str, Any], name: str) -> list[str] | None:
+    """The session phases *name* may screen in, or None for "any".
+
+    v1's variants declare nothing and so keep running in every phase: the
+    generation is frozen, and nothing about it changes because v2 grew a
+    pre-market variant.
+    """
+    sessions = get_variant(config, name).get("sessions")
+    if not sessions:
+        return None
+    return [str(phase).strip().lower() for phase in sessions]
+
+
+def variant_names(config: dict[str, Any], *, phase: str | None = None) -> list[str]:
+    """Variant names, optionally only those valid in this session *phase*."""
+    names = list(version_variants(config))
+    if not phase:
+        return names
+    wanted = str(phase).strip().lower()
+    return [
+        name
+        for name in names
+        if (sessions := variant_sessions(config, name)) is None or wanted in sessions
+    ]
 
 
 def variant_filters(config: dict[str, Any], name: str) -> list[str]:

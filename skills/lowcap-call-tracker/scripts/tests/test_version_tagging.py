@@ -132,8 +132,8 @@ def test_a_v1_cycle_is_unchanged_by_any_of_this(tmp_path, config):
 
 
 def test_an_early_v2_run_logs_a_skip_instead_of_screening(tmp_path, config):
-    """Before 16:30 Zurich a v2 run still prices the open book — it just does
-    not screen, because relative volume means nothing yet."""
+    """Before the operator's floor a v2 run still prices the open book — it
+    just does not screen."""
     report = run_cycle(
         config,
         backend="heuristic",
@@ -142,13 +142,13 @@ def test_an_early_v2_run_logs_a_skip_instead_of_screening(tmp_path, config):
         screener_version="v2",
         force_screen=True,
         offline=True,
-        now=datetime(2026, 10, 7, 15, 0, tzinfo=ZoneInfo("Europe/Zurich")),
+        now=datetime(2026, 10, 7, 6, 0, tzinfo=ZoneInfo("Europe/Zurich")),
         db_path=str(tmp_path / "calls.db"),
         telegram=False,
         prices={},
     )
     assert report["screening_ran"] is False
-    assert "16:30" in report["screen_skipped"]
+    assert "08:00" in report["screen_skipped"]
     assert report["hits"] == 0
     assert report["new_calls"] == []
 

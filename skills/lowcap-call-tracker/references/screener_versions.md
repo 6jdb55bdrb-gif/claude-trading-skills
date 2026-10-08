@@ -69,11 +69,60 @@ rejecting is now **weighed** after the fetch (`scripts/screener_guards.py`):
   carry a name over `min_confidence_to_take` — which is the point of replacing
   a filter with a score. It moves the number only; the gate alone decides TAKE
   vs SKIP.
-- **Run gate** (`earliest_run: 16:30 Europe/Zurich`). v2 orders by relative
-  volume, and in the first hour after the US open that ratio compares a partial
-  session against a full one — it ranks whatever opened first, not whatever is
-  unusual. An earlier run logs the skip and **still prices the open book**:
-  skipping the stop checks would be the more expensive failure.
+- **Run gate** (`earliest_run: 08:00 Europe/Zurich`). The operator's own floor
+  on when a scan may screen. 08:00 Zurich is 02:00 ET, before the pre-market
+  tape opens, so in practice the market's extended-hours window (04:00 ET) is
+  the binding constraint. An earlier run logs the skip and **still prices the
+  open book**: skipping the stop checks would be the more expensive failure.
+  (This replaced a 16:30 floor whose job — keeping relative volume off a
+  partial session — now belongs to the per-variant `sessions` list below.)
+
+### Session-aware variants
+
+Each v2 variant declares the session phases it is valid in, and `screen_all`
+only runs the ones that match the current phase:
+
+| Variant | Sessions | Why |
+|---|---|---|
+| `squeeze` | regular, afterhours | ranks on relative volume and "up today", neither of which exists before the open |
+| `momentum_breakout` | regular, afterhours | same |
+| `premarket_gap` | premarket | a gap is only a gap before the open |
+
+v1's variants declare nothing and keep running in every phase: the generation
+is frozen.
+
+### The pre-market screen
+
+FinViz's public screener has **no pre-market filter**. Measured 2026-10-08
+mid-session: `order=-premarketchange` is silently ignored and falls back to
+ticker order (the same trap as an unrecognised filter token — a bogus token
+returns the unfiltered universe, so validity has to be proven by narrowing,
+never by the absence of an error). `ta_perf_dup`, `sh_relvol_o2` and
+`ta_change_u5` are real tokens, but before the open they read the previous
+session.
+
+So the pre-market screen splits the job:
+
+1. **FinViz gives the universe** — market cap, price, float, average volume,
+   country, stocks-only. Structural facts that do not change overnight. No
+   filter here may depend on today's tape.
+2. **The universe is capped** (`max_universe: 60`), most-traded first, because
+   measuring costs one tape request per name and a pre-market scan slower than
+   the pre-market session is useless. Liquidity is the right thing to keep: a
+   gap on an empty book is one order, not demand.
+3. **The gap is measured from the tape** (one batched yfinance prepost
+   download) and the name must clear `min_gap_pct: 5.0` **and**
+   `min_volume_pct_of_adv: 10.0`. These sit below the explosion-signal
+   premarket bonus (+10% on 20% of ADV) on purpose: this is the bar to be
+   looked at, not the bar to score.
+4. **The measured print becomes the entry price**, with the previous close kept
+   as `prior_close` — a pre-market call entered at yesterday's close is priced
+   at a level nobody can get. The measured gap also becomes the hit's
+   `change_pct`, so the +25% chase cap reads the pre-market move rather than
+   yesterday's change.
+
+A name with no pre-market print is dropped silently: most of the universe has
+none, and reporting it would bury the real skips.
 
 ## Explosion signals (v2 only)
 

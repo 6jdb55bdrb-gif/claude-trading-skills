@@ -374,6 +374,93 @@ def fetch_movers(
         return None
 
 
+def premarket_moves(
+    tickers: dict[str, Any], *, as_of: str | None = None
+) -> dict[str, dict[str, Any]]:
+    """Measure the pre-market gap and volume share for many names at once.
+
+    *tickers* maps ticker to its average daily volume (from the screener row),
+    which is what the volume share is measured against. One batched download
+    rather than one request per name: the pre-market screen looks at dozens of
+    names and has a session's worth of time to do it in.
+
+    A name with no pre-market print is simply absent from the result — most of
+    the universe has none, and that is not a finding.
+    """
+    if not tickers:
+        return {}
+    try:  # pragma: no cover - network path
+        import yfinance
+    except ImportError:
+        return {}
+    symbols = sorted(name for name in tickers if name)
+    try:  # pragma: no cover - network path
+        data = yfinance.download(
+            tickers=" ".join(symbols),
+            period="2d",
+            interval="5m",
+            prepost=True,
+            progress=False,
+            group_by="ticker",
+            auto_adjust=False,
+            threads=False,
+        )
+    except Exception:
+        return {}
+    if data is None or getattr(data, "empty", True):  # pragma: no cover - network path
+        return {}
+
+    out: dict[str, dict[str, Any]] = {}
+    for symbol in symbols:  # pragma: no cover - network path
+        try:
+            frame = data[symbol] if len(symbols) > 1 else data
+        except (KeyError, TypeError):
+            continue
+        bars = []
+        for index, row in frame.iterrows():
+            close = _number(row.get("Close"))
+            if close is None:
+                continue
+            bars.append(
+                {
+                    "datetime": str(index),
+                    "date": str(index)[:10],
+                    "high": _number(row.get("High")),
+                    "low": _number(row.get("Low")),
+                    "close": close,
+                    "volume": _number(row.get("Volume")),
+                }
+            )
+        if not bars:
+            continue
+        today = as_of or bars[-1]["date"]
+        prior_close = None
+        for candle in reversed([bar for bar in bars if bar["date"] < today]):
+            minute = _minute_of_day(candle["datetime"])
+            if minute is not None and minute <= REGULAR_CLOSE_MINUTES:
+                prior_close = candle["close"]
+                break
+        stats = premarket_stats(
+            [bar for bar in bars if bar["date"] == today],
+            prior_close=prior_close,
+            avg_volume=tickers.get(symbol),
+        )
+        if stats.get("premarket_gap_pct") is None:
+            continue
+        last = None
+        for candle in reversed([bar for bar in bars if bar["date"] == today]):
+            if _minute_of_day(candle["datetime"]) is not None:
+                last = candle["close"]
+                break
+        out[symbol] = {
+            "gap_pct": stats["premarket_gap_pct"],
+            "volume_pct_of_adv": stats.get("premarket_volume_pct_of_adv"),
+            "last": last,
+            "prior_close": prior_close,
+        }
+    return out
+
+
 def gather_signal_data(
     hit: dict[str, Any],
     config: dict[str, Any],

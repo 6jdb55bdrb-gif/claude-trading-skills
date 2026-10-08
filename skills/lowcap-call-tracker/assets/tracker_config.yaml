@@ -251,11 +251,15 @@ screener:
         short_float_bonus:
           - { min_pct: 20.0, bonus: 10 }
           - { min_pct: 10.0, bonus: 5 }
-      # v2 must not run in the first hour after the US open: relative volume is
-      # too noisy to rank on. Expressed in the operator's own timezone.
+      # The operator's own floor on when a scan may screen, in their timezone.
+      # 08:00 Zurich is 02:00 ET, before the pre-market tape opens, so in
+      # practice the market's extended-hours window (04:00 ET) is the binding
+      # constraint and the morning scan screens pre-market. The variants
+      # themselves decide which session they are valid in (see `sessions`),
+      # which is what replaced the old 16:30 relative-volume floor.
       earliest_run:
         timezone: Europe/Zurich
-        time: "16:30"
+        time: "08:00"
       # --- Explosion signals (v2 only) -----------------------------------
       # Run on every surviving hit AFTER the FinViz filters and BEFORE the
       # Judge, so the roles argue with the numbers in front of them. Each
@@ -364,6 +368,9 @@ screener:
         squeeze:
           asset_type: stock
           label: Squeeze v2 (wider float, short float scored not required)
+          # Ranks on relative volume and "up today", neither of which exists
+          # before the open, so it does not run pre-market.
+          sessions: [regular, afterhours]
           views: [overview, ownership, performance, technical]
           filters:
             - cap_smallunder      # market cap under $2B
@@ -384,6 +391,7 @@ screener:
         momentum_breakout:
           asset_type: stock
           label: Momentum breakout v2 (near 52w high, RelVol > 2)
+          sessions: [regular, afterhours]
           views: [overview, ownership, performance, technical]
           filters:
             - cap_smallunder
@@ -403,6 +411,41 @@ screener:
           # has none after this many trading days, the report flags it for
           # deletion rather than leaving dead config in place.
           flag_for_deletion_after_days: 5
+
+        premarket_gap:
+          asset_type: stock
+          label: Pre-market gap v2 (structural universe, measured gap)
+          # The only variant that runs before the open, and the only one whose
+          # selection does not come from FinViz. FinViz's public screener has
+          # no pre-market filter — `order=-premarketchange` is silently
+          # ignored and falls back to ticker order — so these filters are
+          # STRUCTURAL only (facts that do not change overnight), and the
+          # actual pre-market move is measured from the tape afterwards. Any
+          # filter here that depended on today's session would read yesterday
+          # and call it today.
+          sessions: [premarket]
+          views: [overview, ownership]
+          filters:
+            - cap_smallunder      # market cap under $2B
+            - sh_price_1to20      # price $1-$20
+            - sh_avgvol_o300      # liquid enough for a gap to mean something
+            - sh_float_u50        # float under 50M shares
+            - ind_stocksonly
+            - geo_usa
+          # Most-traded first: the cap below keeps one tape request per name
+          # bounded, and liquidity is what makes a gap real rather than one
+          # order on an empty book.
+          order: "-volume"
+          view: overview
+          premarket:
+            # One tape fetch per name, so the universe is capped before any of
+            # it happens. A pre-market scan slower than the pre-market session
+            # is useless.
+            max_universe: 60
+            # Lower than the explosion-signal bonus (which pays at +10% on 20%
+            # of ADV): this is the bar to be LOOKED at, not the bar to score.
+            min_gap_pct: 5.0
+            min_volume_pct_of_adv: 10.0
 
         # etf_momentum is NOT in v2. It fired once and returned QYLD, a $8.1bn
         # covered-call income fund with 0.44% monthly volatility — a correct

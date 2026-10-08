@@ -141,9 +141,15 @@ filter can only ever narrow a screen:
   carry a name over the threshold; the gate still decides TAKE vs SKIP.
 - **a name already up more than +25% today is skipped** — that is a chase, not
   an entry. Each skip is named in the report and the Telegram message.
-- **v2 does not screen before 16:30 Europe/Zurich** — it ranks on relative
-  volume, which in the first hour after the US open ranks whatever opened first.
-  An earlier run logs the skip and still prices the open book.
+- **v2 does not screen before 08:00 Europe/Zurich** (the operator's floor; the
+  market's own 04:00 ET extended-hours window is the later, binding one). An
+  earlier run logs the skip and still prices the open book.
+- **each variant declares its sessions.** `squeeze` and `momentum_breakout` run
+  in the regular and after-hours sessions, because they rank on relative volume
+  and "up today". `premarket_gap` runs only before the open: FinViz has no
+  pre-market filter, so it takes a structural universe from FinViz, caps it at
+  the 60 most-traded names, and measures the actual gap and pre-market volume
+  from the tape — the measured print becomes the entry price.
 
 Read `references/screener_variants.md` for the full filter-code tables, the ETF
 data-gap rationale and the OTC-exclusion options, and

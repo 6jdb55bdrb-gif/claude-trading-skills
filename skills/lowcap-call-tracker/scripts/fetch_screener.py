@@ -411,6 +411,114 @@ def load_fixture(path: str, variant: str | None = None) -> list[dict[str, Any]]:
     return hits
 
 
+def premarket_spec(config: dict[str, Any], variant: str) -> dict[str, Any]:
+    """The pre-market block for *variant*, or ``{}`` for a normal variant."""
+    return get_variant(config, variant).get("premarket") or {}
+
+
+def premarket_universe(
+    rows: list[dict[str, Any]], config: dict[str, Any], variant: str
+) -> list[dict[str, Any]]:
+    """Cap the universe before any tape is fetched, most-traded first.
+
+    Measuring the pre-market move costs one tape request per name, so an
+    uncapped universe would make a pre-market scan slower than the pre-market
+    session. Liquidity is the right thing to keep: a gap on an empty book is
+    one order, not demand.
+    """
+    spec = premarket_spec(config, variant)
+    limit = spec.get("max_universe")
+    ordered = sorted(rows, key=lambda row: parse_number(row.get("volume")) or 0.0, reverse=True)
+    try:
+        limit = int(limit)
+    except (TypeError, ValueError):
+        return ordered
+    return ordered[: max(limit, 0)]
+
+
+def apply_premarket_filter(
+    rows: list[dict[str, Any]],
+    config: dict[str, Any],
+    variant: str,
+    *,
+    moves: dict[str, dict[str, Any]] | None = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Keep the names actually gapping on pre-market volume.
+
+    *moves* is the measured tape, ``{ticker: {gap_pct, volume_pct_of_adv,
+    last}}``; passing it bypasses the network. A name with no pre-market print
+    is dropped silently — that is the normal case for most of the universe and
+    reporting it would bury the real skips.
+    """
+    spec = premarket_spec(config, variant)
+    if not spec:
+        return list(rows), []
+    min_gap = parse_number(spec.get("min_gap_pct")) or 0.0
+    min_volume = parse_number(spec.get("min_volume_pct_of_adv")) or 0.0
+    measured = moves if moves is not None else fetch_premarket_moves(rows)
+
+    kept: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
+    for row in rows:
+        ticker = str(row.get("ticker") or "").upper()
+        move = measured.get(ticker)
+        if not move:
+            continue
+        gap = parse_number(move.get("gap_pct"))
+        volume_pct = parse_number(move.get("volume_pct_of_adv"))
+        if gap is None:
+            continue
+        if gap < min_gap:
+            skipped.append(
+                {
+                    "ticker": ticker,
+                    "variant": variant,
+                    "reason": f"pre-market gap {gap:+.1f}% below +{min_gap:.0f}%",
+                }
+            )
+            continue
+        if volume_pct is None or volume_pct < min_volume:
+            shown = "unknown" if volume_pct is None else f"{volume_pct:.1f}%"
+            skipped.append(
+                {
+                    "ticker": ticker,
+                    "variant": variant,
+                    "reason": (
+                        f"gapped {gap:+.1f}% on {shown} of average volume (needs {min_volume:.0f}%)"
+                    ),
+                }
+            )
+            continue
+        hit = dict(row)
+        last = parse_number(move.get("last"))
+        hit["premarket_gap_pct"] = gap
+        hit["premarket_volume_pct_of_adv"] = volume_pct
+        # The screener row's price is the previous close before the open, and a
+        # call entered there is priced at a level nobody can get. The measured
+        # pre-market print becomes the entry; the close is kept for reference.
+        if last:
+            hit["prior_close"] = parse_number(row.get("price"))
+            hit["price"] = last
+        # The day's move, as of now, is the gap — so the +25% chase cap reads
+        # the pre-market move instead of yesterday's change.
+        hit["change_pct"] = gap
+        hit["session_phase"] = "premarket"
+        kept.append(hit)
+    return kept, skipped
+
+
+def fetch_premarket_moves(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Measure the pre-market gap and volume for *rows* from the tape."""
+    from signal_providers import premarket_moves
+
+    pairs = {
+        str(row.get("ticker") or "").upper(): parse_number(row.get("avg_volume"))
+        for row in rows
+        if row.get("ticker")
+    }
+    return premarket_moves(pairs)
+
+
 def screen_variant(
     config: dict[str, Any],
     variant: str,
@@ -418,6 +526,7 @@ def screen_variant(
     mode: str | None = None,
     fixture: str | None = None,
     verbose: bool = False,
+    guard_skips: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Return normalized hits for *variant*."""
     spec = get_variant(config, variant)
@@ -438,6 +547,13 @@ def screen_variant(
         ]
         hits = list(merge_rows(row_sets).values())
 
+    premarket = premarket_spec(config, variant)
+    if premarket and resolved != "fixture":
+        hits = premarket_universe(hits, config, variant)
+        hits, premarket_skips = apply_premarket_filter(hits, config, variant)
+    else:
+        premarket_skips = []
+
     version = screener_version(config)
     out = []
     for hit in hits:
@@ -451,6 +567,8 @@ def screen_variant(
         hit.setdefault("filters", ",".join(variant_filters(config, variant)))
         if _exchange_allowed(config, hit):
             out.append(hit)
+    if guard_skips is not None:
+        guard_skips.extend(premarket_skips)
     return out
 
 
@@ -462,6 +580,7 @@ def screen_all(
     variants: list[str] | None = None,
     verbose: bool = False,
     guard_skips: list[dict[str, Any]] | None = None,
+    phase: str | None = None,
 ) -> list[dict[str, Any]]:
     """Screen every configured variant, de-duplicated by (ticker, variant).
 
@@ -470,11 +589,21 @@ def screen_all(
     rows that come back. Capped names are appended to *guard_skips* when one is
     given, so the run report can say what was refused and why.
     """
-    names = variants or variant_names(config)
+    # A variant only screens in the sessions it is valid in: relative volume
+    # and "up today" do not exist before the open, and a gap is only a gap
+    # before it.
+    names = variants or variant_names(config, phase=phase)
     seen: set[tuple[str, str]] = set()
     hits: list[dict[str, Any]] = []
     for name in names:
-        for hit in screen_variant(config, name, mode=mode, fixture=fixture, verbose=verbose):
+        for hit in screen_variant(
+            config,
+            name,
+            mode=mode,
+            fixture=fixture,
+            verbose=verbose,
+            guard_skips=guard_skips,
+        ):
             key = (hit["ticker"], name)
             if key in seen:
                 continue
