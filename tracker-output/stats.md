@@ -2,13 +2,13 @@
 
 **Backend:** UP · reviewed 16 / unreviewed 0 · TAKE/SKIP 3/13 (18.8% TAKE)
 
-**Account (every call):** $1,152.23 (+15.22% on $1,000.00) · 60.0% allocated · cash $582.77
+**Account (every call):** $1,149.80 (+14.98% on $1,000.00) · 60.0% allocated · cash $582.77
 
 **TAKE only (the Judge's scorecard):** $963.29 (-3.67%). What following the Judge's verdicts alone would have returned — the gap against the account above is what the Judge's selectivity is worth.
 
-**Total PnL:** +9.51% — equal weight across all 16 priced call(s)
+**Total PnL:** +9.36% — equal weight across all 16 priced call(s)
 
-**Generated:** 2026-10-08T09:14:10+00:00<br>
+**Generated:** 2026-10-08T12:56:01+00:00<br>
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -26,50 +26,50 @@
 | Wrong | 7 |
 | Neutral | 3 |
 | Hit rate % | 37.5 |
-| **Total PnL % (equal weight, all calls)** | +9.51% |
-| Average PnL % per call | 9.51 |
+| **Total PnL % (equal weight, all calls)** | +9.36% |
+| Average PnL % per call | 9.36 |
 | Portfolio PnL % (equal weight, TAKE only) | -12.24 |
 
 **Best call:** SDEV (long, squeeze, shadow) +175.82% — entry 1.04 → 2.868499994277954
-**Worst call:** SDEV (long, squeeze, shadow) -42.66% — entry 4.57 → 2.6203
+**Worst call:** SDEV (long, squeeze, shadow) -45.52% — entry 4.57 → 2.4898
 
 ### By instrument (call / put)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 16 | 6 | 6 | 7 | 3 | 37.5 | 9.51 |
+| call | 16 | 6 | 6 | 7 | 3 | 37.5 | 9.36 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| etf | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.16 |
-| stock | 15 | 5 | 5 | 7 | 3 | 33.3 | 10.14 |
+| etf | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.2 |
+| stock | 15 | 5 | 5 | 7 | 3 | 33.3 | 9.97 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| etf_momentum | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.16 |
-| squeeze | 15 | 5 | 5 | 7 | 3 | 33.3 | 10.14 |
+| etf_momentum | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.2 |
+| squeeze | 15 | 5 | 5 | 7 | 3 | 33.3 | 9.97 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | TAKE | 3 | 1 | 0 | 2 | 1 | 0.0 | -12.24 |
-| SKIP (shadow) | 13 | 5 | 6 | 5 | 2 | 46.2 | 14.53 |
+| SKIP (shadow) | 13 | 5 | 6 | 5 | 2 | 46.2 | 14.35 |
 
-**Judge edge (avg PnL TAKE − avg PnL shadow):** -26.77 → Judge is not adding value
+**Judge edge (avg PnL TAKE − avg PnL shadow):** -26.58 → Judge is not adding value
 
 ### Per-role accuracy
 
 | Role | Avg score (winners) | Avg score (others) | Edge | Corr(score, PnL) | n | Polarity |
 |---|---|---|---|---|---|---|
 | researcher | 4.5 | 4.4 | 0.1 | -0.11 | 16 | quality (higher is better) |
-| technician | 4.42 | 4.9 | -0.48 | -0.01 | 16 | quality (higher is better) |
+| technician | 4.42 | 4.9 | -0.48 | -0.015 | 16 | quality (higher is better) |
 | skeptic | 7.75 | 7.1 | 0.65 | 0.241 | 16 | severity (lower is better) |
-| risk_manager | 4.75 | 4.45 | 0.3 | 0.249 | 16 | quality (higher is better) |
+| risk_manager | 4.75 | 4.45 | 0.3 | 0.253 | 16 | quality (higher is better) |
 
 ### Confidence buckets
 
@@ -77,8 +77,8 @@
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
 | 0-40 | 2 | 0 | 1 | 1 | 0 | 50.0 | 61.35 |
-| 40-70 | 10 | 3 | 4 | 5 | 1 | 40.0 | 13.64 |
-| 70-100 | 4 | 3 | 1 | 1 | 2 | 25.0 | -26.71 |
+| 40-70 | 10 | 3 | 4 | 5 | 1 | 40.0 | 13.58 |
+| 70-100 | 4 | 3 | 1 | 1 | 2 | 25.0 | -27.19 |
 
 
 ### Voided calls
@@ -96,8 +96,8 @@ anything.
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20261008T091406Z | 2026-10-08T09:14:06+00:00 | no | — | — | — |
+| run_20261008T125555Z | 2026-10-08T12:55:56+00:00 | no | — | — | — |
+| run_20261008T091406Z | 2026-10-08T09:14:06+00:00 | no | 0 | 0 | 0.0 |
 | run_20261008T083305Z | 2026-10-08T08:33:05+00:00 | no | 0 | 0 | 0.0 |
 | run_20261008T083011Z | 2026-10-08T08:30:11+00:00 | no | 0 | 0 | 0.0 |
 | run_20261008T054608Z | 2026-10-08T05:46:08+00:00 | no | 0 | 0 | 0.0 |
-| run_20261008T054557Z | 2026-10-08T05:45:58+00:00 | no | 0 | 0 | 0.0 |
