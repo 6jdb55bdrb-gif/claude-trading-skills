@@ -69,6 +69,7 @@ def test_a_cycle_tags_its_calls_with_the_version_it_ran(tmp_path, config):
         screen_mode="fixture",
         fixture=str(FIXTURE_HITS),
         screener_version="v2",
+        now=datetime(2026, 10, 7, 17, 0, tzinfo=ZoneInfo("Europe/Zurich")),
         force_screen=True,
         offline=True,
         db_path=str(tmp_path / "calls.db"),

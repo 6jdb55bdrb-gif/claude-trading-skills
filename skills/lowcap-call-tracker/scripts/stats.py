@@ -400,7 +400,11 @@ def render_markdown(stats: dict[str, Any]) -> str:
         f"**Total PnL:** {_signed(stats['portfolio']['total_pnl_pct'])} "
         f"— equal weight across all {stats['portfolio']['calls_counted']} priced call(s)",
         "",
-        f"**Generated:** {stats['generated_at']}  ",
+        # No trailing-space hard break: the repo's trailing-whitespace hook
+        # strips it on every commit, so the generator and the hook would
+        # rewrite this line against each other after every run. A line break
+        # tag survives both.
+        f"**Generated:** {stats['generated_at']}<br>",
         f"**Close rule:** {stats['close_rule']}",
         "",
         "## Overall",

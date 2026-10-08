@@ -561,3 +561,14 @@ def test_the_shipped_config_reports_every_run():
     from config import load_config
 
     assert load_config()["telegram"]["notify_when"] == "always"
+
+
+def test_the_stats_file_survives_the_trailing_whitespace_hook(config, tmp_db):
+    """The generator must not emit a markdown hard break: the repo hook strips
+    trailing whitespace, so every run would rewrite the line the hook had just
+    fixed, and the committed file would never match a freshly generated one."""
+    from stats import compute_stats, render_markdown
+
+    markdown = render_markdown(compute_stats(tmp_db, config))
+    assert "**Generated:**" in markdown
+    assert not any(line != line.rstrip() for line in markdown.splitlines())
