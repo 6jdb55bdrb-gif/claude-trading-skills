@@ -200,6 +200,12 @@ def run_cycle(
     snapshot: str | None = None,
     notify_when: str | None = None,
     screener_version: str | None = None,
+    # Deliberately NOT derived from `offline`: that flag is about the role
+    # adapters, and the heuristic backend sets it. Tying outcome measurement to
+    # it meant every live scan (scan.sh runs --backend heuristic) silently
+    # skipped the tracker. None means "follow offline", which is right for a
+    # library caller that really has no network.
+    measure_outcomes: bool | None = None,
 ) -> dict[str, Any]:
     """Execute one cycle and return a structured report."""
     run_id = make_run_id(now)
@@ -349,9 +355,10 @@ def run_cycle(
 
         # 4. Measure what the older calls did. Cheap, and it is the only
         #    record the version experiment is settled on.
-        # `offline` means no network in this run, so the measurement waits for
-        # a run that can price it rather than recording a gap as a result.
-        if not dry_run and not offline:
+        # A run that cannot reach prices waits for one that can, rather than
+        # recording a data gap as a result.
+        measuring = (not offline) if measure_outcomes is None else measure_outcomes
+        if not dry_run and measuring:
             report["outcomes"] = fill_outcomes(db, config, bars=bars)
         if not dry_run:
             scorecard = build_scorecard(db, config)
@@ -627,7 +634,10 @@ def main(argv: list[str] | None = None) -> int:
         agents_dir=args.agents_dir,
         force_screen=args.force_screen,
         dry_run=args.dry_run,
+        # The heuristic backend skips the role adapters but must still measure
+        # outcomes; only an explicit --offline turns the measurement off.
         offline=args.offline or args.backend == "heuristic",
+        measure_outcomes=not args.offline,
         db_path=args.db,
         telegram=not args.no_telegram,
         snapshot=args.snapshot,

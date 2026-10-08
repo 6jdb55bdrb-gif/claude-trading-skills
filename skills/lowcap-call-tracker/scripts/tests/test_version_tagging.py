@@ -246,3 +246,110 @@ def test_an_offline_run_does_not_pretend_to_measure_anything(tmp_path, config):
         prices={},
     )
     assert "outcomes" not in report
+
+
+def test_the_heuristic_backend_does_not_switch_off_outcome_measurement(tmp_path, config):
+    """`--backend heuristic` is about which roles speak, not about price
+    history. Conflating the two meant every live scan silently skipped the
+    outcome tracker, because scan.sh runs the heuristic backend.
+    """
+    import run_cycle as module
+
+    captured = {}
+    real = module.run_cycle
+
+    def spy(*args, **kwargs):
+        captured.update(kwargs)
+        return real(*args, **{**kwargs, "telegram": False})
+
+    module.run_cycle = spy
+    try:
+        module.main(
+            [
+                "--backend",
+                "heuristic",
+                "--screen-mode",
+                "fixture",
+                "--fixture",
+                str(FIXTURE_HITS),
+                "--db",
+                str(tmp_path / "calls.db"),
+                "--prices-json",
+                "{}",
+                "--no-telegram",
+            ]
+        )
+    finally:
+        module.run_cycle = real
+    assert captured["offline"] is True, "the heuristic backend still skips the role adapters"
+    assert captured["measure_outcomes"] is True, "but outcomes must still be measured"
+
+
+def test_an_explicit_offline_flag_does_switch_it_off(tmp_path, config):
+    import run_cycle as module
+
+    captured = {}
+    real = module.run_cycle
+
+    def spy(*args, **kwargs):
+        captured.update(kwargs)
+        return real(*args, **{**kwargs, "telegram": False})
+
+    module.run_cycle = spy
+    try:
+        module.main(
+            [
+                "--offline",
+                "--backend",
+                "heuristic",
+                "--screen-mode",
+                "fixture",
+                "--fixture",
+                str(FIXTURE_HITS),
+                "--db",
+                str(tmp_path / "calls.db"),
+                "--prices-json",
+                "{}",
+                "--no-telegram",
+            ]
+        )
+    finally:
+        module.run_cycle = real
+    assert captured["measure_outcomes"] is False
+
+
+def test_outcomes_are_measured_even_when_the_role_adapters_are_offline(tmp_path, config):
+    """The two switches are independent: no network for the adapters, but the
+    price history the measurement needs is still fetched (here, injected)."""
+    from call_db import CallDatabase
+
+    db_path = tmp_path / "calls.db"
+    run_cycle(
+        config,
+        backend="heuristic",
+        screen_mode="fixture",
+        fixture=str(FIXTURE_HITS),
+        force_screen=True,
+        offline=True,
+        db_path=str(db_path),
+        telegram=False,
+        prices={},
+    )
+    with CallDatabase(db_path) as db:
+        db.conn.execute("UPDATE calls SET call_date = '2026-09-28T20:00:00+00:00'")
+        db.conn.commit()
+        tickers = [row["ticker"] for row in db.conn.execute("SELECT ticker FROM calls")]
+    history = {ticker: [{"date": "2026-09-29", "low": 9.9, "close": 10.0}] for ticker in tickers}
+    report = run_cycle(
+        config,
+        backend="heuristic",
+        screen_mode="fixture",
+        fixture=str(FIXTURE_HITS),
+        offline=True,
+        measure_outcomes=True,
+        db_path=str(db_path),
+        telegram=False,
+        prices={},
+        bars=history,
+    )
+    assert report["outcomes"]["updated"] == len(tickers)
