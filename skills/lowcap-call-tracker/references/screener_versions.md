@@ -234,7 +234,8 @@ After 30 calls the table says which signals to keep.
 
 ## The fixed stop
 
-`tracker.sl_pct: 20.0` and `scripts/stop_loss.py`:
+`tracker.sl_pct: 30.0` (widened from 20 on 2026-10-08) and
+`scripts/stop_loss.py`:
 
 ```
 calculate_stop_loss(entry_price) == round(entry_price * (1 - sl_pct / 100), 2)
@@ -242,7 +243,13 @@ calculate_stop_loss(entry_price) == round(entry_price * (1 - sl_pct / 100), 2)
 
 Resolved at insert time against the entry actually stored, written to
 `calls.sl_price` for TAKEs and shadow SKIPs alike, and printed on every call
-line in the Telegram message. It is distinct from `trail_pct`: the trailing stop
+line in the Telegram message. Because it is resolved per call, changing
+`sl_pct` moves new calls only — an open position keeps the line it was taken
+with until the operator re-sets it. Widening it on the open book is safe
+(a wider stop can only remove a future stop-out), but **adding** one to a call
+taken without a stop can mark it stopped against a low it already printed,
+which writes a counterfactual into a measured outcome. Check the lows since
+the call date before doing that. It is distinct from `trail_pct`: the trailing stop
 moves with the peak, this line never moves. `sl_pct: null` disables it rather
 than falling back to an invented default. Long only — `roles.allow_short` stays
 false, and a short has no stop line because the formula subtracts from entry.

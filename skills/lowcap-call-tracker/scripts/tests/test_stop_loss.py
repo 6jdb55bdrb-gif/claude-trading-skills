@@ -30,8 +30,9 @@ def test_the_stop_is_the_entry_less_the_configured_percent(entry, pct, expected)
 
 
 def test_the_default_percent_comes_from_the_config(config):
-    assert sl_pct(config) == 20.0
-    assert calculate_stop_loss(10.0, config=config) == 8.00
+    """The shipped stop, asserted in one place. Widened to 30% on 2026-10-08."""
+    assert sl_pct(config) == 30.0
+    assert calculate_stop_loss(10.0, config=config) == 7.00
 
 
 def test_the_stop_is_rounded_to_the_cent():
@@ -87,8 +88,14 @@ def test_a_missing_low_is_not_a_hit(config):
 
 
 def test_the_bird_case_end_to_end(config):
-    """BIRD: entry 3.66, so a 20% stop sits at 2.93; it traded to 3.12, not hit."""
+    """BIRD: entry 3.66, so the configured 30% stop sits at 2.56.
+
+    Its low was 3.12 and it closed on the TRAILING stop at -16.4%, so the
+    fixed line would not have fired at 20% either. That is the division of
+    labour: the trail takes a call out on a reversal, the fixed stop is the
+    floor under a collapse.
+    """
     stop = calculate_stop_loss(3.66, config=config)
-    assert stop == 2.93
+    assert stop == 2.56
     assert stop_hit(low=3.1217, stop=stop) is False
-    assert stop_hit(low=2.90, stop=stop) is True
+    assert stop_hit(low=2.50, stop=stop) is True

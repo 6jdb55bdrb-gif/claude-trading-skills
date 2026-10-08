@@ -85,7 +85,10 @@ tracker:
   # Unlike the trailing stop this never moves: it is the line the outcome
   # tracker checks each day's LOW against, and the number quoted in every TAKE
   # that goes to Telegram. Long only, so the stop is always below entry.
-  sl_pct: 20.0
+  # Widened from 20 to 30 on 2026-10-08 (operator decision). Resolved per call
+  # at entry, so changing this moves new calls only; an open call keeps the
+  # line it was taken with unless the operator re-sets it.
+  sl_pct: 30.0
   account_funds: all
   mark_extended_hours: true
   # Whether an extended print with ZERO volume may CLOSE a position.

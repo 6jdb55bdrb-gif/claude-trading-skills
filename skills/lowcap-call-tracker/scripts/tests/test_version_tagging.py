@@ -108,8 +108,12 @@ def test_a_cycle_tags_its_calls_with_the_version_it_ran(tmp_path, config):
         tagged = {row["ticker"]: dict(row) for row in rows}
     assert tagged, "the cycle recorded no calls"
     assert {row["screener_version"] for row in tagged.values()} == {"v2"}
+    # Derived from the configured percentage rather than a hardcoded factor,
+    # so widening the stop does not need this test edited again.
+    from stop_loss import calculate_stop_loss, sl_pct
+
     for row in tagged.values():
-        assert row["sl_price"] == round(row["entry_price"] * 0.8, 2)
+        assert row["sl_price"] == calculate_stop_loss(row["entry_price"], sl_pct=sl_pct(config))
     # v2 has no ETF variant and refuses to chase PMPX's +41% day.
     assert set(tagged) == {"SQZX"}
 
