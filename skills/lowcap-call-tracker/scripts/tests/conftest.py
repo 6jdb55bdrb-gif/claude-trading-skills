@@ -10,9 +10,46 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 import pytest  # noqa: E402
 
-from config import load_config  # noqa: E402
+from config import load_config, repo_root  # noqa: E402
 
 FIXTURE_HITS = Path(__file__).resolve().parents[1] / "fixtures" / "dry_run_hits.json"
+
+
+# The committed artefacts a cycle writes. A test that reaches these has
+# escaped its temporary directory, and the damage is invisible: the file still
+# looks like a valid report, just one generated from an empty test database.
+COMMITTED_OUTPUTS = (
+    repo_root() / "tracker-output" / "stats.md",
+    repo_root() / "tracker-output" / "improvements.md",
+    repo_root() / "tracker-output" / "state_snapshot.json",
+)
+
+
+@pytest.fixture(autouse=True)
+def _never_write_the_committed_outputs():
+    """Fail any test that writes the repository's own report files.
+
+    Two tests have now done this — one through the `config` fixture's default
+    paths, one by driving the CLI, which loads its own config. Both overwrote
+    a real report with an empty-book one and were only noticed because git
+    showed the file dirty. This turns that into a test failure, named after
+    the file, at the moment it happens.
+    """
+    before = {path: path.read_bytes() if path.is_file() else None for path in COMMITTED_OUTPUTS}
+    yield
+    for path, original in before.items():
+        current = path.read_bytes() if path.is_file() else None
+        if current != original:
+            if original is None:
+                path.unlink(missing_ok=True)
+            else:
+                path.write_bytes(original)
+            raise AssertionError(
+                f"this test wrote {path.relative_to(repo_root())}, a committed file. "
+                "Point tracker.stats_file / improvements_file / snapshot_file at "
+                "tmp_path (see the `config` fixture, or _output_overlay for a test "
+                "that drives main())."
+            )
 
 
 @pytest.fixture()

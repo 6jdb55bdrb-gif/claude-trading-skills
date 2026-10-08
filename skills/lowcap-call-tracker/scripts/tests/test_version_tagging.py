@@ -14,6 +14,30 @@ from run_cycle import run_cycle
 from conftest import FIXTURE_HITS, review_payload
 
 
+def _output_overlay(tmp_path):
+    """A config overlay pointing the written artefacts at a temp directory.
+
+    main() loads its own config, so a test driving the CLI writes the
+    repository's committed tracker-output/ files unless it says otherwise.
+    """
+    import yaml
+
+    path = tmp_path / "overlay.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "tracker": {
+                    "stats_file": str(tmp_path / "stats.md"),
+                    "improvements_file": str(tmp_path / "improvements.md"),
+                    "reports_dir": str(tmp_path / "reports"),
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
 def _row(db, call_id):
     cursor = db.conn.execute("SELECT * FROM calls WHERE id = ?", (call_id,))
     return dict(cursor.fetchone())
@@ -266,6 +290,8 @@ def test_the_heuristic_backend_does_not_switch_off_outcome_measurement(tmp_path,
     try:
         module.main(
             [
+                "--config",
+                str(_output_overlay(tmp_path)),
                 "--backend",
                 "heuristic",
                 "--screen-mode",
@@ -299,6 +325,8 @@ def test_an_explicit_offline_flag_does_switch_it_off(tmp_path, config):
     try:
         module.main(
             [
+                "--config",
+                str(_output_overlay(tmp_path)),
                 "--offline",
                 "--backend",
                 "heuristic",
