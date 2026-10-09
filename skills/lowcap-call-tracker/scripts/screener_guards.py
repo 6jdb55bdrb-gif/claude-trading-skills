@@ -175,10 +175,13 @@ def earliest_run_block(
 ) -> str | None:
     """Why this version must not screen yet, or None when it may.
 
-    v2 orders by relative volume, and relative volume in the first hour after
-    the US open is a ratio of a partial session against a full one — it ranks
-    whatever opened first, not whatever is unusual. The gate waits for the
-    number to mean something.
+    The operator's own floor, in their own timezone, on when a scan may
+    screen at all. It is not the market's clock and not a data-quality rule:
+    which variants are valid in which part of the tape is each variant's own
+    ``sessions`` list, and whether there is a live tape at all is
+    ``market_hours.session_state``. Those two are the binding constraints in
+    practice; this one just stops a scan running earlier than the operator
+    wants to be woken by one.
     """
     gate = earliest_run(config, version)
     if gate is None:
@@ -200,6 +203,6 @@ def earliest_run_block(
         return None
     return (
         f"{(version or screener_version(config))} does not screen before "
-        f"{time_text} {zone_name} (now {moment.strftime('%H:%M')}): relative "
-        "volume is too noisy in the first hour after the US open"
+        f"{time_text} {zone_name} (now {moment.strftime('%H:%M')}): the "
+        "operator's floor on when a scan may screen"
     )

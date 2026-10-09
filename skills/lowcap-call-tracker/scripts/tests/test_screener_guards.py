@@ -268,3 +268,14 @@ def test_a_v1_review_of_the_same_name_records_no_bonus(config):
     }
     review = review_hit(hit, config, backend="heuristic", offline=True)
     assert "short_float_bonus" not in review["verdicts"]["judge"]
+
+
+def test_the_gate_message_does_not_explain_itself_with_the_old_rule(v2):
+    """The 16:30 floor existed to keep relative volume off a partial session;
+    that job moved to the per-variant `sessions` list. A message still citing
+    it would send the operator looking for a data problem that is not there."""
+    block = earliest_run_block(v2, now=_zurich(6, 0))
+    assert block is not None
+    assert "relative volume" not in block.lower()
+    assert "operator" in block.lower()
+    assert "08:00" in block
