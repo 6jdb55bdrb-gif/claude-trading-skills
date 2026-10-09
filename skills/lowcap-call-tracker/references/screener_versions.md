@@ -115,6 +115,24 @@ So the pre-market screen splits the job:
    `min_volume_pct_of_adv: 10.0`. These sit below the explosion-signal
    premarket bonus (+10% on 20% of ADV) on purpose: this is the bar to be
    looked at, not the bar to score.
+
+   > **The volume half is currently unenforceable.** Measured 2026-10-09:
+   > yfinance reports `0.0` volume on *every* pre/post bar at every interval
+   > (1m, 5m, 15m, 30m — 111 one-minute bars, none with volume). So a summed
+   > zero means the provider publishes no pre-market volume, not that nobody
+   > traded. An **absent** reading therefore passes the filter and is recorded
+   > as `None`; a **reported** figure below the floor still fails. Treating
+   > the zero as a fact refused every genuine gapper on the first live run
+   > (VEEA at +35.9% among them), which is the missing-data-as-evidence
+   > mistake this layer exists to avoid. If a source for pre-market volume
+   > appears, nothing in the code changes — the threshold starts biting again
+   > on its own.
+
+   Bar timestamps are converted to Eastern time before the pre-market window
+   is applied, never read off the string: `Ticker.history` labels bars in ET
+   while `download` labels them in UTC, so a 13:00 UTC bar is 09:00 ET, and
+   parsing the hour out of the text filed the last half hour of pre-market
+   prints as the regular session.
 4. **The measured print becomes the entry price**, with the previous close kept
    as `prior_close` — a pre-market call entered at yesterday's close is priced
    at a level nobody can get. The measured gap also becomes the hit's

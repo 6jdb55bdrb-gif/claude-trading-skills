@@ -22,6 +22,13 @@ import re
 from datetime import date, datetime, timezone
 from typing import Any
 
+try:  # pragma: no cover - stdlib on 3.9+
+    from zoneinfo import ZoneInfo
+
+    HAS_ZONEINFO = True
+except ImportError:  # pragma: no cover
+    HAS_ZONEINFO = False
+
 IBORROWDESK_URL = "https://iborrowdesk.com/api/ticker/{ticker}"
 HALT_FEED_URL = "https://www.nasdaqtrader.com/rss.aspx?feed=tradehalts"
 
@@ -46,13 +53,35 @@ def _number(value: Any) -> float | None:
     return number if number == number and abs(number) != float("inf") else None
 
 
-def _minute_of_day(stamp: Any) -> int | None:
-    """Minutes past midnight for a bar timestamp, or None."""
+MARKET_TZ = "America/New_York"
+
+
+def bar_minute_et(stamp: Any) -> int | None:
+    """Minutes past midnight **in market time** for a bar timestamp, or None.
+
+    This has to convert rather than read the clock off the string:
+    ``Ticker.history`` labels bars in Eastern time while ``download`` labels
+    them in UTC, so a 13:00 UTC bar is 09:00 ET — pre-market — and parsing the
+    hour out of the text would file it as the regular session and lose every
+    pre-market print of the last half hour.
+    """
     text = str(stamp or "").strip()
-    match = re.search(r"(\d{1,2}):(\d{2})", text)
-    if not match:
+    if not text:
         return None
-    return int(match.group(1)) * 60 + int(match.group(2))
+    try:
+        from datetime import datetime as _datetime
+
+        moment = _datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        # Not a timestamp we can place on a clock; refuse rather than guess.
+        return None
+    if moment.tzinfo is not None and HAS_ZONEINFO:
+        moment = moment.astimezone(ZoneInfo(MARKET_TZ))
+    return moment.hour * 60 + moment.minute
+
+
+def _minute_of_day(stamp: Any) -> int | None:
+    return bar_minute_et(stamp)
 
 
 # --- VWAP ---------------------------------------------------------------
@@ -108,9 +137,14 @@ def premarket_stats(
         out["premarket_gap_pct"] = round((last_close / base - 1.0) * 100.0, 2)
     volume = sum(_number(candle.get("volume")) or 0.0 for candle in pre)
     adv = _number(avg_volume)
-    if adv and adv > 0:
+    # Measured 2026-10-09: yfinance reports 0.0 volume on EVERY pre/post bar at
+    # every interval, so a summed zero means the provider publishes no
+    # pre-market volume — not that nobody traded. Calling that 0% of average
+    # volume would refuse exactly the names a gap screen exists to find, which
+    # is the missing-data-as-evidence mistake this whole layer avoids.
+    if adv and adv > 0 and volume > 0:
         out["premarket_volume_pct_of_adv"] = round(100.0 * volume / adv, 2)
-    out["premarket_volume"] = volume
+    out["premarket_volume"] = volume or None
     return out
 
 
@@ -374,6 +408,16 @@ def fetch_movers(
         return None
 
 
+def _as_market_time(index: Any) -> str:
+    """A bar index as an Eastern-time string, whatever zone it arrived in."""
+    try:  # pragma: no cover - pandas timestamp path
+        if HAS_ZONEINFO and getattr(index, "tzinfo", None) is not None:
+            return str(index.tz_convert(MARKET_TZ))
+    except Exception:
+        pass
+    return str(index)
+
+
 def premarket_moves(
     tickers: dict[str, Any], *, as_of: str | None = None
 ) -> dict[str, dict[str, Any]]:
@@ -421,10 +465,11 @@ def premarket_moves(
             close = _number(row.get("Close"))
             if close is None:
                 continue
+            stamp = _as_market_time(index)
             bars.append(
                 {
-                    "datetime": str(index),
-                    "date": str(index)[:10],
+                    "datetime": stamp,
+                    "date": stamp[:10],
                     "high": _number(row.get("High")),
                     "low": _number(row.get("Low")),
                     "close": close,

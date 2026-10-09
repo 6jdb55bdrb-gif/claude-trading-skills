@@ -477,8 +477,12 @@ def apply_premarket_filter(
                 }
             )
             continue
-        if volume_pct is None or volume_pct < min_volume:
-            shown = "unknown" if volume_pct is None else f"{volume_pct:.1f}%"
+        # An ABSENT volume reading passes: the provider publishes no
+        # pre-market volume (measured 2026-10-09), and refusing a name on a
+        # number nobody reports would make this screen incapable of ever
+        # producing a call. A reported figure below the floor still fails.
+        if volume_pct is not None and volume_pct < min_volume:
+            shown = f"{volume_pct:.1f}%"
             skipped.append(
                 {
                     "ticker": ticker,

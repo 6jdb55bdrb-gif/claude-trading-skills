@@ -312,3 +312,83 @@ def test_an_offline_run_with_no_headline_claims_no_catalyst_data(config):
     data = gather_signal_data({"ticker": "EXPL", "price": 4.0}, config, offline=True)
     assert data["news_hours_ago"] is None
     assert data["catalyst_found"] is None
+
+
+# --- bar timestamps must be read in market time -------------------------
+
+
+def test_a_utc_timestamp_is_classified_in_market_time():
+    """yfinance returns ET from Ticker.history and UTC from download(). A
+    13:00 UTC bar is 09:00 ET — pre-market — and reading the hour off the
+    string would file it as the regular session."""
+    from signal_providers import bar_minute_et
+
+    assert bar_minute_et("2026-10-09 13:00:00+00:00") == 9 * 60
+    assert bar_minute_et("2026-10-09 09:25:00-04:00") == 9 * 60 + 25
+    assert bar_minute_et("2026-10-09 14:30:00+00:00") == 10 * 60 + 30
+
+
+def test_a_naive_timestamp_is_read_as_market_time():
+    from signal_providers import bar_minute_et
+
+    assert bar_minute_et("2026-10-09 07:30:00") == 7 * 60 + 30
+
+
+def test_an_unreadable_timestamp_has_no_minute():
+    from signal_providers import bar_minute_et
+
+    assert bar_minute_et("nonsense") is None
+    assert bar_minute_et(None) is None
+
+
+def test_premarket_bars_are_selected_in_market_time():
+    """The same session, labelled in UTC, must still read as pre-market."""
+    stats = premarket_stats(
+        [
+            {"datetime": "2026-10-09 11:30:00+00:00", "close": 4.40, "volume": 100},
+            {"datetime": "2026-10-09 13:15:00+00:00", "close": 4.60, "volume": 100},
+        ],
+        prior_close=4.00,
+        avg_volume=1_000,
+    )
+    assert stats["premarket_gap_pct"] == pytest.approx(15.0, abs=0.01)
+
+
+def test_a_utc_labelled_regular_bar_is_not_premarket():
+    stats = premarket_stats(
+        [{"datetime": "2026-10-09 15:00:00+00:00", "close": 4.40, "volume": 100}],
+        prior_close=4.00,
+        avg_volume=1_000,
+    )
+    assert stats["premarket_gap_pct"] is None
+
+
+# --- volume the provider does not report -------------------------------
+
+
+def test_zero_premarket_volume_is_unknown_not_zero():
+    """Measured 2026-10-09: yfinance reports 0.0 volume on EVERY pre/post bar
+    at every interval, so a summed zero means the provider does not publish
+    pre-market volume — not that nobody traded. Reporting 0% of ADV refuses
+    exactly the names a gap screen exists to find.
+    """
+    stats = premarket_stats(
+        [
+            {"datetime": "2026-10-09 07:30:00", "close": 4.40, "volume": 0.0},
+            {"datetime": "2026-10-09 08:45:00", "close": 4.60, "volume": 0.0},
+        ],
+        prior_close=4.00,
+        avg_volume=1_000_000,
+    )
+    assert stats["premarket_gap_pct"] == pytest.approx(15.0, abs=0.01)
+    assert stats["premarket_volume_pct_of_adv"] is None
+
+
+def test_real_premarket_volume_is_still_measured():
+    """If the provider ever starts reporting it, nothing here changes."""
+    stats = premarket_stats(
+        [{"datetime": "2026-10-09 07:30:00", "close": 4.40, "volume": 250_000}],
+        prior_close=4.00,
+        avg_volume=1_000_000,
+    )
+    assert stats["premarket_volume_pct_of_adv"] == pytest.approx(25.0, abs=0.01)

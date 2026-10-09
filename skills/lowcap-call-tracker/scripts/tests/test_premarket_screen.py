@@ -218,3 +218,29 @@ def test_a_regular_variant_has_no_premarket_block(v2):
 
     assert premarket_spec(v2, "squeeze") == {}
     assert premarket_spec(v2, "premarket_gap")["min_gap_pct"] == 5.0
+
+
+def test_an_unknown_volume_does_not_refuse_a_gapper(v2):
+    """The volume half of the screen is unenforceable while the provider
+    publishes no pre-market volume. Missing data must not act as evidence, so
+    the name goes through for the roles to judge — the alternative is a screen
+    that can never produce a call."""
+    from fetch_screener import apply_premarket_filter
+
+    rows = [{"ticker": "GAPU", "price": 4.00, "avg_volume": 1_000_000}]
+    moves = {"GAPU": {"gap_pct": 35.9, "volume_pct_of_adv": None, "last": 5.44}}
+    kept, skipped = apply_premarket_filter(rows, v2, "premarket_gap", moves=moves)
+    assert [hit["ticker"] for hit in kept] == ["GAPU"]
+    assert kept[0]["premarket_volume_pct_of_adv"] is None
+    assert skipped == []
+
+
+def test_a_measured_thin_volume_still_refuses(v2):
+    """A reported 1% is a fact and still fails; only an absent number passes."""
+    from fetch_screener import apply_premarket_filter
+
+    rows = [{"ticker": "THIN", "price": 4.00, "avg_volume": 1_000_000}]
+    moves = {"THIN": {"gap_pct": 20.0, "volume_pct_of_adv": 1.0, "last": 4.80}}
+    kept, skipped = apply_premarket_filter(rows, v2, "premarket_gap", moves=moves)
+    assert kept == []
+    assert "volume" in skipped[0]["reason"]
