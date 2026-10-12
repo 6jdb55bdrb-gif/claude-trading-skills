@@ -99,3 +99,42 @@ def test_the_scorecard_appears_once_it_is_ready(config):
 
 def test_no_scorecard_line_while_the_sample_is_thin(config):
     assert "Scorecard" not in format_run_notification(base_report(), config)
+
+
+def test_a_hard_skip_is_not_printed_twice(config):
+    """The gate writes the hard-skip reason into the Judge's reason line, so a
+    separate HARD SKIP line said the same thing a second time on every one of
+    them."""
+    text = format_run_notification(
+        base_report(
+            new_calls=[
+                call(
+                    decision="SKIP",
+                    confidence=64,
+                    reason="SKIP — reverse split: 80 days ago",
+                    hard_skip_reason="reverse split: 80 days ago",
+                )
+            ]
+        ),
+        config,
+    )
+    assert text.count("reverse split: 80 days ago") == 1
+
+
+def test_a_hard_skip_the_reason_does_not_mention_is_still_shown(config):
+    """If the Judge's reason fired on something else, the hard skip must not
+    vanish — it is the more serious finding of the two."""
+    text = format_run_notification(
+        base_report(
+            new_calls=[
+                call(
+                    decision="SKIP",
+                    confidence=20,
+                    reason="SKIP — confidence 20 below threshold 55",
+                    hard_skip_reason="cash runway: 1.0 months of cash",
+                )
+            ]
+        ),
+        config,
+    )
+    assert "cash runway: 1.0 months of cash" in text

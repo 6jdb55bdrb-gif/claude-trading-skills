@@ -463,6 +463,19 @@ def _call_line(review: dict[str, Any], *, stop_pct: float | None = None) -> dict
     }
 
 
+def _hard_skip_to_show(call: dict[str, Any]) -> str | None:
+    """The hard-skip reason, unless the decision reason already carries it.
+
+    The gate writes the first override into the Judge's reason, and for a hard
+    skip that override IS this text — so printing both repeated the same
+    sentence on every hard-skipped call.
+    """
+    reason = str(call.get("hard_skip_reason") or "").strip()
+    if not reason:
+        return None
+    return None if reason in str(call.get("reason") or "") else reason
+
+
 def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
     session = report["session"]
     lines = [
@@ -490,8 +503,9 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
             )
             if call.get("signal_line"):
                 lines.append(f"       {call['signal_line']}")
-            if call.get("hard_skip_reason"):
-                lines.append(f"       HARD SKIP — {call['hard_skip_reason']}")
+            hard_skip = _hard_skip_to_show(call)
+            if hard_skip:
+                lines.append(f"       HARD SKIP — {hard_skip}")
             if call["reason"]:
                 lines.append(f"       {call['reason']}")
     else:

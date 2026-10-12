@@ -522,3 +522,24 @@ def test_the_summary_of_an_empty_sheet_says_so(v2):
 
 def test_the_summary_of_a_v1_hit_is_empty(config):
     assert signal_summary(evaluate(hit(screener_version="v1"), config)) == ""
+
+
+def test_a_hard_skip_reason_does_not_repeat_its_own_label(v2):
+    """Live output read "reverse split: reverse split 80 days ago" — the label
+    and the detail both naming the filter. Each check's detail carries the
+    facts; the label supplies the name."""
+    result = evaluate(hit(), v2, data={"reverse_split_days_ago": 80})
+    assert result["hard_skips"] == ["reverse split: 80 days ago"]
+
+
+def test_the_other_hard_skip_reasons_still_read_as_sentences(v2):
+    cases = {
+        "dilution_filings": (
+            {"dilution_filings": [{"form": "S-3", "days_ago": 12}]},
+            "dilution risk: S-3 filed 12 days ago",
+        ),
+        "cash_runway": ({"cash_runway_months": 2.5}, "cash runway: 2.5 months of cash"),
+        "intraday_halts": ({"halts_today": 5}, "repeated halts: 5 halts today"),
+    }
+    for data, expected in cases.values():
+        assert evaluate(hit(), v2, data=data)["hard_skips"] == [expected]

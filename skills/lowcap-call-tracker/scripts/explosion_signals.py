@@ -366,7 +366,10 @@ def _reverse_split(spec: dict[str, Any], data: dict[str, Any]) -> dict[str, Any]
     if days_ago is None:
         return _entry(_NA, detail="split history unavailable")
     window = _number(spec.get("window_days")) or 180.0
-    entry = _entry(_OK, value=int(days_ago), detail=f"reverse split {days_ago:.0f} days ago")
+    # The detail carries the facts only: the reason line prefixes it with the
+    # filter's name, and a detail that repeated it read "reverse split:
+    # reverse split 80 days ago" in the live report.
+    entry = _entry(_OK, value=int(days_ago), detail=f"{days_ago:.0f} days ago")
     return entry | {"skip": days_ago <= window}
 
 

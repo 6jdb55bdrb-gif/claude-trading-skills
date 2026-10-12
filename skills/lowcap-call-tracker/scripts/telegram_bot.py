@@ -339,6 +339,19 @@ def _stop_note(update: dict[str, Any]) -> str:
     return note
 
 
+def _hard_skip_to_show(call: dict[str, Any]) -> str | None:
+    """The hard-skip reason, unless the decision reason already carries it.
+
+    The gate writes the first override into the Judge's reason, and for a hard
+    skip that override IS this text — so printing both repeated the same
+    sentence on every hard-skipped call.
+    """
+    reason = str(call.get("hard_skip_reason") or "").strip()
+    if not reason:
+        return None
+    return None if reason in str(call.get("reason") or "") else reason
+
+
 def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> str:
     """Render the per-run push message."""
     telegram = config.get("telegram") or {}
@@ -386,8 +399,9 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
             # it scored travels with it.
             if call.get("signal_line"):
                 lines.append(f"    <i>{escape_html(str(call['signal_line']))}</i>")
-            if call.get("hard_skip_reason"):
-                lines.append(f"    <i>hard skip — {escape_html(str(call['hard_skip_reason']))}</i>")
+            hard_skip = _hard_skip_to_show(call)
+            if hard_skip:
+                lines.append(f"    <i>hard skip — {escape_html(hard_skip)}</i>")
             lines.append(f"    <i>{escape_html(call.get('reason') or '')}</i>")
             if telegram.get("include_role_detail"):
                 lines.extend(_role_detail_lines(report, call["ticker"]))
