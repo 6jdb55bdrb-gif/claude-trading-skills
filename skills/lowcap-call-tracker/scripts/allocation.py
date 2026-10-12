@@ -145,12 +145,20 @@ def _book(db: CallDatabase, config: dict[str, Any], *, taken_only: bool) -> dict
 
     cash = round(account - allocated + realized, 2)
     portfolio_value = round(cash + positions_value, 2)
+    # Realized P&L is capital: banked profit is money the account can commit,
+    # and a banked loss is money it no longer has. The allocation percentage
+    # therefore measures against capital NOW, not against the starting size —
+    # measured against the opening balance, a fully invested book that had
+    # grown read "110% allocated", which is the one thing this number exists
+    # to warn about and so a false alarm worse than no number at all.
+    capital = round(account + realized, 2)
     return {
         "account_usd": round(account, 2),
+        "capital_usd": capital,
         "position_pct": position_pct(config),
         "cash_usd": cash,
         "allocated_usd": round(allocated, 2),
-        "allocated_pct": round(allocated / account * 100.0, 1) if account else 0.0,
+        "allocated_pct": round(allocated / capital * 100.0, 1) if capital else 0.0,
         "positions_value_usd": round(positions_value, 2),
         "portfolio_value_usd": portfolio_value,
         "realized_usd": round(realized, 2),

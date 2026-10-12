@@ -126,3 +126,60 @@ def test_the_report_names_take_only_mode_when_chosen(tmp_db, config):
     _add(tmp_db, "MEDS", decision="TAKE", entry=5.16, price=4.18)
     text = render_text(compute_stats(tmp_db, _cfg(config, "take_only")))
     assert "ACCOUNT (TAKE only)" in text
+
+
+def test_allocated_pct_is_measured_against_current_capital(tmp_db, config):
+    """A fully invested book must read 100%, not 110%.
+
+    Realized gains are capital: after +$100 of banked profit the account has
+    $1,100 to commit, and committing all of it is being fully invested, not
+    levered. Measuring against the STARTING size made a correct book look
+    over-committed — which is the one thing an allocation percentage exists to
+    warn about, so the false alarm is worse than no number.
+    """
+    from allocation import portfolio_state
+
+    # Two closed winners bank $100, then the whole book is committed.
+    won = tmp_db.insert_call(review_payload("WON", entry=10.0), run_id="r1", allocation_usd=100.0)
+    tmp_db.apply_price(won, 20.0, close_threshold_pct=None, allow_stop=False)
+    tmp_db.close_call(won, reason="target_hit")
+    for index in range(11):
+        tmp_db.insert_call(
+            review_payload(f"OPEN{index}", entry=10.0), run_id="r1", allocation_usd=100.0
+        )
+
+    state = portfolio_state(tmp_db, config)
+    assert state["realized_usd"] == 100.0
+    assert state["allocated_usd"] == 1100.0
+    assert state["cash_usd"] == 0.0
+    assert state["allocated_pct"] == 100.0
+    # The growth is still visible, just not disguised as leverage.
+    assert state["capital_usd"] == 1100.0
+
+
+def test_a_half_invested_book_still_reads_half(tmp_db, config):
+    from allocation import portfolio_state
+
+    for index in range(5):
+        tmp_db.insert_call(
+            review_payload(f"HALF{index}", entry=10.0), run_id="r1", allocation_usd=100.0
+        )
+    state = portfolio_state(tmp_db, config)
+    assert state["allocated_pct"] == 50.0
+    assert state["capital_usd"] == 1000.0
+
+
+def test_realized_losses_shrink_the_capital_the_percentage_is_measured_against(tmp_db, config):
+    from allocation import portfolio_state
+
+    lost = tmp_db.insert_call(review_payload("LOST", entry=10.0), run_id="r1", allocation_usd=100.0)
+    tmp_db.apply_price(lost, 5.0, close_threshold_pct=None, allow_stop=False)
+    tmp_db.close_call(lost, reason="stopped")
+    for index in range(9):
+        tmp_db.insert_call(
+            review_payload(f"OPEN{index}", entry=10.0), run_id="r1", allocation_usd=100.0
+        )
+    state = portfolio_state(tmp_db, config)
+    assert state["realized_usd"] == -50.0
+    assert state["capital_usd"] == 950.0
+    assert state["allocated_pct"] == round(900.0 / 950.0 * 100.0, 1)
