@@ -163,16 +163,20 @@ def test_a_cycle_funds_each_new_call_from_the_cash_left(tmp_path, config):
         state = portfolio_state(db, cfg)
         judge = take_only_state(db, cfg)
     # The fixture gives two TAKEs and one SKIP. The account funds every call by
-    # default, so all three are committed and the third is capped by the cash
-    # that was left: 400 + 400 + 200.
+    # default, so all three are committed and the last one funded is capped by
+    # the cash left: 400 + 400 + 200. Rows come back in insert order, which is
+    # funding order — TAKEs first.
     assert allocations == [400.0, 400.0, 200.0]
     assert state["allocated_usd"] == 1000.0
     assert state["cash_usd"] == 0.0
     assert state["allocated_pct"] == 100.0
-    # The TAKE-only view sees only the two TAKEs. The fixture order is
-    # SQZX (TAKE), PMPX (SKIP), URAX (TAKE), so the TAKEs got 400 and the
-    # capped 200 — the SKIP in between consumed the other full slice.
-    assert judge["allocated_usd"] == 600.0
+    # The TAKE-only view sees only the two TAKEs, and both now carry a FULL
+    # slice: TAKEs are funded before shadow SKIPs, so the SKIP takes the capped
+    # remainder instead of a whole slice out of the middle. Before that priority
+    # existed this read 600 — the fixture order is SQZX (TAKE), PMPX (SKIP),
+    # URAX (TAKE), and the SKIP in between ate the slice the second TAKE should
+    # have had.
+    assert judge["allocated_usd"] == 800.0
 
 
 def test_a_take_is_still_capped_by_the_cash_the_account_has_left(tmp_path, config):

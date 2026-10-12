@@ -138,3 +138,28 @@ def test_a_hard_skip_the_reason_does_not_mention_is_still_shown(config):
         config,
     )
     assert "cash runway: 1.0 months of cash" in text
+
+
+def test_an_unfunded_call_says_so_in_the_message(config):
+    """On the phone a call with no money behind it looks identical to a funded
+    one, which is how a +67.6% position holding 47 cents went unremarked."""
+    text = format_run_notification(
+        base_report(new_calls=[call(decision="SKIP", confidence=40, allocation_usd=None)]),
+        config,
+    )
+    assert "unfunded" in text.lower()
+
+
+def test_a_funded_call_does_not_carry_the_note(config):
+    text = format_run_notification(base_report(new_calls=[call(allocation_usd=100.0)]), config)
+    assert "unfunded" not in text.lower()
+
+
+def test_a_scrap_allocation_is_named_not_hidden(config):
+    """47 cents is funded, but calling it a position without the number is the
+    same mistake in a different shape."""
+    text = format_run_notification(
+        base_report(new_calls=[call(decision="SKIP", confidence=40, allocation_usd=0.47)]),
+        config,
+    )
+    assert "0.47" in text

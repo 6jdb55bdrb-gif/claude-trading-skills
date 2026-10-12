@@ -402,6 +402,20 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
             hard_skip = _hard_skip_to_show(call)
             if hard_skip:
                 lines.append(f"    <i>hard skip — {escape_html(hard_skip)}</i>")
+            # A call with no money behind it, or a scrap of one, reads exactly
+            # like a full position unless the size is on the line.
+            if "allocation_usd" in call:
+                allocation = call["allocation_usd"]
+                full = round(
+                    (config.get("tracker") or {}).get("account_size", 0)
+                    * (config.get("tracker") or {}).get("position_pct", 0)
+                    / 100.0,
+                    2,
+                )
+                if not allocation:
+                    lines.append("    <i>unfunded — tracked, not valued (book full)</i>")
+                elif full and allocation < full:
+                    lines.append(f"    <i>part slice — ${allocation:,.2f} of ${full:,.2f}</i>")
             lines.append(f"    <i>{escape_html(call.get('reason') or '')}</i>")
             if telegram.get("include_role_detail"):
                 lines.extend(_role_detail_lines(report, call["ticker"]))

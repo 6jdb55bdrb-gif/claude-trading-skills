@@ -333,18 +333,19 @@ def run_cycle(
                 report["unreviewed"] = len(reviews)
             report["reviews"] = reviews
             report["screening_ran"] = True
-            for review in reviews:
+            for review in fund_order(reviews):
                 if dry_run:
                     report["new_calls"].append(
                         {**_call_line(review, stop_pct=sl_pct(config)), "call_id": None}
                     )
                     continue
                 cash = portfolio_state(db, config)["cash_usd"]
+                allocation = slice_usd(config, cash_available=cash)
                 call_id = db.insert_call(
                     review,
                     run_id=run_id,
                     allow_short=short_allowed(config),
-                    allocation_usd=slice_usd(config, cash_available=cash),
+                    allocation_usd=allocation,
                     trail_floor_pct=config["tracker"].get("trailing_stop_pct"),
                     trail_atr_mult=config["tracker"].get("trailing_stop_atr_mult"),
                     screener_version=version,
@@ -354,7 +355,11 @@ def run_cycle(
                     report["duplicates_skipped"].append(review["ticker"])
                     continue
                 report["new_calls"].append(
-                    {**_call_line(review, stop_pct=sl_pct(config)), "call_id": call_id}
+                    {
+                        **_call_line(review, stop_pct=sl_pct(config)),
+                        "call_id": call_id,
+                        "allocation_usd": allocation,
+                    }
                 )
         else:
             report["hits"] = 0
@@ -432,6 +437,22 @@ def _backend_line(report: dict[str, Any]) -> str:
         f"Role backend: DOWN — {health.get('reason', 'unknown')}  "
         "→ hits recorded UNREVIEWED, judged on the next healthy run"
     )
+
+
+# Funding priority within one cycle. The portfolio is the cap, so when the
+# book is full the only question left is who gets the money — and arrival
+# order is noise: the pre-market screen logs its batch at 04:00 and a TAKE
+# found at 10:00 was being starved by shadow SKIPs that happened to be
+# written first. A TAKE is a call the Judge wants held; an UNREVIEWED hit is a
+# real find whose verdict is pending; a SKIP is one the Judge refused. Funded
+# in that order, stably, so the screener's own ranking survives inside each
+# group.
+_FUNDING_RANK = {"TAKE": 0, DECISION_UNREVIEWED: 1}
+
+
+def fund_order(reviews: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """*reviews* reordered by funding priority, stable within each decision."""
+    return sorted(reviews, key=lambda review: _FUNDING_RANK.get(review.get("decision"), 2))
 
 
 def _call_line(review: dict[str, Any], *, stop_pct: float | None = None) -> dict[str, Any]:
@@ -512,6 +533,15 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
         lines.append("  (none)")
     if report["duplicates_skipped"]:
         lines.append(f"  already open, not duplicated: {', '.join(report['duplicates_skipped'])}")
+    unfunded = [
+        call["ticker"]
+        for call in report["new_calls"]
+        if "allocation_usd" in call and not call["allocation_usd"]
+    ]
+    if unfunded:
+        lines.append(
+            f"  funded book full — logged unfunded (tracked, not valued): {', '.join(unfunded)}"
+        )
     for skip in report.get("guard_skips") or []:
         lines.append(f"  guard skip: {skip['ticker']} — {skip['reason']}")
 
