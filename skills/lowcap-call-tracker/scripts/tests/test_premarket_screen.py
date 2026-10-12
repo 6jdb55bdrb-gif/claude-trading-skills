@@ -244,3 +244,34 @@ def test_a_measured_thin_volume_still_refuses(v2):
     kept, skipped = apply_premarket_filter(rows, v2, "premarket_gap", moves=moves)
     assert kept == []
     assert "volume" in skipped[0]["reason"]
+
+
+def test_the_skip_reason_shows_enough_precision_to_justify_itself(v2):
+    """Live output read "pre-market gap +5.0% below +5%", which reads as a
+    broken filter. The verdict was right (4.99 < 5.00); one decimal place had
+    rounded the number into contradicting its own explanation."""
+    from fetch_screener import apply_premarket_filter
+
+    rows = [{"ticker": "EDGE", "price": 4.00, "avg_volume": 1_000_000}]
+    _, skipped = apply_premarket_filter(
+        rows,
+        v2,
+        "premarket_gap",
+        moves={"EDGE": {"gap_pct": 4.99, "volume_pct_of_adv": None, "last": 4.20}},
+    )
+    assert "+4.99%" in skipped[0]["reason"]
+    assert "+5.0%" not in skipped[0]["reason"]
+
+
+def test_the_gap_boundary_itself_is_inclusive(v2):
+    from fetch_screener import apply_premarket_filter
+
+    rows = [{"ticker": "EDGE", "price": 4.00, "avg_volume": 1_000_000}]
+    kept, skipped = apply_premarket_filter(
+        rows,
+        v2,
+        "premarket_gap",
+        moves={"EDGE": {"gap_pct": 5.00, "volume_pct_of_adv": None, "last": 4.20}},
+    )
+    assert [hit["ticker"] for hit in kept] == ["EDGE"]
+    assert skipped == []

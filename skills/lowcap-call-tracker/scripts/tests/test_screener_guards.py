@@ -279,3 +279,10 @@ def test_the_gate_message_does_not_explain_itself_with_the_old_rule(v2):
     assert "relative volume" not in block.lower()
     assert "operator" in block.lower()
     assert "08:00" in block
+
+
+def test_the_change_cap_reason_shows_enough_precision(v2):
+    """Same rounding trap as the pre-market gap message: a name at 25.04%
+    would have read "already up +25.0% today (cap +25%)"."""
+    _, skipped = apply_change_cap([{"ticker": "EDGE", "change_pct": 25.04}], v2)
+    assert "+25.04%" in skipped[0]["reason"]

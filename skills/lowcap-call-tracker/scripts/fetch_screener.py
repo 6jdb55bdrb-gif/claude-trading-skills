@@ -473,7 +473,7 @@ def apply_premarket_filter(
                 {
                     "ticker": ticker,
                     "variant": variant,
-                    "reason": f"pre-market gap {gap:+.1f}% below +{min_gap:.0f}%",
+                    "reason": f"pre-market gap {gap:+.2f}% below +{min_gap:.0f}%",
                 }
             )
             continue

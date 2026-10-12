@@ -103,7 +103,7 @@ def apply_change_cap(
                 "ticker": hit.get("ticker"),
                 "variant": hit.get("variant"),
                 "change_pct": change,
-                "reason": f"already up {change:+.1f}% today (cap +{cap:.0f}%)",
+                "reason": f"already up {change:+.2f}% today (cap +{cap:.0f}%)",
             }
         )
     return kept, skipped
