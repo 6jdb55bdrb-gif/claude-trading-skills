@@ -267,10 +267,94 @@ with until the operator re-sets it. Widening it on the open book is safe
 (a wider stop can only remove a future stop-out), but **adding** one to a call
 taken without a stop can mark it stopped against a low it already printed,
 which writes a counterfactual into a measured outcome. Check the lows since
-the call date before doing that. It is distinct from `trail_pct`: the trailing stop
-moves with the peak, this line never moves. `sl_pct: null` disables it rather
+the call date before doing that. It is distinct from `trail_pct` (see
+**The trailing stop** below): the trail moves with the peak and closes
+positions, this line never moves and is only measured. `sl_pct: null` disables it rather
 than falling back to an invented default. Long only — `roles.allow_short` stays
 false, and a short has no stop line because the formula subtracts from entry.
+
+## The trailing stop
+
+`tracker.trailing_stop_pct: 25.0`, `tracker.trailing_stop_atr_mult: null`, and
+`call_db.resolve_trail_pct` / `call_db.apply_price`:
+
+```
+stop = peak_price * (1 - trail_pct / 100)       # peak starts AT the entry price
+```
+
+A **flat 25%** below the high-water mark since entry, set on 2026-10-13 on the
+operator's instruction: "if a position is up 100% and goes down 25% it should
+close the position". Because the high-water mark starts at the entry price, a
+call that never gains carries a plain 25% stop at the same distance — one rule,
+not two.
+
+The ATR multiplier that used to widen it is **off**. A 25% floor under a 1.5x
+ATR multiplier is not a 25% trail: on the live book it resolved to 40.3% on
+VEEA, 49.0% on XRPN and 37.7% on MEDS, so the number in the config was not the
+number in force on the positions that mattered. The scaling code is untouched,
+so setting a multiplier restores it exactly.
+
+The distance is resolved **once, at entry**, and stored in `calls.trail_pct`, so
+editing the config changes new calls only. `scripts/retrail.py` is the one
+deliberate step that moves the open book onto a new setting:
+
+```bash
+python3 scripts/retrail.py                 # print the plan, write nothing
+python3 scripts/retrail.py --apply         # write the new distances
+python3 scripts/retrail.py --apply --only-widen   # skip anything it would tighten
+```
+
+The plan names, per open call, the distance it moves from and to, the resulting
+stop price, how far below its own peak it is sitting, and — the line that
+matters — whether the new distance is one it has **already** given back, in
+which case the next price update closes it. Applying writes the distance and
+nothing else; the close belongs to the price update, which is the only code
+that compares a trail to a price somebody actually paid. `--only-widen` leaves
+every tightening call on the distance it was taken with.
+
+This is distinct from the fixed stop below: the trail moves with the peak and
+closes positions; `sl_price` never moves and is only measured.
+
+## Capital rotation
+
+`tracker.capital_gated: true`, `tracker.rotation`, and `scripts/rotation.py`.
+
+The book used to run two ledgers. The screener kept calling, and once the
+account was fully committed the new calls were logged with no money behind
+them — tracked, unvalued, and reading in the report exactly like a position the
+account held. Six of seventeen open calls were in that state; one of them,
+NCPL, was the best name in the book and was holding 47 cents. The operator's
+instruction: "the money should rotate — positions should be closed to get the
+cash to put into other calls. The $ should be managed also with the calls, not
+in parallel."
+
+So a new call that cannot be funded either displaces a position or is not made.
+
+**Rotation.** When cash is short of a full slice, the worst open position is
+closed and its value funds the call. Every rule is a brake, because this spends
+money on a screener hit:
+
+| Key | Default | What it refuses |
+|---|---|---|
+| `enabled` | `true` | Off means a full book simply stops funding. |
+| `require_take` | `true` | A SKIP has no claim on committed capital. |
+| `protect_winners` | `true` | Selling what works to buy what is new. |
+| `max_displace_pnl_pct` | `0.0` | Displacing a position that is merely flat. |
+| `min_confidence_edge` | `10` | Churn on noise — 75 against 70 is not an edge. |
+| `max_per_run` | `3` | One pre-market batch recycling the whole account. |
+
+What is freed is the position's **value, not its allocation**: $100 put into a
+name now 30% down is $70 of cash. The losers go first, worst first, because the
+cheapest capital to recycle is the capital doing the least. A rotation is
+recorded on both sides — the closed call's `close_reason` names the call that
+took its money, and both the report and the Telegram push name the pair.
+
+**The capital gate.** A call still unfundable after rotation is not made: no
+row, a `capital skip` line in the report naming the dollars it wanted, and a
+`💤` line in the push. The cost is real and worth stating: a capital skip leaves
+nothing for the outcome experiment to measure. The alternative measured calls
+the account never took, which is worse. `capital_gated: false` restores the old
+unfunded-row behaviour.
 
 ## Outcome tracking
 
@@ -313,4 +397,8 @@ python3 scripts/screener_variants.py --urls   # reads screener.screener_version
 # Measure outcomes, then score v1 against v2
 python3 scripts/outcome_tracker.py --fill --verbose
 python3 scripts/outcome_report.py --fill
+
+# Move the OPEN positions onto the trailing stop the config now says
+python3 scripts/retrail.py                        # plan only
+python3 scripts/retrail.py --apply --only-widen   # no position is exited
 ```

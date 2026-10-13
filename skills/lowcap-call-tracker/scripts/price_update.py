@@ -316,6 +316,10 @@ def update_open_calls(
             # Per-call now, scaled to the instrument's ATR, so the report has to
             # say which distance each position is actually being managed on.
             "trail_pct": row["trail_pct"],
+            # What the account actually has in this call. None means nothing:
+            # a tracked observation, not a position. It goes on the line
+            # because an unfunded call read exactly like a funded one.
+            "allocation_usd": row["allocation_usd"],
         }
         if price is None:
             # An open call that cannot be priced must still be REPORTED, with its
@@ -414,6 +418,10 @@ def format_updates(result: dict[str, Any]) -> str:
             tag = update["kind"].upper()
         if update.get("extended"):
             tag += " · EXT (untraded)" if update.get("untraded") else " · EXT"
+        if not update["closed"] and not update.get("allocation_usd"):
+            # Tracked, not held. Said on the line rather than in a footnote,
+            # because this is the line the position is read from.
+            tag += " · UNFUNDED"
         if update.get("prior_session"):
             # Append rather than replace: a stop-out or an expiry is the louder
             # fact, but which session the mark came from must not be lost.

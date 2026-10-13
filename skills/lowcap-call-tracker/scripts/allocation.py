@@ -52,6 +52,15 @@ def position_pct(config: dict[str, Any]) -> float:
     return float(config["tracker"].get("position_pct", 10.0) or 0.0)
 
 
+def full_slice_usd(config: dict[str, Any]) -> float:
+    """A whole position: ``position_pct`` of the account, in dollars.
+
+    What a new call *wants*. ``slice_usd`` says what it can actually have, and
+    rotation exists to close the gap between the two.
+    """
+    return round(account_size(config) * position_pct(config) / 100.0, 2)
+
+
 def slice_usd(config: dict[str, Any], *, cash_available: float) -> float | None:
     """The dollars the next call gets, or None when there is nothing left.
 
@@ -60,7 +69,7 @@ def slice_usd(config: dict[str, Any], *, cash_available: float) -> float | None:
     """
     if cash_available <= 0:
         return None
-    full = round(account_size(config) * position_pct(config) / 100.0, 2)
+    full = full_slice_usd(config)
     if full <= 0:
         return None
     return round(min(full, cash_available), 2)

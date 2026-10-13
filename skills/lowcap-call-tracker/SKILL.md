@@ -174,9 +174,36 @@ python3 skills/lowcap-call-tracker/scripts/outcome_report.py
 
 Every call, TAKE and SKIP, is measured at +1, +3 and +5 **sessions** from the
 call, with each session's low checked against the call's fixed stop
-(`tracker.sl_pct`, 20% below entry, stored per call as `sl_price`). A stopped
+(`tracker.sl_pct`, 30% below entry, stored per call as `sl_price`). A stopped
 call is out at the stop and no later price is read. The cycle fills outcomes
 itself, so running these by hand is only for a look or a replay.
+
+### How a position closes, and who pays for a new one
+
+Two stops and one funding rule, all three set in `assets/tracker_config.yaml`:
+
+- **Trailing stop** — a flat **25%** below the highest price seen since entry
+  (`tracker.trailing_stop_pct`). The high-water mark starts at the entry price,
+  so a call that never gains carries a plain 25% stop. This is the rule that
+  actually closes positions, checked on every price update.
+- **Fixed stop** — **30%** below entry (`tracker.sl_pct`), stored per call as
+  `sl_price`. It never moves, and it is *measured*, not acted on: the outcome
+  tracker checks each session's low against it.
+- **Rotation and the capital gate** — a new TAKE that the account cannot fund
+  closes the worst losing position and takes its cash
+  (`tracker.rotation`); if nothing is displaceable, the call is **not made**
+  (`tracker.capital_gated`) rather than logged with no money behind it.
+
+Both stop distances are resolved per call at entry, so editing the config moves
+new calls only. To move the open book onto a new trailing stop:
+
+```bash
+python3 skills/lowcap-call-tracker/scripts/retrail.py            # plan only
+python3 skills/lowcap-call-tracker/scripts/retrail.py --apply
+```
+
+The plan names any position the new distance has *already* passed, which the
+next price update would close. `--only-widen` skips exactly those.
 
 The report gives hit rate, average return and stop-hit rate per screener
 version, per variant and per confidence bucket (`<50`, `50-59`, `60-69`, `70+`),
@@ -352,11 +379,15 @@ Prices come from yfinance — free, no key.
 ## Resources
 
 - `references/screener_versions.md` — the v1 → v2 changelog: what each filter
-  cost, the guards that replaced the hard filters, the fixed stop, and the
-  outcome scorecard
+  cost, the guards that replaced the hard filters, both stops, capital rotation,
+  and the outcome scorecard
 - `scripts/outcome_tracker.py` — +1/+3/+5-session returns and stop checks for
   every call; `scripts/outcome_report.py` — the v1-vs-v2 scorecard, the
   per-signal edge table and its (never-applied) threshold proposals
+- `scripts/rotation.py` — the rotation policy (who may displace whom, and what
+  freeing a position is actually worth) and the capital gate;
+  `scripts/retrail.py` — move the open positions onto a changed trailing stop,
+  naming anything it would close before it writes
 - `scripts/explosion_signals.py` — the v2 signal scoring (pure, offline);
   `scripts/signal_providers.py` — the measurements behind it (yfinance, FinViz
   movers, Nasdaq halts, iBorrowDesk); `scripts/edgar_client.py` — the

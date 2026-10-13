@@ -24,28 +24,39 @@ tracker:
   # carries a plain stop at the same distance — one rule, not two. Measured on
   # the underlying, checked on every price update. null disables it.
   #
-  # This is now the FLOOR, not the whole rule — see trailing_stop_atr_mult.
-  # Chosen from this tracker's own history: every call peaked (+25.9% average)
-  # and gave it all back holding to expiry (-0.1% average). A 15% trail on the
-  # same price paths returned +10.0% with 4 of 6 green.
-  trailing_stop_pct: 15.0
-  # The trail is widened to this multiple of the instrument's own ATR, as a
-  # percentage of the entry price, whenever that is wider than the floor:
+  # Set to a FLAT 25% on 2026-10-13 (operator decision, in their words: "if a
+  # position is up 100% and goes down 25% it should close the position"). It is
+  # the whole rule again, not a floor — see trailing_stop_atr_mult below.
+  #
+  # The earlier 15% was chosen from this tracker's own history: every call
+  # peaked (+25.9% average) and gave it all back holding to expiry (-0.1%
+  # average), and a 15% trail on the same price paths returned +10.0% with 4 of
+  # 6 green. 25% banks less of a round-trip and survives more noise; the
+  # operator's number governs either way.
+  trailing_stop_pct: 25.0
+  # When set, the trail is widened to this multiple of the instrument's own ATR,
+  # as a percentage of the entry price, whenever that is wider than the floor:
   #     trail = max(trailing_stop_pct, mult x ATR / entry x 100)
-  # A fixed 15% is narrower than one session on most of this universe — 6 of
-  # the first 10 calls carried an ATR above 13% of entry and 4 above 22% — so
-  # the floor alone closes positions on noise rather than on thesis failure.
-  # Replaying the whole book on daily closes: +9.2% per call on the fixed 15%
-  # against +11.7% at 1.5x ATR. Read that as directional, not proven: 6 closed
-  # calls is not a sample, one name (SDEV +149%) supplies all the profit under
-  # both rules, and the replay walks daily closes while the live tracker samples
-  # whenever a scan runs. The cost is visible too — GRML banked +11.1% on the
-  # floor and -2.8% on the wider trail, because a wider stop gives back more on
-  # a name that round-trips.
   # Resolved once per call at entry and stored on the row, so changing this
-  # never re-stops a position that is already open. null disables scaling and
-  # restores the plain fixed trail.
-  trailing_stop_atr_mult: 1.5
+  # never re-stops a position that is already open.
+  #
+  # SWITCHED OFF (null) on 2026-10-13. The operator asked for a 25% trailing stop, and
+  # a 25% floor under a 1.5x ATR multiplier is not one: on the live book it
+  # resolved to 40.3% on VEEA, 49.0% on XRPN and 37.7% on MEDS, so the number
+  # in the config was not the number in force on the positions that mattered.
+  # One flat distance, the same on every call, is what was asked for and what
+  # can be checked by eye. The scaling machinery stays in the code
+  # (resolve_trail_pct) so setting a multiplier here restores it unchanged.
+  #
+  # Why it existed, for whoever considers turning it back on: a fixed 15% was
+  # narrower than one session on most of this universe (6 of the first 10 calls
+  # carried an ATR above 13% of entry, 4 above 22%), and replaying the book on
+  # daily closes gave +9.2% per call on the fixed 15% against +11.7% at 1.5x
+  # ATR. That was never proof — 6 closed calls is not a sample and one name
+  # (SDEV +149%) supplied all the profit under both rules — and the cost showed
+  # too: GRML banked +11.1% on the floor and -2.8% on the wider trail. At a 25%
+  # flat trail the noise argument is also much weaker than it was at 15%.
+  trailing_stop_atr_mult: null
   # Which high the trail measures from.
   #
   # false (default): the highest price a SCAN SAMPLED. A scan reads a price at
@@ -116,10 +127,48 @@ tracker:
   # slice of it at entry; what is not in a position is cash.
   account_size: 1000.0
   # Dollars per call, as a percent of account_size. 10% -> $100 a call and room
-  # for ten positions. The last position gets whatever cash is actually left,
-  # and once the account is fully committed no further call is funded (it is
-  # still recorded and tracked — the screener's record stays complete).
+  # for ten positions. The last position gets whatever cash is actually left.
   position_pct: 10.0
+  # WHAT HAPPENS WHEN THE ACCOUNT IS FULLY COMMITTED.
+  #
+  # true (default): a call that cannot be funded — after rotation has had its
+  #   chance — is NOT MADE. It appears in the report as a capital skip, with
+  #   the dollars it wanted, and nothing is written to the database.
+  # false: the old behaviour. The call is recorded with no allocation and
+  #   tracked unvalued.
+  #
+  # Set true on 2026-10-13 (operator decision: "the $ should be managed also
+  # with the calls, not in parallel"). The old behaviour ran two ledgers: the
+  # screener kept calling, and six of seventeen open calls were carrying no
+  # money while reading in the report exactly like the eleven that were. One
+  # of them — NCPL, the best name in the book — was holding 47 cents.
+  #
+  # The cost of the gate is real and worth stating: a capital skip leaves no
+  # row, so the v1-vs-v2 outcome experiment never measures that hit. The
+  # alternative measured hits the account never took, which is worse.
+  capital_gated: true
+  # CAPITAL ROTATION — closing a position to fund a better call.
+  #
+  # Every key is a brake; see rotation.py for why each one exists.
+  rotation:
+    # Master switch. Off means a full book simply stops funding.
+    enabled: true
+    # Only a call the Judge said TAKE may displace an open position.
+    require_take: true
+    # Never displace a position that is up. A rule that sells winners to buy
+    # screener hits turns a good book into a bad one.
+    protect_winners: true
+    # A position must be at least this far down to be displaced, in percent.
+    # Kept at 0 so a flat position is left alone; protect_winners clamps any
+    # positive value here back to 0.
+    max_displace_pnl_pct: 0.0
+    # The newcomer's confidence must beat the displaced position's by this
+    # much. 75 against 70 is noise, and acting on noise churns the book on
+    # every scan.
+    min_confidence_edge: 10
+    # Most positions one run may close for cash. A pre-market batch must not
+    # be able to recycle the whole account before the open.
+    max_per_run: 3
   risk_pct: 1.0
   max_position_pct: 10.0
   # Safety valve: never open more than this many new calls in one run.

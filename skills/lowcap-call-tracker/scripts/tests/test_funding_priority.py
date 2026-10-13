@@ -128,16 +128,12 @@ def test_an_unreviewed_call_funds_after_a_take_but_before_a_skip(tmp_db, config)
 # --- saying so ----------------------------------------------------------
 
 
-def test_the_report_says_when_the_book_is_full(tmp_path, config):
-    """A call logged with no money must say so. Silently recording a
-    zero-weight call reads in the report exactly like a funded one — which is
-    how the best-performing name in the live book came to be holding 47 cents
-    without anything pointing it out."""
-    from run_cycle import format_report
-
-    # Two slices of 50% fill the book, so the fixture's third call gets nothing.
+def _full_book_cycle(tmp_path, config):
+    """Two slices of 50% fill the book, so the fixture's third call cannot be
+    funded. Nothing in it is displaceable — every position is flat at entry —
+    so rotation has no answer and the capital gate decides."""
     config["tracker"]["position_pct"] = 50.0
-    report = run_cycle(
+    return run_cycle(
         config,
         backend="heuristic",
         screen_mode="fixture",
@@ -149,6 +145,32 @@ def test_the_report_says_when_the_book_is_full(tmp_path, config):
         telegram=False,
         prices={},
     )
+
+
+def test_a_call_the_book_cannot_pay_for_is_not_made(tmp_path, config):
+    """The capital gate, from the cycle's side. It used to be recorded with no
+    money, which read in the report exactly like a funded call — that is how
+    the best-performing name in the live book came to be holding 47 cents
+    without anything pointing it out."""
+    from run_cycle import format_report
+
+    report = _full_book_cycle(tmp_path, config)
+
+    assert [call.get("allocation_usd") for call in report["new_calls"]] == [500.0, 500.0]
+    assert len(report["capital_skips"]) == 1
+    text = format_report(report)
+    assert "capital skip" in text.lower()
+    assert "not called" in text.lower()
+
+
+def test_the_report_still_says_when_an_unfunded_call_is_logged(tmp_path, config):
+    """With the gate off, the old behaviour has to keep saying so: a
+    zero-weight call must never read like a position."""
+    from run_cycle import format_report
+
+    config["tracker"]["capital_gated"] = False
+    report = _full_book_cycle(tmp_path, config)
+
     allocations = [call.get("allocation_usd") for call in report["new_calls"]]
     assert allocations.count(None) == 1, allocations
     text = format_report(report)

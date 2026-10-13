@@ -19,6 +19,8 @@ from screener_guards import (
     short_float_points,
 )
 
+from conftest import FIXTURE_HITS
+
 
 @pytest.fixture()
 def v2(config):
@@ -200,7 +202,10 @@ def test_a_hit_carries_the_version_that_produced_it(v2):
 
 # --- wiring ---------------------------------------------------------------
 
-FIXTURE = "fixtures/dry_run_hits.json"
+# Absolute, via the shared fixture path: a relative path here passes only when
+# pytest happens to run from the scripts directory, and CI runs from the repo
+# root — where these three tests were failing with FileNotFoundError.
+FIXTURE = str(FIXTURE_HITS)
 
 
 def test_every_hit_is_tagged_with_the_version_that_screened_it(v2):

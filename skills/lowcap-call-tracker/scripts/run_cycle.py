@@ -25,7 +25,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-from allocation import portfolio_state, slice_usd
+from allocation import full_slice_usd, money, portfolio_state, slice_usd
 from call_db import DECISION_UNREVIEWED, KIND_ACTIVE, KIND_UNREVIEWED, CallDatabase
 from explosion_signals import telegram_signal_line
 from fetch_screener import FetchError, screen_all
@@ -43,6 +43,7 @@ from role_review import (
     review_hits,
     short_allowed,
 )
+from rotation import capital_gated, format_rotations, rotate_for
 from screener_guards import earliest_run_block
 from screener_variants import screener_version as active_version
 from state_snapshot import (
@@ -240,6 +241,10 @@ def run_cycle(
         "reviews": [],
         "price_update": {"priced": 0, "closed": 0, "updates": [], "missing_prices": []},
         "guard_skips": [],
+        # Positions closed to free cash for a better call, and calls that were
+        # not made because there was none. The two lines of one ledger.
+        "rotations": [],
+        "capital_skips": [],
         "errors": [],
     }
     if gate:
@@ -333,6 +338,10 @@ def run_cycle(
                 report["unreviewed"] = len(reviews)
             report["reviews"] = reviews
             report["screening_ran"] = True
+            # One rotation budget for the whole run, shared across every call
+            # in it: the cap has to mean "this run", or a batch of ten hits
+            # would recycle the book ten times over.
+            rotation_budget = {"used": 0}
             for review in fund_order(reviews):
                 if dry_run:
                     report["new_calls"].append(
@@ -340,7 +349,33 @@ def run_cycle(
                     )
                     continue
                 cash = portfolio_state(db, config)["cash_usd"]
+                wanted = full_slice_usd(config)
+                if cash < wanted:
+                    # Short of a full slice: see whether this call has earned
+                    # the right to displace a losing position.
+                    rotations = rotate_for(
+                        db,
+                        config,
+                        review=review,
+                        run_id=run_id,
+                        budget=rotation_budget,
+                    )
+                    if rotations:
+                        report["rotations"].extend(rotations)
+                        cash = portfolio_state(db, config)["cash_usd"]
                 allocation = slice_usd(config, cash_available=cash)
+                if allocation is None and capital_gated(config):
+                    # Not made, not recorded. A call with no money behind it
+                    # read in the report exactly like a funded one, which is
+                    # the parallel book the operator asked to end.
+                    report["capital_skips"].append(
+                        {
+                            **_call_line(review, stop_pct=sl_pct(config)),
+                            "wanted_usd": wanted,
+                            "cash_usd": round(cash, 2),
+                        }
+                    )
+                    continue
                 call_id = db.insert_call(
                     review,
                     run_id=run_id,
@@ -542,6 +577,14 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
         lines.append(
             f"  funded book full — logged unfunded (tracked, not valued): {', '.join(unfunded)}"
         )
+    for skip in report.get("capital_skips") or []:
+        lines.append(
+            f"  capital skip: {skip['ticker']} — no cash for a "
+            f"{money(skip['wanted_usd'])} position ({money(skip['cash_usd'])} free), "
+            "not called"
+        )
+    if report.get("rotations"):
+        lines += ["", "ROTATED OUT FOR CASH"] + format_rotations(report["rotations"])
     for skip in report.get("guard_skips") or []:
         lines.append(f"  guard skip: {skip['ticker']} — {skip['reason']}")
 

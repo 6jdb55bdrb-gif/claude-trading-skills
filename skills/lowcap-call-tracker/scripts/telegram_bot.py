@@ -426,6 +426,30 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
             f"<i>{escape_html(str(skip.get('reason') or 'guard skip'))}</i>"
         )
 
+    # A position closed to pay for a call above. It has to be on the message
+    # that announces the call: finding a holding gone, with nothing naming what
+    # took its money, is worse than never rotating at all.
+    if report.get("rotations"):
+        lines.append("")
+        lines.append("<b>♻️ Rotated for cash</b>")
+        for entry in report["rotations"]:
+            lines.append(
+                f"• <b>{escape_html(str(entry['ticker']))}</b> closed "
+                f"{_pnl_tag(entry.get('pnl_pct'))} → "
+                f"${entry.get('freed_usd', 0.0):,.2f} into "
+                f"<b>{escape_html(str(entry['for_ticker']))}</b>"
+                + ("  <i>(was a TAKE)</i>" if entry.get("was_take") else "")
+            )
+
+    # And the other side of the same ledger: a call the account could not pay
+    # for and therefore did not make.
+    for skip in report.get("capital_skips") or []:
+        lines.append(
+            f"💤 <b>{escape_html(str(skip.get('ticker') or '?'))}</b> "
+            f"<i>no cash for a ${skip.get('wanted_usd', 0.0):,.2f} position "
+            f"(${skip.get('cash_usd', 0.0):,.2f} free) — not called</i>"
+        )
+
     open_updates = sorted(
         [update for update in price_update.get("updates", []) if not update.get("closed")],
         key=lambda item: item.get("pnl_pct") or 0,
@@ -436,6 +460,10 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
         lines.append(f"<b>Open calls</b> ({len(open_updates)})")
         for update in open_updates[:10]:
             kind = "" if update.get("kind") == KIND_ACTIVE else " · shadow"
+            # Tracked, not held: a call the account never put money into must
+            # not read like one of its positions.
+            if not update.get("allocation_usd"):
+                kind += " · unfunded"
             age = update.get("age_days")
             age_note = f" · {age}d" if age else ""
             remaining = update.get("days_to_expiry")
