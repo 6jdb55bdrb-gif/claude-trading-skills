@@ -63,6 +63,7 @@ def test_rotation_is_on_and_gated_by_default(config):
         "max_displace_pnl_pct": 0.0,
         "min_confidence_edge": 10,
         "max_per_run": 3,
+        "min_fill_fraction": 0.8,
     }
     assert rotation_settings(config) == tracker["rotation"]
     assert capital_gated(config) is True
@@ -192,8 +193,8 @@ def test_nothing_rotates_while_there_is_cash(tmp_db, config):
 
 
 def test_rotation_stops_once_a_full_slice_is_free(tmp_db, config):
-    """One loser at -30% frees $70 of a $100 slice; a second completes it and
-    a third is not taken."""
+    """One loser at -30% frees $70 of a $100 slice, which is under the 80%
+    fill floor; a second takes it past it and a third is not taken."""
     for index in range(10):
         _fund(tmp_db, f"T{index}", confidence=40)
     for ticker in ("T1", "T2", "T3"):
@@ -204,6 +205,53 @@ def test_rotation_stops_once_a_full_slice_is_free(tmp_db, config):
     )
     assert len(rotations) == 2
     assert portfolio_state(tmp_db, config)["cash_usd"] >= full_slice_usd(config)
+
+
+def test_a_second_position_is_not_closed_to_cover_a_rounding_shortfall(tmp_db, config):
+    """The live failure this rule exists for.
+
+    On 2026-10-14 TCRT displaced BTCS, which freed $89.63 of a $100 slice —
+    and the loop closed IMMR as well, a position only 2.1% down, for the
+    remaining $10.37. Closing a near-flat position to top another up by a
+    tenth of a slice is exactly the churn every other brake here prevents.
+    Worse, the money went to the NEXT call in the run while the close reason
+    named this one, so the record misattributed it.
+
+    A rotation now stops once the cash covers `min_fill_fraction` of a slice.
+    The next call rotates for itself, under its own name."""
+    for index in range(10):
+        _fund(tmp_db, f"T{index}", confidence=40)
+    _mark(tmp_db, tmp_db.open_call_for("T1")["id"], 8.96)  # -10.4%, frees $89.60
+    _mark(tmp_db, tmp_db.open_call_for("T2")["id"], 9.79)  # -2.1%, barely down
+
+    rotations = rotate_for(
+        tmp_db, _cfg(config), review=review_payload("NEW", confidence=90), run_id="r2"
+    )
+
+    assert [entry["ticker"] for entry in rotations] == ["T1"]
+    assert tmp_db.open_call_for("T2") is not None, "a near-flat position was churned"
+    # 89.6% of a slice, funded as a part slice rather than paid for twice.
+    assert portfolio_state(tmp_db, config)["cash_usd"] == pytest.approx(89.60, abs=0.01)
+
+
+def test_the_fill_floor_is_configurable_and_shipped_at_80_percent(config):
+    assert config["tracker"]["rotation"]["min_fill_fraction"] == 0.8
+    assert rotation_settings(config)["min_fill_fraction"] == 0.8
+
+
+def test_a_fill_floor_of_one_restores_the_strict_full_slice_rule(tmp_db, config):
+    for index in range(10):
+        _fund(tmp_db, f"T{index}", confidence=40)
+    _mark(tmp_db, tmp_db.open_call_for("T1")["id"], 8.96)
+    _mark(tmp_db, tmp_db.open_call_for("T2")["id"], 9.79)
+
+    rotations = rotate_for(
+        tmp_db,
+        _cfg(config, min_fill_fraction=1.0),
+        review=review_payload("NEW", confidence=90),
+        run_id="r2",
+    )
+    assert [entry["ticker"] for entry in rotations] == ["T1", "T2"]
 
 
 def test_a_run_may_only_rotate_so_many_times(tmp_db, config):

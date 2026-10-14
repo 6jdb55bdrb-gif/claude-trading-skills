@@ -169,6 +169,13 @@ tracker:
     # Most positions one run may close for cash. A pre-market batch must not
     # be able to recycle the whole account before the open.
     max_per_run: 3
+    # Rotation stops once the freed cash covers this fraction of a full slice,
+    # and the call takes a part slice rather than a second position being sold
+    # for the remainder. Added 2026-10-14 after the first live rotation freed
+    # $89.63 of a $100 slice and the loop then closed a position 2.1% down for
+    # the missing $10.37 — whose money then went to the next call in the run,
+    # while the close reason named this one. 1.0 restores the strict rule.
+    min_fill_fraction: 0.8
   risk_pct: 1.0
   max_position_pct: 10.0
   # Safety valve: never open more than this many new calls in one run.

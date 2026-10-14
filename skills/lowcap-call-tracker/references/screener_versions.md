@@ -342,6 +342,14 @@ money on a screener hit:
 | `max_displace_pnl_pct` | `0.0` | Displacing a position that is merely flat. |
 | `min_confidence_edge` | `10` | Churn on noise — 75 against 70 is not an edge. |
 | `max_per_run` | `3` | One pre-market batch recycling the whole account. |
+| `min_fill_fraction` | `0.8` | Selling a second position to cover a rounding shortfall. |
+
+Rotation stops once the freed cash covers `min_fill_fraction` of a slice, and
+the call takes a part slice rather than a second position being sold for the
+remainder — the first live rotation freed $89.63 of a $100 slice and then closed
+a position 2.1% down for the missing $10.37, whose money went to the next call
+in the run while the close reason named this one. The next call rotates for
+itself, under its own name.
 
 What is freed is the position's **value, not its allocation**: $100 put into a
 name now 30% down is $70 of cash. The losers go first, worst first, because the

@@ -23,6 +23,12 @@ Every rule here is a brake, because this spends real money on a screener hit:
   against 70 is noise; acting on noise would churn the book every scan.
 * **A run may only rotate so many times** (``max_per_run``), so a single
   pre-market batch cannot recycle the entire account before the open.
+* **No second position is closed to cover a rounding shortfall**
+  (``min_fill_fraction``). The first live rotation freed $89.63 of a $100
+  slice and the loop then closed a position only 2.1% down for the remaining
+  $10.37 — and that money went to the NEXT call in the run while the close
+  reason named this one. A part slice is the right answer; the next call
+  rotates for itself, under its own name.
 * **What is freed is the position's VALUE, not its allocation.** $100 put into
   a name now 30% down is $70 of cash. Freeing the allocation would invent $30
   that was lost.
@@ -48,6 +54,7 @@ ROTATION_DEFAULTS: dict[str, Any] = {
     "max_displace_pnl_pct": 0.0,
     "min_confidence_edge": 10,
     "max_per_run": 3,
+    "min_fill_fraction": 0.8,
 }
 
 
@@ -174,11 +181,16 @@ def rotate_for(
     needed = full_slice_usd(config)
     if needed <= 0:
         return []
+    # Enough, not exact. Closing another position to cover the last tenth of a
+    # slice costs a whole position to buy a rounding error.
+    fill = _number(settings.get("min_fill_fraction"))
+    fill = 1.0 if fill is None else min(max(fill, 0.0), 1.0)
+    target = needed * fill
 
     rotated: list[dict[str, Any]] = []
     while budget.get("used", 0) < allowed:
         cash = portfolio_state(db, config)["cash_usd"]
-        if cash >= needed:
+        if cash >= target:
             break
         candidate = pick_displacement(review, displaceable(db, config), settings)
         if candidate is None:
