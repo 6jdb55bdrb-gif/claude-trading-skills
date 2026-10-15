@@ -2,13 +2,13 @@
 
 **Backend:** UP · reviewed 39 / unreviewed 0 · TAKE/SKIP 7/32 (17.9% TAKE)
 
-**Account (every call):** $1,141.62 (+14.16% on $1,000.00) · 100.0% allocated · cash $0.00
+**Account (every call):** $1,075.69 (+7.57% on $1,000.00) · 94.0% allocated · cash $61.42
 
-**TAKE only (the Judge's scorecard):** $971.27 (-2.87%). What following the Judge's verdicts alone would have returned — the gap against the account above is what the Judge's selectivity is worth.
+**TAKE only (the Judge's scorecard):** $917.18 (-8.28%). What following the Judge's verdicts alone would have returned — the gap against the account above is what the Judge's selectivity is worth.
 
-**Total PnL:** +0.62% — equal weight across all 39 priced call(s)
+**Total PnL:** -1.65% — equal weight across all 39 priced call(s)
 
-**Generated:** 2026-10-14T10:31:28+00:00<br>
+**Generated:** 2026-10-15T06:47:14+00:00<br>
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -21,14 +21,14 @@
 | Voided (not executable) | 2 |
 | TAKE calls | 7 |
 | Shadow (SKIP) calls | 32 |
-| Open | 17 |
-| Right | 13 |
-| Wrong | 18 |
-| Neutral | 8 |
-| Hit rate % | 33.3 |
-| **Total PnL % (equal weight, all calls)** | +0.62% |
-| Average PnL % per call | 0.62 |
-| Portfolio PnL % (equal weight, TAKE only) | -4.1 |
+| Open | 16 |
+| Right | 10 |
+| Wrong | 19 |
+| Neutral | 10 |
+| Hit rate % | 25.6 |
+| **Total PnL % (equal weight, all calls)** | -1.65% |
+| Average PnL % per call | -1.65 |
+| Portfolio PnL % (equal weight, TAKE only) | -11.61 |
 
 **Best call:** SDEV (long, squeeze, shadow) +175.82% — entry 1.04 → 2.868499994277954
 **Worst call:** SDEV (long, squeeze, shadow) -56.46% — entry 4.57 → 1.9900000095367432
@@ -37,49 +37,49 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 39 | 17 | 13 | 18 | 8 | 33.3 | 0.62 |
+| call | 39 | 16 | 10 | 19 | 10 | 25.6 | -1.65 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| etf | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.21 |
-| stock | 38 | 16 | 12 | 18 | 8 | 31.6 | 0.63 |
+| etf | 1 | 1 | 0 | 0 | 1 | 0.0 | -0.03 |
+| stock | 38 | 15 | 10 | 19 | 9 | 26.3 | -1.69 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| etf_momentum | 1 | 1 | 1 | 0 | 0 | 100.0 | 0.21 |
-| premarket_gap | 14 | 6 | 2 | 7 | 5 | 14.3 | -7.75 |
-| squeeze | 24 | 10 | 10 | 11 | 3 | 41.7 | 5.52 |
+| etf_momentum | 1 | 1 | 0 | 0 | 1 | 0.0 | -0.03 |
+| premarket_gap | 14 | 5 | 3 | 8 | 3 | 21.4 | -10.78 |
+| squeeze | 24 | 10 | 7 | 11 | 6 | 29.2 | 3.61 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| TAKE | 7 | 5 | 2 | 2 | 3 | 28.6 | -4.1 |
-| SKIP (shadow) | 32 | 12 | 11 | 16 | 5 | 34.4 | 1.66 |
+| TAKE | 7 | 4 | 1 | 3 | 3 | 14.3 | -11.61 |
+| SKIP (shadow) | 32 | 12 | 9 | 16 | 7 | 28.1 | 0.53 |
 
-**Judge edge (avg PnL TAKE − avg PnL shadow):** -5.76 → Judge is not adding value
+**Judge edge (avg PnL TAKE − avg PnL shadow):** -12.14 → Judge is not adding value
 
 ### Per-role accuracy
 
 | Role | Avg score (winners) | Avg score (others) | Edge | Corr(score, PnL) | n | Polarity |
 |---|---|---|---|---|---|---|
-| researcher | 3.86 | 3.7 | 0.17 | 0.015 | 39 | quality (higher is better) |
-| technician | 5.12 | 5.12 | 0.0 | -0.017 | 39 | quality (higher is better) |
-| skeptic | 6.0 | 5.98 | 0.02 | 0.167 | 39 | severity (lower is better) |
-| risk_manager | 5.77 | 5.13 | 0.63 | 0.151 | 39 | quality (higher is better) |
+| researcher | 3.97 | 3.68 | 0.29 | 0.009 | 39 | quality (higher is better) |
+| technician | 5.25 | 5.07 | 0.18 | -0.038 | 39 | quality (higher is better) |
+| skeptic | 6.2 | 5.91 | 0.29 | 0.219 | 39 | severity (lower is better) |
+| risk_manager | 5.65 | 5.24 | 0.41 | 0.123 | 39 | quality (higher is better) |
 
 ### Confidence buckets
 
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| 0-40 | 6 | 1 | 1 | 4 | 1 | 16.7 | 12.75 |
-| 40-70 | 26 | 13 | 11 | 10 | 5 | 42.3 | 4.13 |
-| 70-100 | 7 | 3 | 1 | 4 | 2 | 14.3 | -22.82 |
+| 0-40 | 6 | 1 | 1 | 4 | 1 | 16.7 | 11.77 |
+| 40-70 | 26 | 13 | 9 | 10 | 7 | 34.6 | 2.79 |
+| 70-100 | 7 | 2 | 0 | 5 | 2 | 0.0 | -29.65 |
 
 
 ### Voided calls
@@ -97,9 +97,9 @@ anything.
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20261014T103051Z | 2026-10-14T10:30:51+00:00 | yes | — | — | — |
+| run_20261015T064704Z | 2026-10-15T06:47:04+00:00 | no | — | — | — |
+| run_20261015T064251Z | 2026-10-15T06:42:51+00:00 | no | 0 | 0 | 0.0 |
+| run_20261014T103051Z | 2026-10-14T10:30:51+00:00 | yes | 2 | 0 | 0.0 |
 | run_20261013T193341Z | 2026-10-13T19:33:41+00:00 | yes | 0 | 0 | 0.0 |
 | run_20261013T142208Z | 2026-10-13T14:22:08+00:00 | yes | 0 | 0 | 0.0 |
-| run_20261013T142126Z | 2026-10-13T14:21:26+00:00 | yes | 1 | 1 | 0.0 |
-| run_20261013T135043Z | 2026-10-13T13:50:43+00:00 | yes | 0 | 4 | 0.0 |
 

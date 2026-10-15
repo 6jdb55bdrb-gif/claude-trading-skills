@@ -348,6 +348,45 @@ def update_open_calls(
             )
             continue
         stop_allowed = not (untraded and not stop_on_untraded)
+        # An untraded quote may not CLOSE a position — but it must not SHIELD
+        # one either. When it becomes the mark, the stop is still owed a look at
+        # the newest price somebody actually paid: the regular session's close.
+        # TCRT closed 2.07 on 68.4M shares with its trail at 2.53, and an
+        # overnight quote of 1.96 with no volume behind it left the call open
+        # 18% through its own stop, because the whole update had lost stop
+        # permission rather than just the untraded price.
+        #
+        # Only a close NO OLDER than the mark already on the row qualifies: a
+        # provider offering a previous session is not new evidence, and
+        # replaying it would stop a position on a session it already survived.
+        if (
+            not stop_allowed
+            and point
+            and point.get("price") is not None
+            and point.get("as_of")
+            and str(point["as_of"]) >= str(row["price_as_of"] or "")
+            and str(row["call_date"])[:10] <= str(point["as_of"])
+        ):
+            traded = db.apply_price(
+                row["id"],
+                float(point["price"]),
+                close_threshold_pct=threshold,
+                as_of=point["as_of"],
+                trailing_stop_pct=trailing,
+                session_high=point.get("high") if use_session_high else None,
+                allow_stop=True,
+            )
+            if traded.get("closed"):
+                # Out at the traded close. The quote that followed it prices
+                # nothing: this position no longer exists.
+                traded["stale_source"] = False
+                traded["pre_entry"] = False
+                traded["extended"] = False
+                traded["untraded"] = False
+                traded["prior_session"] = bool(point["as_of"] < today)
+                traded.update({"priced": True, "stale_days": 0, **common})
+                updates.append(traded)
+                continue
         result = db.apply_price(
             row["id"],
             float(price),

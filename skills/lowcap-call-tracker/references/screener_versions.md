@@ -315,6 +315,26 @@ every tightening call on the distance it was taken with.
 This is distinct from the fixed stop below: the trail moves with the peak and
 closes positions; `sl_price` never moves and is only measured.
 
+### The stop is evaluated on the newest TRADED price
+
+`tracker.stop_on_untraded_extended: false` means a zero-volume extended print
+may move the mark but not close a position — that rule exists because the MEDS
+entry was taken on bars reporting no trades at all, and it stays.
+
+It was being applied to the whole update rather than to the untraded price.
+When an untraded quote became the mark, the call lost stop permission
+*entirely* — including against the regular session's close, which is a traded
+price. TCRT was called 3.37 on the 2026-10-14 pre-market screen (trail 2.53),
+closed **2.07 on 68.4M shares**, and the 02:42 ET run marked it 1.96 from an
+overnight quote and left it OPEN, 18% through its own stop.
+
+So when the mark is untraded, the stop is checked first against the newest
+traded price — the daily close — and the quote is applied afterwards for the
+mark alone. Two guards keep this from re-stopping history: the close must be
+**no older than the mark already on the row** (a provider offering a previous
+session is not new evidence), and it must not predate the call. An untraded
+quote still cannot close a position by itself.
+
 ## Capital rotation
 
 `tracker.capital_gated: true`, `tracker.rotation`, and `scripts/rotation.py`.
