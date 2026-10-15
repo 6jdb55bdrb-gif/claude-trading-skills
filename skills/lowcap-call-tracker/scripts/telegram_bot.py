@@ -446,8 +446,7 @@ def format_run_notification(report: dict[str, Any], config: dict[str, Any]) -> s
     for skip in report.get("capital_skips") or []:
         lines.append(
             f"💤 <b>{escape_html(str(skip.get('ticker') or '?'))}</b> "
-            f"<i>no cash for a ${skip.get('wanted_usd', 0.0):,.2f} position "
-            f"(${skip.get('cash_usd', 0.0):,.2f} free) — not called</i>"
+            f"<i>{escape_html(str(skip.get('reason') or 'no capital'))} — not called</i>"
         )
 
     open_updates = sorted(

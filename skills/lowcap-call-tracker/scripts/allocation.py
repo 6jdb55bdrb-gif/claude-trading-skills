@@ -52,6 +52,37 @@ def position_pct(config: dict[str, Any]) -> float:
     return float(config["tracker"].get("position_pct", 10.0) or 0.0)
 
 
+def position_cap(config: dict[str, Any]) -> int | None:
+    """How many funded positions may be open at once, or None for no cap.
+
+    At ``position_pct: 10`` ten slices are the whole account, so the cap and
+    the cash normally say the same thing. They part company the moment a
+    position is a PART slice — the last one funded, or one funded out of a
+    rotation — because the leftover cash would otherwise open an eleventh
+    position in a book that is already fully committed in intent. The count is
+    the rule; the cash agreeing with it is a coincidence.
+    """
+    raw = config["tracker"].get("max_open_positions", 10)
+    if raw is None:
+        return None
+    try:
+        cap = int(raw)
+    except (TypeError, ValueError):
+        return None
+    return cap if cap > 0 else None
+
+
+def open_positions(db: CallDatabase, config: dict[str, Any]) -> int:
+    """Funded open positions in the account's own book.
+
+    Funded, because an unfunded call holds no money and so cannot be occupying
+    a slot that exists because the money runs out. Six such rows were open
+    when the cap went in; letting them block new calls would be the parallel
+    book again, from the other side.
+    """
+    return len(portfolio_state(db, config)["positions"])
+
+
 def full_slice_usd(config: dict[str, Any]) -> float:
     """A whole position: ``position_pct`` of the account, in dollars.
 

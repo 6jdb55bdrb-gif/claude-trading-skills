@@ -61,7 +61,8 @@ def test_rotation_is_on_and_gated_by_default(config):
         "require_take": True,
         "protect_winners": True,
         "max_displace_pnl_pct": 0.0,
-        "min_confidence_edge": 10,
+        "require_higher_confidence": True,
+        "min_confidence_edge": 0,
         "max_per_run": 3,
         "min_fill_fraction": 0.8,
     }
@@ -134,14 +135,16 @@ def test_only_a_take_may_displace(tmp_db, config):
 
 
 def test_the_newcomer_must_beat_the_position_it_replaces(tmp_db, config):
+    """Strictly higher, which is the shipped rule — "only rotate capital if
+    the confidence is higher". test_higher_confidence_only.py covers the
+    boundary; this is the same rule read off a real database row."""
     loser = _fund(tmp_db, "BAD", confidence=70)
     _mark(tmp_db, loser, 7.0)
     candidates = displaceable(tmp_db, config)
     settings = rotation_settings(config)
 
-    # 75 against 70 is noise, not an edge: the required margin is 10.
-    assert pick_displacement(review_payload("A", confidence=75), candidates, settings) is None
-    assert pick_displacement(review_payload("B", confidence=80), candidates, settings) is not None
+    assert pick_displacement(review_payload("A", confidence=70), candidates, settings) is None
+    assert pick_displacement(review_payload("B", confidence=71), candidates, settings) is not None
 
 
 def test_a_newcomer_without_a_confidence_never_displaces(tmp_db, config):

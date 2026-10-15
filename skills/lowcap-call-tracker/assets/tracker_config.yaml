@@ -129,6 +129,22 @@ tracker:
   # Dollars per call, as a percent of account_size. 10% -> $100 a call and room
   # for ten positions. The last position gets whatever cash is actually left.
   position_pct: 10.0
+  # MOST OPEN POSITIONS AT ONCE. Operator decision 2026-10-15: "only accept 10
+  # open positions at a time as total portfolio is allocated then".
+  #
+  # Ten slices of 10% ARE the account, so this and the cash normally say the
+  # same thing — they part company the moment a position is a PART slice (the
+  # last one funded, or one funded out of a rotation), because the leftover
+  # cash would otherwise open an eleventh position in a book already fully
+  # committed in intent. The count is the rule; the cash agreeing with it is a
+  # coincidence. Keep it equal to 100 / position_pct.
+  #
+  # Only FUNDED positions count: an unfunded call holds no money and cannot be
+  # occupying a slot that exists because the money runs out. A full book is
+  # not a closed door — a new TAKE may still displace a position (see
+  # rotation), and rotation fires on a full count as well as on empty cash.
+  # null removes the cap and leaves the cash as the only limit.
+  max_open_positions: 10
   # WHAT HAPPENS WHEN THE ACCOUNT IS FULLY COMMITTED.
   #
   # true (default): a call that cannot be funded — after rotation has had its
@@ -162,10 +178,22 @@ tracker:
     # Kept at 0 so a flat position is left alone; protect_winners clamps any
     # positive value here back to 0.
     max_displace_pnl_pct: 0.0
-    # The newcomer's confidence must beat the displaced position's by this
-    # much. 75 against 70 is noise, and acting on noise churns the book on
-    # every scan.
-    min_confidence_edge: 10
+    # The newcomer's confidence must be HIGHER than the displaced position's,
+    # strictly. Equal is not higher: a coin toss is not a reason to sell one
+    # position to buy another. Operator decision 2026-10-15 ("only rotate
+    # capital if the confidence is higher"), and the reason it is a separate
+    # key from the margin below is that a margin of 0 would otherwise read "a
+    # difference of at least nothing", which admits a tie.
+    require_higher_confidence: true
+    # An ADDITIONAL margin on top, in confidence points. 0 means the strict
+    # comparison above is the whole rule, which is what was asked for.
+    #
+    # It shipped at 10 on the reasoning that 75 against 70 is noise, and that
+    # is still the argument for raising it: this book's 70-100 confidence
+    # bucket is 0 for 7 and averaging -30.1%, so small differences in
+    # confidence are currently measuring nothing. Set it back to 10 to make
+    # rotation demand a real gap.
+    min_confidence_edge: 0
     # Most positions one run may close for cash. A pre-market batch must not
     # be able to recycle the whole account before the open.
     max_per_run: 3

@@ -360,9 +360,17 @@ money on a screener hit:
 | `require_take` | `true` | A SKIP has no claim on committed capital. |
 | `protect_winners` | `true` | Selling what works to buy what is new. |
 | `max_displace_pnl_pct` | `0.0` | Displacing a position that is merely flat. |
-| `min_confidence_edge` | `10` | Churn on noise — 75 against 70 is not an edge. |
+| `require_higher_confidence` | `true` | A tie. Equal is not higher. |
+| `min_confidence_edge` | `0` | Nothing extra — the strict comparison is the rule. |
 | `max_per_run` | `3` | One pre-market batch recycling the whole account. |
 | `min_fill_fraction` | `0.8` | Selling a second position to cover a rounding shortfall. |
+
+The newcomer's confidence must be **strictly higher** than the displaced
+position's (`require_higher_confidence`, the operator's rule of 2026-10-15:
+"only rotate capital if the confidence is higher"). `min_confidence_edge` adds
+any further margin on top and ships at 0, so the strict comparison is the whole
+rule. It is two settings rather than one because a margin of 0 alone would read
+"a difference of at least nothing", which admits a tie.
 
 Rotation stops once the freed cash covers `min_fill_fraction` of a slice, and
 the call takes a part slice rather than a second position being sold for the
@@ -377,9 +385,18 @@ cheapest capital to recycle is the capital doing the least. A rotation is
 recorded on both sides — the closed call's `close_reason` names the call that
 took its money, and both the report and the Telegram push name the pair.
 
-**The capital gate.** A call still unfundable after rotation is not made: no
-row, a `capital skip` line in the report naming the dollars it wanted, and a
-`💤` line in the push. The cost is real and worth stating: a capital skip leaves
+**The position cap.** `tracker.max_open_positions: 10` — ten slices of 10% are
+the account, so the count and the cash normally agree. They part company the
+moment a position is a PART slice (the last one funded, or one funded out of a
+rotation): the leftover cash would open an eleventh position in a book already
+fully committed in intent. The count is the rule; the cash agreeing is a
+coincidence. Only FUNDED positions count — an unfunded call holds no money and
+cannot occupy a slot that exists because the money runs out. Rotation fires on
+a full count as well as on empty cash, and answers it with exactly one close.
+
+**The capital gate.** A call still unfundable — or still beyond the cap — after
+rotation is not made: no row, a `capital skip` line in the report naming
+whether it was the money or the count, and a `💤` line in the push. The cost is real and worth stating: a capital skip leaves
 nothing for the outcome experiment to measure. The alternative measured calls
 the account never took, which is worse. `capital_gated: false` restores the old
 unfunded-row behaviour.

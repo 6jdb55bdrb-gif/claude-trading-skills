@@ -189,9 +189,12 @@ Two stops and one funding rule, all three set in `assets/tracker_config.yaml`:
 - **Fixed stop** — **30%** below entry (`tracker.sl_pct`), stored per call as
   `sl_price`. It never moves, and it is *measured*, not acted on: the outcome
   tracker checks each session's low against it.
-- **Rotation and the capital gate** — a new TAKE that the account cannot fund
-  closes the worst losing position and takes its cash
-  (`tracker.rotation`); if nothing is displaceable, the call is **not made**
+- **Ten positions, and no eleventh** — `tracker.max_open_positions: 10`, which
+  is what ten 10% slices of the account come to. Only funded positions count.
+- **Rotation and the capital gate** — a new TAKE that the account cannot fund,
+  or that has no slot left, closes the worst losing position and takes its cash
+  (`tracker.rotation`), but only when its confidence is **strictly higher**
+  than that position's. If nothing is displaceable, the call is **not made**
   (`tracker.capital_gated`) rather than logged with no money behind it.
 
 Both stop distances are resolved per call at entry, so editing the config moves

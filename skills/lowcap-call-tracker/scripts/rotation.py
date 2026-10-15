@@ -19,8 +19,15 @@ Every rule here is a brake, because this spends real money on a screener hit:
 * **A winner is never displaced.** Selling what is working to buy what is new
   is a machine for turning a good book into a bad one. Only a position that is
   actually down is a rotation candidate, and the worst one goes first.
-* **The newcomer must beat it by a margin** (``min_confidence_edge``). 75
-  against 70 is noise; acting on noise would churn the book every scan.
+* **The newcomer's confidence must be HIGHER**
+  (``require_higher_confidence``), strictly: equal is not higher, and a coin
+  toss is not a reason to sell one position to buy another. Enforced
+  separately from the numeric margin so that a margin of zero cannot smuggle
+  in a tie.
+* **And by any margin required on top** (``min_confidence_edge``). Shipped at
+  0 on the operator's instruction — "only rotate capital if the confidence is
+  higher" — so the strict comparison is the whole rule. Raising it to 10 says
+  75 against 70 is noise, which is how it was first shipped.
 * **A run may only rotate so many times** (``max_per_run``), so a single
   pre-market batch cannot recycle the entire account before the open.
 * **No second position is closed to cover a rounding shortfall**
@@ -41,7 +48,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from allocation import full_slice_usd, portfolio_state
+from allocation import full_slice_usd, open_positions, portfolio_state, position_cap
 from call_db import KIND_ACTIVE, STATUS_OPEN, CallDatabase
 
 # Defaults applied when `tracker.rotation` is absent or partial. They are the
@@ -52,7 +59,8 @@ ROTATION_DEFAULTS: dict[str, Any] = {
     "require_take": True,
     "protect_winners": True,
     "max_displace_pnl_pct": 0.0,
-    "min_confidence_edge": 10,
+    "require_higher_confidence": True,
+    "min_confidence_edge": 0,
     "max_per_run": 3,
     "min_fill_fraction": 0.8,
 }
@@ -148,10 +156,14 @@ def pick_displacement(
     edge = _number(settings.get("min_confidence_edge"))
     edge = 0.0 if edge is None else edge
     ticker = str(review.get("ticker", "")).upper()
+    strict = bool(settings.get("require_higher_confidence", True))
     for candidate in candidates:
         if candidate["ticker"].upper() == ticker:
             continue  # the same name open twice is a duplicate, not a rotation
-        if confidence - (candidate["confidence"] or 0.0) >= edge:
+        held = candidate["confidence"] or 0.0
+        if strict and confidence <= held:
+            continue
+        if confidence - held >= edge:
             return candidate
     return None
 
@@ -187,10 +199,16 @@ def rotate_for(
     fill = 1.0 if fill is None else min(max(fill, 0.0), 1.0)
     target = needed * fill
 
+    cap = position_cap(config)
     rotated: list[dict[str, Any]] = []
     while budget.get("used", 0) < allowed:
         cash = portfolio_state(db, config)["cash_usd"]
-        if cash >= target:
+        # Two reasons to rotate, and the count is the one cash cannot see: a
+        # book of ten part slices has money left and no room for an eleventh
+        # position. One close answers the count, so the loop re-reads it rather
+        # than freeing slots speculatively.
+        no_room = cap is not None and open_positions(db, config) >= cap
+        if cash >= target and not no_room:
             break
         candidate = pick_displacement(review, displaceable(db, config), settings)
         if candidate is None:

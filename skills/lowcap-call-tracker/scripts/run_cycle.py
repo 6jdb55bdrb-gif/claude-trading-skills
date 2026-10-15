@@ -25,7 +25,14 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-from allocation import full_slice_usd, money, portfolio_state, slice_usd
+from allocation import (
+    full_slice_usd,
+    money,
+    open_positions,
+    portfolio_state,
+    position_cap,
+    slice_usd,
+)
 from call_db import DECISION_UNREVIEWED, KIND_ACTIVE, KIND_UNREVIEWED, CallDatabase
 from explosion_signals import telegram_signal_line
 from fetch_screener import FetchError, screen_all
@@ -350,9 +357,14 @@ def run_cycle(
                     continue
                 cash = portfolio_state(db, config)["cash_usd"]
                 wanted = full_slice_usd(config)
-                if cash < wanted:
-                    # Short of a full slice: see whether this call has earned
-                    # the right to displace a losing position.
+                cap = position_cap(config)
+                held = open_positions(db, config)
+                # Two ways to be full: out of money, or out of slots. A book of
+                # part slices has cash left and still no room for an eleventh
+                # position, so the count is checked on its own.
+                if cash < wanted or (cap is not None and held >= cap):
+                    # See whether this call has earned the right to displace a
+                    # losing position — for its cash, its slot, or both.
                     rotations = rotate_for(
                         db,
                         config,
@@ -363,16 +375,26 @@ def run_cycle(
                     if rotations:
                         report["rotations"].extend(rotations)
                         cash = portfolio_state(db, config)["cash_usd"]
+                        held = open_positions(db, config)
                 allocation = slice_usd(config, cash_available=cash)
-                if allocation is None and capital_gated(config):
+                no_room = cap is not None and held >= cap
+                if (allocation is None or no_room) and capital_gated(config):
                     # Not made, not recorded. A call with no money behind it
                     # read in the report exactly like a funded one, which is
-                    # the parallel book the operator asked to end.
+                    # the parallel book the operator asked to end — and a call
+                    # beyond the position cap is the same thing with the cash
+                    # arriving from a part slice.
                     report["capital_skips"].append(
                         {
                             **_call_line(review, stop_pct=sl_pct(config)),
                             "wanted_usd": wanted,
                             "cash_usd": round(cash, 2),
+                            "open_positions": held,
+                            "reason": (
+                                f"{held} open positions, the cap"
+                                if no_room
+                                else f"no cash for a {money(wanted)} position ({money(cash)} free)"
+                            ),
                         }
                     )
                     continue
@@ -578,11 +600,7 @@ def format_report(report: dict[str, Any], *, verbose: bool = False) -> str:
             f"  funded book full — logged unfunded (tracked, not valued): {', '.join(unfunded)}"
         )
     for skip in report.get("capital_skips") or []:
-        lines.append(
-            f"  capital skip: {skip['ticker']} — no cash for a "
-            f"{money(skip['wanted_usd'])} position ({money(skip['cash_usd'])} free), "
-            "not called"
-        )
+        lines.append(f"  capital skip: {skip['ticker']} — {skip['reason']}, not called")
     if report.get("rotations"):
         lines += ["", "ROTATED OUT FOR CASH"] + format_rotations(report["rotations"])
     for skip in report.get("guard_skips") or []:

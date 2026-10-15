@@ -136,10 +136,10 @@ def test_the_gate_can_be_switched_off_for_the_old_behaviour(tmp_path, config):
 
 
 def test_a_low_conviction_take_does_not_displace(tmp_path, config):
-    """The seeded loser was called with confidence 95; the fixture TAKE scores
-    100, which is not the required 10 points of edge."""
+    """The seeded loser carries confidence 100 and so does the fixture TAKE.
+    Equal is not higher, so nothing is displaced and the call is not made."""
     path = tmp_path / "calls.db"
-    kept = _seed(path, confidence=95)
+    kept = _seed(path, confidence=100)
     report = _cycle(config, path)
 
     assert report["rotations"] == []
