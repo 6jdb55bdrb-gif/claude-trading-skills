@@ -24,16 +24,33 @@ tracker:
   # carries a plain stop at the same distance — one rule, not two. Measured on
   # the underlying, checked on every price update. null disables it.
   #
-  # Set to a FLAT 25% on 2026-10-13 (operator decision, in their words: "if a
-  # position is up 100% and goes down 25% it should close the position"). It is
-  # the whole rule again, not a floor — see trailing_stop_atr_mult below.
+  # A FLAT 15%. It is the whole rule, not a floor — see trailing_stop_atr_mult.
   #
-  # The earlier 15% was chosen from this tracker's own history: every call
-  # peaked (+25.9% average) and gave it all back holding to expiry (-0.1%
-  # average), and a 15% trail on the same price paths returned +10.0% with 4 of
-  # 6 green. 25% banks less of a round-trip and survives more noise; the
-  # operator's number governs either way.
-  trailing_stop_pct: 25.0
+  # History, because this number has moved twice and both moves are informative:
+  #
+  # * 15% originally, chosen from this tracker's own record — every call peaked
+  #   (+25.9% average) and gave it all back holding to expiry (-0.1% average),
+  #   and a 15% trail on the same price paths returned +10.0% with 4 of 6 green.
+  # * 25% on 2026-10-13 (operator: "if a position is up 100% and goes down 25%
+  #   it should close the position").
+  # * Back to 15% on 2026-10-17 (operator: "add a 15% trail in future"), after
+  #   two live cases of the wider trail handing back a large move: VEEA banked
+  #   +35.8% where 15% would have banked about +62.5%, and NCPL peaked at
+  #   +49.4% then sat at +17.8% with its 25% stop still 4.9% below.
+  #
+  # The cost of 15% is equally real and was why it was widened: it closes
+  # positions on a single session of noise in a universe whose average daily
+  # range is a quarter of the price. Neither number is obviously right. This one
+  # is the operator's.
+  #
+  # "IN FUTURE" is the default, not a special case: the distance is resolved at
+  # entry and stored on the row (calls.trail_pct), so editing this moves new
+  # calls only. On the day of this change, retrailing the open book would have
+  # closed AISP, FEAM, USDE and NCPL on the next price update — all four were
+  # further off their highs than 15%. `scripts/retrail.py` is the deliberate
+  # step that moves open positions onto a new setting, and it names any such
+  # position before it writes.
+  trailing_stop_pct: 15.0
   # When set, the trail is widened to this multiple of the instrument's own ATR,
   # as a percentage of the entry price, whenever that is wider than the floor:
   #     trail = max(trailing_stop_pct, mult x ATR / entry x 100)

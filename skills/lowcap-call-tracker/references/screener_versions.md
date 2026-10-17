@@ -275,24 +275,34 @@ false, and a short has no stop line because the formula subtracts from entry.
 
 ## The trailing stop
 
-`tracker.trailing_stop_pct: 25.0`, `tracker.trailing_stop_atr_mult: null`, and
+`tracker.trailing_stop_pct: 15.0`, `tracker.trailing_stop_atr_mult: null`, and
 `call_db.resolve_trail_pct` / `call_db.apply_price`:
 
 ```
 stop = peak_price * (1 - trail_pct / 100)       # peak starts AT the entry price
 ```
 
-A **flat 25%** below the high-water mark since entry, set on 2026-10-13 on the
-operator's instruction: "if a position is up 100% and goes down 25% it should
-close the position". Because the high-water mark starts at the entry price, a
-call that never gains carries a plain 25% stop at the same distance — one rule,
-not two.
+A **flat 15%** below the high-water mark since entry. Because the mark starts at
+the entry price, a call that never gains carries a plain 15% stop at the same
+distance — one rule, not two.
 
-The ATR multiplier that used to widen it is **off**. A 25% floor under a 1.5x
-ATR multiplier is not a 25% trail: on the live book it resolved to 40.3% on
-VEEA, 49.0% on XRPN and 37.7% on MEDS, so the number in the config was not the
-number in force on the positions that mattered. The scaling code is untouched,
-so setting a multiplier restores it exactly.
+The number has moved twice, and both moves are on the record:
+
+| date | distance | why |
+|---|---|---|
+| — | 15% | The tracker's own replay: every call peaked (+25.9% average) and gave it back to expiry (-0.1%); a 15% trail on those paths returned +10.0%, 4 of 6 green. |
+| 2026-10-13 | 25% | Operator: "if a position is up 100% and goes down 25% it should close the position". |
+| 2026-10-17 | **15%** | Operator: "add a 15% trail in future", after VEEA banked +35.8% where 15% would have banked ~+62.5%, and NCPL peaked +49.4% and sat at +17.8% with its 25% stop still 4.9% away. |
+
+The cost of 15% is the reason it was widened in the first place: in a universe
+whose average daily range is a quarter of the price, it closes positions on one
+session of noise. Neither number is obviously right.
+
+The ATR multiplier that used to widen it is **off**. A floor under a 1.5x ATR
+multiplier is not a trail of that width: on the live book a 25% floor resolved
+to 40.3% on VEEA, 49.0% on XRPN and 37.7% on MEDS, so the number in the config
+was not the number in force on the positions that mattered. The scaling code is
+untouched, so setting a multiplier restores it exactly.
 
 The distance is resolved **once, at entry**, and stored in `calls.trail_pct`, so
 editing the config changes new calls only. `scripts/retrail.py` is the one
@@ -303,6 +313,11 @@ python3 scripts/retrail.py                 # print the plan, write nothing
 python3 scripts/retrail.py --apply         # write the new distances
 python3 scripts/retrail.py --apply --only-widen   # skip anything it would tighten
 ```
+
+"In future" is therefore the default, not a special case. On 2026-10-17 that
+distinction was four positions: retrailing the open book to 15% would have
+closed AISP, FEAM, USDE and NCPL on the next price update, all four being
+further off their highs than 15%.
 
 The plan names, per open call, the distance it moves from and to, the resulting
 stop price, how far below its own peak it is sitting, and — the line that

@@ -182,10 +182,11 @@ itself, so running these by hand is only for a look or a replay.
 
 Two stops and one funding rule, all three set in `assets/tracker_config.yaml`:
 
-- **Trailing stop** — a flat **25%** below the highest price seen since entry
+- **Trailing stop** — a flat **15%** below the highest price seen since entry
   (`tracker.trailing_stop_pct`). The high-water mark starts at the entry price,
-  so a call that never gains carries a plain 25% stop. This is the rule that
-  actually closes positions, checked on every price update.
+  so a call that never gains carries a plain 15% stop. This is the rule that
+  actually closes positions, checked on every price update. Resolved at entry
+  and stored per call, so changing the setting moves new calls only.
 - **Fixed stop** — **30%** below entry (`tracker.sl_pct`), stored per call as
   `sl_price`. It never moves, and it is *measured*, not acted on: the outcome
   tracker checks each session's low against it.
