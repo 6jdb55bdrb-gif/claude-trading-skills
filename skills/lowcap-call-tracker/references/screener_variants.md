@@ -5,6 +5,40 @@ tokens; the full catalogue lives in
 `skills/finviz-screener/references/finviz_screener_filters.md`, and URLs are
 built by that skill's `build_url` so both skills emit identical URLs.
 
+## FinViz markup: the results grid is a div grid, not a table
+
+Measured 2026-10-19. The public screener page replaced
+`<table class="screener_table">` with a div grid and now contains **zero
+`<table>` elements**:
+
+| element | class | carries |
+|---|---|---|
+| header cell | `fv-table_header-cell` | a long label (`fv-table_header-label`) and sometimes a short one (`...-label-short`), so the cell's own text runs them together — "Market CapMkt Cap", "VolumeVol" — and matches nothing in `COLUMN_MAP`. Read the long label. |
+| row | `fv-table_row` | `data-row-key="TCRT"`, the authoritative symbol |
+| cell | `fv-table_cell` | the values, in header order |
+| ticker link | `fv-table_link` | `/quote?t=TCRT&b=1` — note `/quote`, not the old `/quote.ashx` |
+
+The ticker CELL still doubles the first letter ("TTCRT" for TCRT) because it
+renders a logo letter and then the symbol, so the symbol comes from
+`data-row-key`, with the link's `?t=` as a fallback.
+
+**How this was found, and the lesson.** The 2026-10-19 10:47 ET cycle reported
+`hits=0` with no error. A structural screen — small cap, $1-20, average volume
+over 300K, US stocks — matches thousands of names, so zero was never plausible,
+but nothing in the output said so: the parser looked for tables, found none,
+and returned `[]`. The page itself was fine (358KB, correct title, our filters
+echoed back in it).
+
+`parse_screener_html` now **raises `FetchError`** when it can find no grid of
+either shape. A grid that is present with no rows still returns `[]`, because
+that is a real empty result — `momentum_breakout` was legitimately empty the
+same morning ("0 Total" on the page). The distinction is the whole point: an
+unparsable page must never again read as a quiet market.
+
+This is the same failure class as the filter-token lesson below — FinViz fails
+silently, so every layer that reads it has to tell "nothing matched" apart from
+"I could not read the answer".
+
 ## Shared base (all variants)
 
 | Requirement | Filter code | Note |

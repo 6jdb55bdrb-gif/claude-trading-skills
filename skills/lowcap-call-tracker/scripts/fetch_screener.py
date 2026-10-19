@@ -139,8 +139,17 @@ MAGNITUDE_FIELDS = {"market_cap", "float_shares", "shares_outstanding", "volume"
 
 _MULTIPLIERS = {"K": 1e3, "M": 1e6, "B": 1e9, "T": 1e12}
 
-# The ?t=SYMBOL carried by the row's own links.
+# The ?t=SYMBOL carried by the row's own links. Both /quote.ashx?t=X (the old
+# page) and /quote?t=X (the current one) are matched: only the query matters.
 _TICKER_HREF_RE = re.compile(r"[?&]t=([A-Za-z][A-Za-z0-9.\-]*)")
+
+# The div grid FinViz replaced its results <table> with (seen 2026-10-19).
+# Class names are matched by prefix because the row classes carry utility
+# suffixes ("fv-table_link inline-flex h-full ...").
+_GRID_ROW_CLASS = "fv-table_row"
+_GRID_CELL_CLASS = "fv-table_cell"
+_GRID_HEADER_CELL_CLASS = "fv-table_header-cell"
+_GRID_HEADER_LABEL_CLASS = "fv-table_header-label"
 
 
 class FetchError(RuntimeError):
@@ -252,13 +261,71 @@ def _canonical_ticker(row: Any) -> str | None:
     return None
 
 
-def parse_screener_html(html: str) -> list[dict[str, Any]]:
-    """Parse the public screener's result grid; returns [] when it is absent.
+def _grid_header_labels(soup: Any) -> list[str]:
+    """The div grid's column names, long label preferred.
 
-    FinViz renders the filter UI as tables too, and its order-by ``<select>``
-    contains the word "Ticker" — so the grid is identified by its
-    ``screener_table`` class, with a structural fallback (a header row carrying a
-    real ``Ticker`` column, no form controls, body rows as wide as the header).
+    Each header cell carries a long label and sometimes a short one, so its
+    text runs them together — "Market CapMkt Cap", "VolumeVol" — and matches
+    nothing in COLUMN_MAP. The long label is the one the map is keyed on.
+    """
+    headers: list[str] = []
+    for cell in soup.find_all(class_=lambda value: value and _GRID_HEADER_CELL_CLASS in value):
+        label = cell.find(
+            class_=lambda value: value and _GRID_HEADER_LABEL_CLASS.rstrip('"') in value
+        )
+        headers.append((label or cell).get_text(strip=True))
+    return headers
+
+
+def _parse_div_grid(soup: Any) -> list[dict[str, Any]] | None:
+    """Rows from FinViz's div grid, or None when this page has no such grid.
+
+    None and [] mean different things and the caller depends on it: None is
+    "this is not a grid", [] is "a grid with no rows in it".
+    """
+    headers = _grid_header_labels(soup)
+    if "ticker" not in {header.strip().lower() for header in headers}:
+        return None
+
+    rows: list[dict[str, Any]] = []
+    for element in soup.find_all(
+        class_=lambda value: value and _GRID_ROW_CLASS in value and "header" not in str(value)
+    ):
+        # The row's own symbol, authoritative: the ticker CELL renders a logo
+        # letter and then the symbol, so its text reads "TTCRT" for TCRT.
+        key = (element.get("data-row-key") or "").strip()
+        cells = [
+            cell.get_text(strip=True)
+            for cell in element.find_all(
+                class_=lambda value: (
+                    value and _GRID_CELL_CLASS in value and "header" not in str(value)
+                )
+            )
+        ]
+        if len(cells) < 2:
+            continue
+        normalized = normalize_row(dict(zip(headers, cells)))
+        canonical = key.upper() or _canonical_ticker(element)
+        if canonical:
+            normalized["ticker"] = canonical
+        ticker = normalized.get("ticker")
+        if ticker and ticker.replace(".", "").replace("-", "").isalpha():
+            rows.append(normalized)
+    return rows
+
+
+def parse_screener_html(html: str) -> list[dict[str, Any]]:
+    """Parse the public screener's result grid.
+
+    Two layouts are supported, because FinViz has served both: the historical
+    ``<table class="screener_table">`` and the div grid that replaced it
+    (``div.fv-table_row``, measured 2026-10-19).
+
+    Raises ``FetchError`` when NEITHER is present. That is the important
+    behaviour: this function used to return [] for an unparsable page, so a
+    layout change read as a quiet market — the cycle logged "hits=0" against a
+    358KB page whose structural filters match thousands of names. An empty grid
+    (header, no rows) is a real result and still returns [].
     """
     if not HAS_BS4:
         raise FetchError(
@@ -289,7 +356,18 @@ def parse_screener_html(html: str) -> list[dict[str, Any]]:
                 rows.append(normalized)
         if rows:
             return rows
-    return []
+
+    grid = _parse_div_grid(soup)
+    if grid is not None:
+        return grid
+    if tables:
+        # A results table was found and yielded nothing usable: an empty page.
+        return []
+    raise FetchError(
+        "could not find a results grid on the screener page — FinViz markup has "
+        "probably changed again (expected <table class=screener_table> or "
+        "div.fv-table_row). Refusing to report an unparsable page as zero hits."
+    )
 
 
 def fetch_view_rows(

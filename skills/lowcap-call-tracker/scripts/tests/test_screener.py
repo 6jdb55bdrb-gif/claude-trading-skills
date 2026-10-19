@@ -224,8 +224,17 @@ def test_parse_screener_html():
     assert rows[0]["rel_volume"] == 4.2
 
 
-def test_parse_screener_html_without_ticker_table_returns_empty():
-    assert parse_screener_html("<html><table><tr><th>Nope</th></tr></table></html>") == []
+def test_parse_screener_html_without_any_results_grid_raises():
+    """This test asserted `== []` until 2026-10-19, and that was the bug.
+
+    FinViz replaced its results <table> with a div grid; the parser found
+    neither and returned nothing, so the cycle logged "hits=0" against a page
+    whose filters match thousands of names. An unparsable page is now an
+    error. A grid that is present and empty still returns [] — see
+    test_finviz_div_grid.py.
+    """
+    with pytest.raises(FetchError, match="could not find"):
+        parse_screener_html("<html><table><tr><th>Nope</th></tr></table></html>")
 
 
 def test_merge_rows_fills_missing_fields_only():

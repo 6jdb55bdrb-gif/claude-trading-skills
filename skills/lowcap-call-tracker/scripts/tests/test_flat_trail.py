@@ -102,7 +102,7 @@ def test_a_call_that_never_gains_still_stops_at_15_percent(tmp_db, config):
 
 
 def test_changing_the_setting_does_not_move_an_open_call(tmp_db, config):
-    """"In future" is the default, not a special case: the distance is stored
+    """ "In future" is the default, not a special case: the distance is stored
     on the row at entry. On 2026-10-17 this was the difference between a
     config edit and four immediate exits — AISP, FEAM, USDE and NCPL were all
     further off their highs than 15%."""
