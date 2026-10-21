@@ -225,11 +225,20 @@ tracker:
   max_position_pct: 10.0
   # Safety valve: never open more than this many new calls in one run.
   max_new_calls_per_run: 10
-  # JSON state snapshot (git-friendly). Set a path to make a run import it into
-  # an empty database and rewrite it afterwards — that is what lets a scheduled
-  # run on a fresh checkout keep dedupe state and PnL history. A server with a
-  # real disk does not need it; leave null there.
-  snapshot_file: null
+  # JSON state snapshot (git-friendly). A run imports it into an EMPTY database
+  # and rewrites it afterwards, which is what lets a run on a fresh checkout keep
+  # dedupe state and PnL history. Import refuses a database that already holds
+  # calls, so setting this can never clobber live state.
+  #
+  # TURNED ON 2026-10-21, after the whole book was lost. This was null with the
+  # note "a server with a real disk does not need it" — and the tracker was not
+  # running on a server with a real disk. It was running in a container whose
+  # disk is reclaimed, against a database outside the repository, so when the
+  # container was recycled on 2026-10-20 the entire 43-call history went with
+  # it. The snapshot is committed, so from now on the book survives in git.
+  #
+  # The cost is that every run rewrites a tracked file; that is the point.
+  snapshot_file: tracker-output/state_snapshot.json
   # Subscribers and invite codes, exported beside the snapshot when one is in
   # use. Deliberately under state/ (gitignored): an invite code is a shared
   # secret and a chat id identifies a person, so neither may be committed.

@@ -30,6 +30,9 @@ def _output_overlay(tmp_path):
                     "stats_file": str(tmp_path / "stats.md"),
                     "improvements_file": str(tmp_path / "improvements.md"),
                     "reports_dir": str(tmp_path / "reports"),
+                    # Same reason as the `config` fixture: the shipped snapshot
+                    # path is a committed file, and main() loads the real config.
+                    "snapshot_file": None,
                 }
             }
         ),

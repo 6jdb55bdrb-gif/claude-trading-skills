@@ -5,6 +5,41 @@ installs a systemd timer that fires every 4 hours, keeps the SQLite database on
 disk, and runs the Telegram command bot as a resident service. Nothing below is
 better than that — it is what to do *before* that box exists.
 
+## The book must live in git, not on the disk
+
+Learned the hard way on 2026-10-20: the entire 43-call history was lost when
+the container running the tracker was recycled.
+
+Two settings caused it together. `tracker.snapshot_file` was `null`, on the
+reasoning recorded in the config that "a server with a real disk does not need
+it" — and the database path pointed outside the repository, at a scratch
+directory. Neither the database nor a snapshot of it was ever committed, so the
+only durable artefacts were `tracker-output/stats.md` (aggregates, not rows) and
+a `state_snapshot.json` from 2026-10-07, thirteen days stale.
+
+The rule now: **if the run does not own the disk, the snapshot is not
+optional.** `snapshot_file: tracker-output/state_snapshot.json` is the shipped
+default. `import_snapshot` refuses a database that already holds calls, so
+turning it on cannot clobber live state; every run rewrites the file and the
+commit carries it.
+
+What was recoverable, and what was not:
+
+| | recovered | how |
+|---|---|---|
+| dollar account (cash, allocated, realized) | **exactly** | each funded call's allocation and final PnL were printed per row in the session that priced them |
+| 15 open positions | entry, mark, peak, trail, size, kind | same |
+| contract expiries | from the days-to-expiry printed per line | |
+| closed UNFUNDED calls | **no** | they never touched cash, so the dollar account is unaffected; the equal-weight tables restart with fewer rows |
+| per-call outcome rows (+1/+3/+5d, stop flags) | **no** | the v1-vs-v2 scorecard restarts |
+| role verdicts and signal sheets for closed calls | **no** | |
+| screener variant per rebuilt call | **no** | rebuilt rows are labelled `rebuilt` rather than guessed, so the variant table cannot misattribute them |
+| Telegram credentials | **no** | the token lived only in an untracked env file, by design |
+
+`scripts/rebuild_book.py` holds the reconstruction, including the figures it
+reconciles against, so the provenance of the restored account is auditable
+rather than asserted.
+
 ## The problem a scheduled cloud session has
 
 A scheduled Claude Code session starts from a **fresh clone**. `state/` is

@@ -455,6 +455,9 @@ def _signal_overlay(tmp_path):
                     "stats_file": str(tmp_path / "stats.md"),
                     "improvements_file": str(tmp_path / "improvements.md"),
                     "reports_dir": str(tmp_path / "reports"),
+                    # main() loads the real config, whose snapshot path is a
+                    # committed file (see the `config` fixture).
+                    "snapshot_file": None,
                 }
             }
         ),

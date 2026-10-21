@@ -74,6 +74,14 @@ def config(tmp_path):
     loaded["tracker"]["stats_file"] = str(output / "stats.md")
     loaded["tracker"]["improvements_file"] = str(output / "improvements.md")
     loaded["tracker"]["reports_dir"] = str(tmp_path / "reports")
+    # The snapshot is now a CONFIGURED path (it was null until 2026-10-21, when
+    # losing the whole book to a recycled container made persistence
+    # non-optional). Left at the shipped value, every cycle test would import
+    # the committed Oct-7 snapshot into its empty database — 16 historical
+    # calls appearing out of nowhere — and then write the committed file back
+    # out. Snapshot behaviour is opted into per test, which is how the tests
+    # that care about it already work.
+    loaded["tracker"]["snapshot_file"] = None
     return loaded
 
 
