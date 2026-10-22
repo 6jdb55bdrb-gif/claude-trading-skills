@@ -2,13 +2,13 @@
 
 **Backend:** UP · reviewed 37 / unreviewed 0 · TAKE/SKIP 4/33 (10.8% TAKE)
 
-**Account (every call):** $1,093.56 (+9.36% on $1,000.00) · 93.6% allocated · cash $66.35
+**Account (every call):** $1,078.25 (+7.83% on $1,000.00) · 85.6% allocated · cash $146.05
 
-**TAKE only (the Judge's scorecard):** $999.28 (-0.07%). What following the Judge's verdicts alone would have returned — the gap against the account above is what the Judge's selectivity is worth.
+**TAKE only (the Judge's scorecard):** $1,013.19 (+1.32%). What following the Judge's verdicts alone would have returned — the gap against the account above is what the Judge's selectivity is worth.
 
-**Total PnL:** +2.00% — equal weight across all 37 priced call(s)
+**Total PnL:** +2.12% — equal weight across all 37 priced call(s)
 
-**Generated:** 2026-10-21T07:57:24+00:00<br>
+**Generated:** 2026-10-22T06:51:33+00:00<br>
 **Close rule:** contracts run to expiry
 
 ## Overall
@@ -21,14 +21,14 @@
 | Voided (not executable) | 0 |
 | TAKE calls | 4 |
 | Shadow (SKIP) calls | 33 |
-| Open | 15 |
-| Right | 15 |
-| Wrong | 16 |
+| Open | 14 |
+| Right | 14 |
+| Wrong | 17 |
 | Neutral | 6 |
-| Hit rate % | 40.5 |
-| **Total PnL % (equal weight, all calls)** | +2.00% |
-| Average PnL % per call | 2.0 |
-| Portfolio PnL % (equal weight, TAKE only) | -0.18 |
+| Hit rate % | 37.8 |
+| **Total PnL % (equal weight, all calls)** | +2.12% |
+| Average PnL % per call | 2.12 |
+| Portfolio PnL % (equal weight, TAKE only) | 3.3 |
 
 **Best call:** SDEV (long, rebuilt, shadow) +175.82% — entry 10.0 → 27.582
 **Worst call:** SDEV (long, rebuilt, shadow) -56.46% — entry 10.0 → 4.354
@@ -37,31 +37,31 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| call | 37 | 15 | 15 | 16 | 6 | 40.5 | 2.0 |
+| call | 37 | 14 | 14 | 17 | 6 | 37.8 | 2.12 |
 
 ### By asset type
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| stock | 37 | 15 | 15 | 16 | 6 | 40.5 | 2.0 |
+| stock | 37 | 14 | 14 | 17 | 6 | 37.8 | 2.12 |
 
 ### By screen variant
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| momentum_breakout | 1 | 1 | 0 | 0 | 1 | 0.0 | -1.05 |
-| premarket_gap | 3 | 3 | 2 | 0 | 1 | 66.7 | 2.71 |
-| rebuilt | 30 | 8 | 10 | 16 | 4 | 33.3 | 1.0 |
-| squeeze | 3 | 3 | 3 | 0 | 0 | 100.0 | 12.36 |
+| momentum_breakout | 1 | 1 | 0 | 0 | 1 | 0.0 | -2.4 |
+| premarket_gap | 3 | 2 | 1 | 1 | 1 | 33.3 | -3.59 |
+| rebuilt | 30 | 8 | 10 | 16 | 4 | 33.3 | 1.58 |
+| squeeze | 3 | 3 | 3 | 0 | 0 | 100.0 | 14.66 |
 
 ### TAKE vs SKIP (is the Judge adding value?)
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| TAKE | 4 | 4 | 2 | 0 | 2 | 50.0 | -0.18 |
-| SKIP (shadow) | 33 | 11 | 13 | 16 | 4 | 39.4 | 2.27 |
+| TAKE | 4 | 4 | 2 | 0 | 2 | 50.0 | 3.3 |
+| SKIP (shadow) | 33 | 10 | 12 | 17 | 4 | 36.4 | 1.97 |
 
-**Judge edge (avg PnL TAKE − avg PnL shadow):** -2.45 → Judge is not adding value
+**Judge edge (avg PnL TAKE − avg PnL shadow):** 1.32 → Judge is adding value
 
 ### Per-role accuracy
 
@@ -77,16 +77,17 @@
 
 | Group | Calls | Open | Right | Wrong | Neutral | Hit rate % | Avg PnL % |
 |---|---|---|---|---|---|---|---|
-| 0-40 | 1 | 1 | 0 | 0 | 1 | 0.0 | -6.62 |
-| 40-70 | 33 | 11 | 14 | 16 | 3 | 42.4 | 2.65 |
-| 70-100 | 3 | 3 | 1 | 0 | 2 | 33.3 | -2.21 |
+| 0-40 | 1 | 1 | 0 | 0 | 1 | 0.0 | -2.94 |
+| 40-70 | 33 | 10 | 13 | 17 | 3 | 39.4 | 2.22 |
+| 70-100 | 3 | 3 | 1 | 0 | 2 | 33.3 | 2.68 |
 
 
 ### Recent runs
 
 | Run | Started | Screened | New calls | Closed | LLM $ |
 |---|---|---|---|---|---|
-| run_20261021T075717Z | 2026-10-21T07:57:17+00:00 | no | — | — | — |
+| run_20261022T065126Z | 2026-10-22T06:51:26+00:00 | no | — | — | — |
+| run_20261021T075717Z | 2026-10-21T07:57:17+00:00 | no | 0 | 0 | 0.0 |
 | run_20261021T075641Z | 2026-10-21T07:56:41+00:00 | no | 0 | 0 | 0.0 |
 | run_20261021T075556Z | 2026-10-21T07:55:56+00:00 | no | 0 | 0 | 0.0 |
 | rebuild | 2026-10-21T07:55:23+00:00 | no | 37 | 0 | 0.0 |
