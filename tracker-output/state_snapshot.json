@@ -2,11 +2,11 @@
  "counts": {
   "calls": 39,
   "llm_usage": 0,
-  "price_history": 214,
+  "price_history": 241,
   "role_verdicts": 47,
-  "runs": 7
+  "runs": 8
  },
- "exported_at": "2026-10-25T15:25:42+00:00",
+ "exported_at": "2026-10-25T15:28:24+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -1173,7 +1173,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 2.9,
@@ -1225,7 +1225,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 16.5703,
@@ -1277,7 +1277,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 5.12,
@@ -1329,7 +1329,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 9.21,
@@ -1381,7 +1381,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-25T15:25:42+00:00",
     "peak_price": 1.17,
@@ -1433,7 +1433,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "active",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 13.8100004196167,
@@ -1485,7 +1485,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 6.1291,
@@ -1589,7 +1589,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 18.7,
@@ -1745,7 +1745,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 1.39,
@@ -1797,7 +1797,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "active",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 2.53,
@@ -1849,7 +1849,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 17.85,
@@ -1901,7 +1901,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 10.24,
@@ -1953,7 +1953,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with range structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-10-25T15:25:42+00:00",
     "peak_price": 3.38,
@@ -2005,7 +2005,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with range structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-10-25T15:25:40+00:00",
+    "last_price_at": "2026-10-25T15:28:23+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-10-25T15:25:42+00:00",
     "peak_price": 10.83,
@@ -3538,6 +3538,195 @@
     "observed_at": "2026-10-25T15:25:40+00:00",
     "pnl_pct": -0.084,
     "price": 10.8209
+   },
+   {
+    "call_id": 31,
+    "id": 215,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -3.0027,
+    "price": 18.09000015258789
+   },
+   {
+    "call_id": 31,
+    "id": 216,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -3.1635,
+    "price": 18.06
+   },
+   {
+    "call_id": 28,
+    "id": 217,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 8.0595,
+    "price": 13.8100004196167
+   },
+   {
+    "call_id": 28,
+    "id": 218,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 8.0595,
+    "price": 13.81
+   },
+   {
+    "call_id": 23,
+    "id": 219,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 34.4186,
+    "price": 2.890000104904175
+   },
+   {
+    "call_id": 23,
+    "id": 220,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 33.4884,
+    "price": 2.87
+   },
+   {
+    "call_id": 24,
+    "id": 221,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 22.4702,
+    "price": 16.459999084472656
+   },
+   {
+    "call_id": 24,
+    "id": 222,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 20.5357,
+    "price": 16.2
+   },
+   {
+    "call_id": 25,
+    "id": 223,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 7.83,
+    "price": 4.820000171661377
+   },
+   {
+    "call_id": 25,
+    "id": 224,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 6.264,
+    "price": 4.75
+   },
+   {
+    "call_id": 26,
+    "id": 225,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -4.9031,
+    "price": 8.34000015258789
+   },
+   {
+    "call_id": 26,
+    "id": 226,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -4.2816,
+    "price": 8.3945
+   },
+   {
+    "call_id": 34,
+    "id": 227,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -9.5588,
+    "price": 1.2300000190734863
+   },
+   {
+    "call_id": 34,
+    "id": 228,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -7.3529,
+    "price": 1.26
+   },
+   {
+    "call_id": 35,
+    "id": 229,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -8.0851,
+    "price": 2.1600000858306885
+   },
+   {
+    "call_id": 35,
+    "id": 230,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -7.6596,
+    "price": 2.17
+   },
+   {
+    "call_id": 36,
+    "id": 231,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -15.6302,
+    "price": 15.0600004196167
+   },
+   {
+    "call_id": 36,
+    "id": 232,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -15.6863,
+    "price": 15.05
+   },
+   {
+    "call_id": 29,
+    "id": 233,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 3.125,
+    "price": 5.94
+   },
+   {
+    "call_id": 37,
+    "id": 234,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -6.2012,
+    "price": 9.604999542236328
+   },
+   {
+    "call_id": 37,
+    "id": 235,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -6.2012,
+    "price": 9.605
+   },
+   {
+    "call_id": 27,
+    "id": 236,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -3.5714,
+    "price": 1.0800000429153442
+   },
+   {
+    "call_id": 27,
+    "id": 237,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -3.5714,
+    "price": 1.08
+   },
+   {
+    "call_id": 38,
+    "id": 238,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 10.8574,
+    "price": 3.3499999046325684
+   },
+   {
+    "call_id": 38,
+    "id": 239,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 11.8502,
+    "price": 3.38
+   },
+   {
+    "call_id": 39,
+    "id": 240,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": 0.0,
+    "price": 10.829999923706055
+   },
+   {
+    "call_id": 39,
+    "id": 241,
+    "observed_at": "2026-10-25T15:28:23+00:00",
+    "pnl_pct": -0.084,
+    "price": 10.8209
    }
   ],
   "role_verdicts": [
@@ -4084,6 +4273,23 @@
     "screening_ran": 0,
     "session_reason": "weekend \u2014 US market closed",
     "started_at": "2026-10-25T15:25:34+00:00"
+   },
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-10-25T15:28:24+00:00",
+    "hits": 0,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 14,
+    "reviewed": 0,
+    "run_id": "run_20261025T152818Z",
+    "screening_ran": 0,
+    "session_reason": "weekend \u2014 US market closed",
+    "started_at": "2026-10-25T15:28:18+00:00"
    }
   ]
  }
