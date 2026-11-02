@@ -1,12 +1,12 @@
 {
  "counts": {
-  "calls": 44,
+  "calls": 45,
   "llm_usage": 0,
-  "price_history": 761,
-  "role_verdicts": 72,
-  "runs": 33
+  "price_history": 786,
+  "role_verdicts": 77,
+  "runs": 34
  },
- "exported_at": "2026-10-31T22:09:57+00:00",
+ "exported_at": "2026-11-02T09:06:09+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -1173,7 +1173,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 2.98,
@@ -1225,7 +1225,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 16.9225,
@@ -1266,7 +1266,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 53,
-    "current_price": 4.31,
+    "current_price": 4.3,
     "direction": "long",
     "entry_price": 4.47,
     "expiry_date": "2026-11-13",
@@ -1277,11 +1277,11 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 5.12,
-    "pnl_pct": -3.5794,
+    "pnl_pct": -3.8031,
     "position_usd": null,
     "price_as_of": "2026-10-30",
     "researcher_score": null,
@@ -1329,7 +1329,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 9.21,
@@ -1381,7 +1381,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-27T08:07:16+00:00",
     "peak_price": 1.17,
@@ -1433,7 +1433,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "active",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 14.350000381469727,
@@ -1485,7 +1485,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 7.1478,
@@ -1589,13 +1589,13 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 18.7,
     "pnl_pct": -3.4853,
     "position_usd": null,
-    "price_as_of": "2026-10-30",
+    "price_as_of": "2026-11-02",
     "researcher_score": null,
     "ret_1d": 0.16,
     "ret_3d": 0.05,
@@ -1849,7 +1849,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 17.85,
@@ -1901,7 +1901,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 10.960000038146973,
@@ -2005,7 +2005,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with range structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-10-30T12:51:49+00:00",
     "peak_price": 13.489999771118164,
@@ -2161,7 +2161,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with uptrend structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-10-31T22:09:57+00:00",
     "peak_price": 6.1,
@@ -2213,7 +2213,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with uptrend structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-10-31T22:09:56+00:00",
+    "last_price_at": "2026-11-02T09:05:42+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-10-31T22:09:57+00:00",
     "peak_price": 16.39,
@@ -2296,6 +2296,58 @@
     "target_price": 3.93,
     "technician_score": 5.0,
     "ticker": "NRXP",
+    "trail_pct": 15.0
+   },
+   {
+    "allocation_usd": 100.0,
+    "asset_type": "stock",
+    "backend": "heuristic",
+    "call_date": "2026-11-02T09:06:08+00:00",
+    "close_reason": null,
+    "closed_at": null,
+    "confidence": 58,
+    "current_price": 1.8804,
+    "direction": "long",
+    "entry_price": 1.8804,
+    "expiry_date": "2026-12-04",
+    "hard_skip_reason": "reverse split: 46 days ago",
+    "hit_json": "{\"ticker\": \"JAGX\", \"company\": \"Jaguar Health Inc\", \"sector\": \"Healthcare\", \"industry\": \"Biotechnology\", \"country\": \"USA\", \"market_cap\": 4360000.0, \"price\": 1.8804, \"change_pct\": 16.07, \"volume\": 2941.0, \"shares_outstanding\": 2320000.0, \"float_shares\": 2180000.0, \"insider_trans_pct\": 0.0, \"inst_own_pct\": 0.03, \"short_float_pct\": 6.45, \"short_ratio\": 0.05, \"avg_volume\": 2900000.0, \"premarket_gap_pct\": 16.07, \"premarket_volume_pct_of_adv\": null, \"prior_close\": 1.88, \"session_phase\": \"premarket\", \"asset_type\": \"stock\", \"variant\": \"premarket_gap\", \"screen_mode\": \"public\", \"screener_version\": \"v2\", \"filters\": \"cap_smallunder,sh_price_1to20,sh_avgvol_o300,sh_float_u50,ind_stocksonly,geo_usa\"}",
+    "id": 45,
+    "instrument": "call",
+    "judge_decision": "SKIP",
+    "judge_reason": "SKIP \u2014 reverse split: 46 days ago",
+    "kind": "shadow",
+    "last_price_at": "2026-11-02T09:06:08+00:00",
+    "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
+    "outcome_updated_at": null,
+    "peak_price": 1.8804,
+    "pnl_pct": 0.0,
+    "position_usd": 65.81,
+    "price_as_of": null,
+    "researcher_score": 3.2,
+    "ret_1d": null,
+    "ret_3d": null,
+    "ret_5d": null,
+    "review_run_id": null,
+    "reviewed_at": "2026-11-02T09:06:08+00:00",
+    "risk_manager_score": 5.0,
+    "risk_usd": 10.0,
+    "run_id": "run_20261102T090537Z",
+    "screen_variant": "premarket_gap",
+    "screener_version": "v2",
+    "shares": 35.0,
+    "signal_bonus": 3.0,
+    "signals_json": "{\"enabled\": true, \"version\": \"v2\", \"bonus\": 3, \"raw_bonus\": 3, \"capped\": false, \"signals\": {\"float_rotation\": {\"status\": \"ok\", \"value\": 0.0, \"points\": 0, \"detail\": \"0.00x float rotation\"}, \"catalyst_recency\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"filing and news record unavailable\"}, \"short_squeeze_pressure\": {\"status\": \"ok\", \"value\": {\"days_to_cover\": 0.05, \"borrow_fee_pct\": null}, \"points\": 0, \"detail\": \"no squeeze pressure\"}, \"volatility_contraction\": {\"status\": \"ok\", \"value\": 25.5, \"points\": 0, \"detail\": \"range in the 26th percentile\"}, \"premarket_gap\": {\"status\": \"ok\", \"value\": {\"gap_pct\": 16.1, \"volume_pct_of_adv\": null}, \"points\": 0, \"detail\": \"gapped +16.1% on thin premarket volume\"}, \"vwap_position\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"no intraday VWAP\"}, \"insider_buying\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"Form 4 record unavailable\"}, \"institutional_ownership\": {\"status\": \"ok\", \"value\": 0.03, \"points\": 3, \"detail\": \"0.0% institutional\"}, \"sector_sympathy\": {\"status\": \"ok\", \"value\": 0, \"points\": 0, \"detail\": \"0 peers up over 10% in Biotechnology\"}}, \"hard_skips\": [\"reverse split: 46 days ago\"], \"hard_skip\": true, \"hard_skip_checks\": {\"dilution_filings\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"EDGAR filing index unavailable\"}, \"reverse_split\": {\"status\": \"ok\", \"value\": 46, \"points\": 0, \"detail\": \"46 days ago\", \"skip\": true}, \"cash_runway\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"no 10-Q cash or burn figures\"}, \"intraday_halts\": {\"status\": \"ok\", \"value\": 0, \"points\": 0, \"detail\": \"0 halts today\", \"skip\": false}}}",
+    "skeptic_score": 2.0,
+    "sl_price": 1.32,
+    "status": "OPEN",
+    "stop_price": 1.6,
+    "stopped_out": 0,
+    "stopped_out_date": null,
+    "strike": 2.0,
+    "target_price": 2.44,
+    "technician_score": 5.0,
+    "ticker": "JAGX",
     "trail_pct": 15.0
    }
   ],
@@ -7627,6 +7679,181 @@
     "observed_at": "2026-10-31T22:09:56+00:00",
     "pnl_pct": -25.0701,
     "price": 2.2699999809265137
+   },
+   {
+    "call_id": 31,
+    "id": 762,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -4.0751,
+    "price": 17.889999389648438
+   },
+   {
+    "call_id": 31,
+    "id": 763,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -3.4853,
+    "price": 18.0
+   },
+   {
+    "call_id": 28,
+    "id": 764,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 0.3912,
+    "price": 12.829999923706055
+   },
+   {
+    "call_id": 28,
+    "id": 765,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 0.3912,
+    "price": 12.83
+   },
+   {
+    "call_id": 23,
+    "id": 766,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 38.1395,
+    "price": 2.9700000286102295
+   },
+   {
+    "call_id": 23,
+    "id": 767,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 38.6047,
+    "price": 2.98
+   },
+   {
+    "call_id": 24,
+    "id": 768,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 19.4196,
+    "price": 16.05
+   },
+   {
+    "call_id": 25,
+    "id": 769,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -3.8031,
+    "price": 4.300000190734863
+   },
+   {
+    "call_id": 25,
+    "id": 770,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -3.8031,
+    "price": 4.3
+   },
+   {
+    "call_id": 26,
+    "id": 771,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -7.7537,
+    "price": 8.09000015258789
+   },
+   {
+    "call_id": 26,
+    "id": 772,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -8.2098,
+    "price": 8.05
+   },
+   {
+    "call_id": 36,
+    "id": 773,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -20.4482,
+    "price": 14.199999809265137
+   },
+   {
+    "call_id": 36,
+    "id": 774,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -20.1681,
+    "price": 14.25
+   },
+   {
+    "call_id": 29,
+    "id": 775,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 14.5833,
+    "price": 6.599999904632568
+   },
+   {
+    "call_id": 29,
+    "id": 776,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 15.9722,
+    "price": 6.68
+   },
+   {
+    "call_id": 37,
+    "id": 777,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 1.3672,
+    "price": 10.380000114440918
+   },
+   {
+    "call_id": 37,
+    "id": 778,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 0.5791,
+    "price": 10.2993
+   },
+   {
+    "call_id": 27,
+    "id": 779,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 0.0,
+    "price": 1.1200000047683716
+   },
+   {
+    "call_id": 27,
+    "id": 780,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -1.7857,
+    "price": 1.1
+   },
+   {
+    "call_id": 39,
+    "id": 781,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 12.8347,
+    "price": 12.220000267028809
+   },
+   {
+    "call_id": 39,
+    "id": 782,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": 10.5263,
+    "price": 11.97
+   },
+   {
+    "call_id": 42,
+    "id": 783,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -3.0769,
+    "price": 5.670000076293945
+   },
+   {
+    "call_id": 42,
+    "id": 784,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -3.0769,
+    "price": 5.67
+   },
+   {
+    "call_id": 43,
+    "id": 785,
+    "observed_at": "2026-11-02T09:05:42+00:00",
+    "pnl_pct": -3.4777,
+    "price": 15.82
+   },
+   {
+    "call_id": 45,
+    "id": 786,
+    "observed_at": "2026-11-02T09:06:08+00:00",
+    "pnl_pct": 0.0,
+    "price": 1.8804
    }
   ],
   "role_verdicts": [
@@ -8277,6 +8504,51 @@
     "role": "judge",
     "score": null,
     "verdict_json": "{\"role\": \"judge\", \"decision\": \"TAKE\", \"confidence\": 72, \"reason\": \"sector_theme catalyst with range structure; objection answered\", \"skeptic_objections_answered\": true, \"skeptic_answer\": \"Skeptic found nothing disqualifying, so there is nothing to rebut.\", \"key_risk\": \"No specific disqualifier found in the available data.\", \"reasons\": [\"researcher 4.0 / technician 5.0 / risk 5.0 vs skeptic severity 2.0\", \"weighted confidence 57\", \"Skeptic found nothing disqualifying, so there is nothing to rebut.\"], \"backend\": \"heuristic\", \"short_float_bonus\": {\"short_float_pct\": 26.01, \"points\": 10, \"confidence_before\": 57, \"confidence_after\": 67}, \"explosion_signals\": {\"bonus\": 5, \"raw_bonus\": 5, \"capped\": false, \"confidence_before\": 67, \"confidence_after\": 72, \"signals\": {\"float_rotation\": {\"status\": \"ok\", \"value\": 0.14, \"points\": 0, \"detail\": \"0.14x float rotation\"}, \"catalyst_recency\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"filing and news record unavailable\"}, \"short_squeeze_pressure\": {\"status\": \"ok\", \"value\": {\"days_to_cover\": 11.22, \"borrow_fee_pct\": null}, \"points\": 5, \"detail\": \"11.2 days to cover\"}, \"volatility_contraction\": {\"status\": \"ok\", \"value\": 92.2, \"points\": 0, \"detail\": \"range in the 92th percentile\"}, \"premarket_gap\": {\"status\": \"ok\", \"value\": {\"gap_pct\": 13.9, \"volume_pct_of_adv\": null}, \"points\": 0, \"detail\": \"gapped +13.9% on thin premarket volume\"}, \"vwap_position\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"no intraday VWAP\"}, \"insider_buying\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"Form 4 record unavailable\"}, \"institutional_ownership\": {\"status\": \"ok\", \"value\": 27.6, \"points\": 0, \"detail\": \"27.6% institutional\"}, \"sector_sympathy\": {\"status\": \"ok\", \"value\": 0, \"points\": 0, \"detail\": \"0 peers up over 10% in Biotechnology\"}}, \"hard_skips\": [], \"summary\": \"signals +5: squeeze pressure +5\"}}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 45,
+    "created_at": "2026-11-02T09:06:08+00:00",
+    "id": 73,
+    "role": "researcher",
+    "score": 3.2,
+    "verdict_json": "{\"role\": \"researcher\", \"score\": 3.2, \"catalyst_type\": \"sector_theme\", \"catalyst_summary\": \"No catalyst identified from available data.\", \"catalyst_date\": null, \"sector_theme\": \"Biotechnology\", \"insider_buying\": false, \"evidence\": [], \"reasons\": [\"episodic-pivot analyzer: UNCLASSIFIED_EP score 32 rating D\", \"catalyst type not identifiable from the event record\"], \"backend\": \"heuristic\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 45,
+    "created_at": "2026-11-02T09:06:08+00:00",
+    "id": 74,
+    "role": "technician",
+    "score": 5.0,
+    "verdict_json": "{\"role\": \"technician\", \"score\": 5.0, \"trend\": \"range\", \"support\": null, \"resistance\": null, \"volume_pattern\": \"thin\", \"extension_pct_sma20\": null, \"breakout_quality\": \"not_a_breakout\", \"reasons\": [\"no weekly price history: scored from screener fields only (cap 6)\"], \"backend\": \"heuristic\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 45,
+    "created_at": "2026-11-02T09:06:08+00:00",
+    "id": 75,
+    "role": "skeptic",
+    "score": 2.0,
+    "verdict_json": "{\"role\": \"skeptic\", \"score\": 2.0, \"strongest_objection\": \"No specific disqualifier found in the available data.\", \"objection_category\": \"none\", \"risk_flags\": [], \"what_would_change_my_mind\": \"Average dollar volume above $5M sustained for a week (today: +16.1%).\", \"reasons\": [\"no specific objection evidenced by the available fields\"], \"backend\": \"heuristic\", \"score_polarity\": \"severity: 0 = no objection, 10 = disqualifying\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 45,
+    "created_at": "2026-11-02T09:06:08+00:00",
+    "id": 76,
+    "role": "risk_manager",
+    "score": 5.0,
+    "verdict_json": "{\"role\": \"risk_manager\", \"score\": 5.0, \"direction\": \"long\", \"instrument\": \"call\", \"strike\": 2.0, \"expiry_date\": \"2026-12-04\", \"dte\": 32, \"expiry_setup\": \"default\", \"direction_reason\": \"every variant screens for strength; default long\", \"entry\": 1.8804, \"stop\": 1.6, \"stop_basis\": \"percent\", \"target\": 2.44, \"r_multiple_to_target\": 2.0, \"shares\": 35, \"position_usd\": 65.81, \"risk_usd\": 10.0, \"position_pct_of_account\": 6.58, \"reasons\": [\"percent stop at 1.6 (14.9% away)\", \"call 2.0 exp 2026-12-04 (32d, default horizon)\"], \"backend\": \"heuristic\"}"
+   },
+   {
+    "backend": "heuristic",
+    "call_id": 45,
+    "created_at": "2026-11-02T09:06:08+00:00",
+    "id": 77,
+    "role": "judge",
+    "score": null,
+    "verdict_json": "{\"role\": \"judge\", \"decision\": \"SKIP\", \"confidence\": 58, \"reason\": \"SKIP \\u2014 reverse split: 46 days ago\", \"skeptic_objections_answered\": true, \"skeptic_answer\": \"Skeptic found nothing disqualifying, so there is nothing to rebut.\", \"key_risk\": \"No specific disqualifier found in the available data.\", \"reasons\": [\"researcher 3.2 / technician 5.0 / risk 5.0 vs skeptic severity 2.0\", \"weighted confidence 55\", \"Skeptic found nothing disqualifying, so there is nothing to rebut.\"], \"backend\": \"heuristic\", \"explosion_signals\": {\"bonus\": 3, \"raw_bonus\": 3, \"capped\": false, \"confidence_before\": 55, \"confidence_after\": 58, \"signals\": {\"float_rotation\": {\"status\": \"ok\", \"value\": 0.0, \"points\": 0, \"detail\": \"0.00x float rotation\"}, \"catalyst_recency\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"filing and news record unavailable\"}, \"short_squeeze_pressure\": {\"status\": \"ok\", \"value\": {\"days_to_cover\": 0.05, \"borrow_fee_pct\": null}, \"points\": 0, \"detail\": \"no squeeze pressure\"}, \"volatility_contraction\": {\"status\": \"ok\", \"value\": 25.5, \"points\": 0, \"detail\": \"range in the 26th percentile\"}, \"premarket_gap\": {\"status\": \"ok\", \"value\": {\"gap_pct\": 16.1, \"volume_pct_of_adv\": null}, \"points\": 0, \"detail\": \"gapped +16.1% on thin premarket volume\"}, \"vwap_position\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"no intraday VWAP\"}, \"insider_buying\": {\"status\": \"n/a\", \"value\": null, \"points\": 0, \"detail\": \"Form 4 record unavailable\"}, \"institutional_ownership\": {\"status\": \"ok\", \"value\": 0.03, \"points\": 3, \"detail\": \"0.0% institutional\"}, \"sector_sympathy\": {\"status\": \"ok\", \"value\": 0, \"points\": 0, \"detail\": \"0 peers up over 10% in Biotechnology\"}}, \"hard_skips\": [\"reverse split: 46 days ago\"], \"summary\": \"signals +3: thin institutions +3\"}, \"gate_overrides\": [\"reverse split: 46 days ago\"], \"judge_reason\": \"sector_theme catalyst with range structure; objection answered\"}"
    }
   ],
   "runs": [
@@ -8840,6 +9112,23 @@
     "screening_ran": 0,
     "session_reason": "weekend \u2014 US market closed",
     "started_at": "2026-10-31T22:09:50+00:00"
+   },
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-11-02T09:06:09+00:00",
+    "hits": 3,
+    "llm_cost_usd": 0.0,
+    "new_calls": 1,
+    "new_shadows": 1,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 13,
+    "reviewed": 3,
+    "run_id": "run_20261102T090537Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-11-02T09:05:37+00:00"
    }
   ]
  }
