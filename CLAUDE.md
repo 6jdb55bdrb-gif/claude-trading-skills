@@ -258,6 +258,7 @@ The table below is **auto-generated** from `skills-index.yaml` by `scripts/gener
 | **Finviz Screener** | ❌ Not used | 🟡 Optional | ❌ Not used | FINVIZ Elite API |
 | **Futures Position Sizer** | ❌ Not used | ❌ Not used | ❌ Not used | Pure calculation; consumes contrarian-setup-gate's READY_FOR_PLAN report or explicit direction/entry/stop flags; works offline |
 | **IBD Distribution Day Monitor** | ✅ Required | ❌ Not used | ❌ Not used | Financial Modeling Prep API |
+| **ICT Silver Bullet** | ❌ Not used | ❌ Not used | ❌ Not used | Free public API, no key; years of 1m/5m/15m crypto bars; Keyless via yfinance; intraday history capped (1m ~30d, 5m/15m ~60d); Local intraday CSV (timestamp, open, high, low, close) for longer equity/futures history |
 | **Institutional Flow Tracker** | ✅ Required | ❌ Not used | ❌ Not used | Financial Modeling Prep API |
 | **Kanchi Dividend Review Monitor** | 🟡 Optional (Recommended) | ❌ Not used | ❌ Not used | Dividend / price monitoring via FMP |
 | **Kanchi Dividend SOP** | 🟡 Optional (Recommended) | ❌ Not used | ❌ Not used | US dividend stock data via FMP |

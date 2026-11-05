@@ -10,7 +10,7 @@ permalink: /en/skill-catalog/
 # Skill Catalog
 {: .no_toc }
 
-A comprehensive catalog of all 74 Claude Trading Skills organized by category. Badge indicators show API requirements at a glance.
+A comprehensive catalog of all 75 Claude Trading Skills organized by category. Badge indicators show API requirements at a glance.
 {: .fs-6 .fw-300 }
 
 > Use English skill names ("CANSLIM", "VCP", "FinViz", etc.) for best search results on this page.
@@ -73,6 +73,7 @@ A comprehensive catalog of all 74 Claude Trading Skills organized by category. B
 | `futures-position-sizer` | `workflow_step` | — |
 | `fxmacrodata-calendar` | `standalone` | Fetches official macro calendar data directly for event-risk planning. |
 | `ibd-distribution-day-monitor` | `standalone` | Runs an independent distribution-day risk assessment for QQQ or SPY. |
+| `ict-silver-bullet` | `research_only` | — |
 | `institutional-flow-tracker` | `standalone` | Produces an independent institutional ownership and flow assessment on demand. |
 | `kanchi-dividend-review-monitor` | `workflow_step` | — |
 | `kanchi-dividend-sop` | `workflow_step` | — |
@@ -173,6 +174,7 @@ A comprehensive catalog of all 74 Claude Trading Skills organized by category. B
 | **[Scenario Analyzer]({{ '/en/skills/scenario-analyzer/' | relative_url }})** | Builds 18-month scenario projections from news headlines. Dual-agent architecture with 1st/2nd/3rd order effects and recommended tickers | <span class="badge badge-free">No API</span> |
 | **[Backtest Expert]({{ '/en/skills/backtest-expert/' | relative_url }})** | Professional-grade strategy validation framework with hypothesis definition, parameter robustness checks, walk-forward testing, and failure post-mortems | <span class="badge badge-free">No API</span> |
 | **[manifoldbt Backtester]({{ '/en/skills/manifoldbt-backtester/' | relative_url }})** | Runs a declarative strategy spec over OHLCV bars with the manifoldbt Rust engine and emits the eight inputs backtest-expert scores | <span class="badge badge-free">No API</span> |
+| **[ICT Silver Bullet]({{ '/en/skills/ict-silver-bullet/' | relative_url }})** | Mechanical ICT Silver Bullet (NY 03-04/10-11/14-15 windows, liquidity sweep + fair value gap retrace) with a conservative intraday backtester, walk-forward halves, bootstrap CIs and a sensitivity grid across BTC, SPY, QQQ, ES and NQ | <span class="badge badge-free">No API</span> |
 | **[MT5 Robot Tester]({{ '/en/skills/mt5-robot-tester/' | relative_url }})** | Batch-tests local MetaTrader 5 Expert Advisors through a resumable three-round pipeline with fail-closed file handling, deterministic gates, and cross-run learnings. Requires Windows, MT5, EA files, and broker tick data | <span class="badge badge-free">No API</span> |
 | **[Stockbee 20% Study]({{ '/en/skills/stockbee-20pct-study/' | relative_url }})** | Builds a daily +20%/-20% mover model book, classifies catalyst and chart context, updates forward outcomes, and mines cohorts for research prompts. Study workflow only — not a buy/sell signal service | <span class="badge badge-api">FMP Required</span> <span class="badge badge-optional">Local JSON Optional</span> |
 | **Options Strategy Advisor** | Educational options tool using Black-Scholes pricing. Calculates Greeks (Delta, Gamma, Theta, Vega, Rho), supports 17+ strategies, P/L simulation | <span class="badge badge-optional">FMP Optional</span> |
@@ -296,6 +298,7 @@ A comprehensive catalog of all 74 Claude Trading Skills organized by category. B
 
 - **[Backtest Expert]({{ '/en/skills/backtest-expert/' | relative_url }})** -- Professional-grade backtesting framework
 - **[manifoldbt Backtester]({{ '/en/skills/manifoldbt-backtester/' | relative_url }})** -- Executes a strategy spec and produces the metrics backtest-expert scores
+- **[ICT Silver Bullet]({{ '/en/skills/ict-silver-bullet/' | relative_url }})** -- Backtest and robustness-check the ICT Silver Bullet intraday setup
 - **Strategy Pivot Designer** -- Generate new approaches when optimization stalls
 
 ---
@@ -332,6 +335,7 @@ A comprehensive catalog of all 74 Claude Trading Skills organized by category. B
 | FTD Detector | Required | -- | -- |
 | Futures Position Sizer | -- | -- | -- |
 | IBD Distribution Day Monitor | Required | -- | -- |
+| ICT Silver Bullet | -- | -- | -- |
 | Institutional Flow Tracker | Required | -- | -- |
 | Kanchi Dividend Review Monitor | Recommended | -- | -- |
 | Kanchi Dividend SOP | Recommended | -- | -- |

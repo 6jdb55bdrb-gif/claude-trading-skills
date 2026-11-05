@@ -10,7 +10,7 @@ permalink: /ja/skill-catalog/
 # スキル一覧
 {: .no_toc }
 
-全74個のClaude Trading Skillsをカテゴリ別に紹介します。各スキルのAPI要件バッジで、利用に必要な外部サービスをすぐに確認できます。
+全75個のClaude Trading Skillsをカテゴリ別に紹介します。各スキルのAPI要件バッジで、利用に必要な外部サービスをすぐに確認できます。
 {: .fs-6 .fw-300 }
 
 > 検索は英語スキル名（"CANSLIM", "VCP", "FinViz"等）での検索を推奨します。日本語の部分一致検索は制限があります。
@@ -73,6 +73,7 @@ permalink: /ja/skill-catalog/
 | `futures-position-sizer` | `workflow_step` | — |
 | `fxmacrodata-calendar` | `standalone` | Fetches official macro calendar data directly for event-risk planning. |
 | `ibd-distribution-day-monitor` | `standalone` | Runs an independent distribution-day risk assessment for QQQ or SPY. |
+| `ict-silver-bullet` | `research_only` | — |
 | `institutional-flow-tracker` | `standalone` | Produces an independent institutional ownership and flow assessment on demand. |
 | `kanchi-dividend-review-monitor` | `workflow_step` | — |
 | `kanchi-dividend-sop` | `workflow_step` | — |
@@ -173,6 +174,7 @@ permalink: /ja/skill-catalog/
 | **[Scenario Analyzer]({{ '/ja/skills/scenario-analyzer/' | relative_url }})** | ニュースヘッドラインから18ヶ月シナリオ分析。1次・2次・3次影響と推奨銘柄を生成 | <span class="badge badge-free">API不要</span> |
 | **[Backtest Expert]({{ '/ja/skills/backtest-expert/' | relative_url }})** | 戦略仮説のパラメータ堅牢性検証、ウォークフォワード検証を含むプロフェッショナルグレード検証フレームワーク | <span class="badge badge-free">API不要</span> |
 | **[manifoldbt Backtester]({{ '/ja/skills/manifoldbt-backtester/' | relative_url }})** | Runs a declarative strategy spec over OHLCV bars with the manifoldbt Rust engine and emits the eight inputs backtest-expert scores _(EN, awaiting translation)_ | <span class="badge badge-free">API不要</span> |
+| **[ICT Silver Bullet]({{ '/ja/skills/ict-silver-bullet/' | relative_url }})** | ICTシルバーバレット（NY時間 03-04/10-11/14-15 のウィンドウ、流動性スイープ＋FVGリトレース）を機械化し、保守的な日中バックテスト、前後半ウォークフォワード、ブートストラップ信頼区間、感応度グリッドでBTC・SPY・QQQ・ES・NQを検証 | <span class="badge badge-free">API不要</span> |
 | **[MT5 Robot Tester]({{ '/ja/skills/mt5-robot-tester/' | relative_url }})** | ローカルのMetaTrader 5 EAを再開可能な3ラウンドで一括検証し、上書きを防ぐファイル処理、決定論的ゲート、実行間学習を提供。Windows、MT5、EAファイル、ブローカーのtick dataが必要 | <span class="badge badge-free">API不要</span> |
 | **[Stockbee 20% Study]({{ '/ja/skills/stockbee-20pct-study/' | relative_url }})** | +20% / -20% mover のモデルブックを日次で作成し、カタリスト、チャート文脈、将来リターン、コホート傾向を研究用に整理。売買シグナルではなく仮説作成専用 | <span class="badge badge-api">FMP必須</span> <span class="badge badge-optional">ローカルJSON任意</span> |
 | **Options Strategy Advisor** | Black-Scholesモデルで理論価格・グリークス算出。17以上のオプション戦略を教育的に解説 | <span class="badge badge-optional">FMP任意</span> |
@@ -286,6 +288,7 @@ permalink: /ja/skill-catalog/
 
 - **[Backtest Expert]({{ '/ja/skills/backtest-expert/' | relative_url }})** - 戦略仮説のプロフェッショナルグレード検証
 - **[manifoldbt Backtester]({{ '/ja/skills/manifoldbt-backtester/' | relative_url }})** - Executes a strategy spec and produces the metrics backtest-expert scores _(EN, awaiting translation)_
+- **[ICT Silver Bullet]({{ '/ja/skills/ict-silver-bullet/' | relative_url }})** - ICTシルバーバレットの日中セットアップをバックテストし頑健性を検証
 - **Strategy Pivot Designer** - 停滞した戦略から新しいアプローチを生成
 
 ### ポートフォリオを管理したい
@@ -329,6 +332,7 @@ permalink: /ja/skill-catalog/
 | FTD Detector | 必須 | - | - |
 | Futures Position Sizer | - | - | - |
 | IBD Distribution Day Monitor | 必須 | - | - |
+| ICT Silver Bullet | - | - | - |
 | Institutional Flow Tracker | 必須 | - | - |
 | Kanchi Dividend Review Monitor | 推奨 | - | - |
 | Kanchi Dividend SOP | 推奨 | - | - |

@@ -857,6 +857,36 @@ skills:
   outputs:
   - distribution_day_count_report
   workflows: []
+- id: ict-silver-bullet
+  display_name: ICT Silver Bullet
+  category: strategy-research
+  status: beta
+  operational_role:
+    type: research_only
+  summary: Mechanical ICT Silver Bullet (NY time-window liquidity sweep + fair value gap retrace) with a conservative intraday backtester, walk-forward halves, bootstrap CIs and a sensitivity grid across BTC, SPY, QQQ, ES and NQ.
+  timeframe: research
+  difficulty: advanced
+  integrations:
+  - id: binance_public_klines
+    type: market_data
+    requirement: optional
+    note: Free public API, no key; years of 1m/5m/15m crypto bars
+  - id: yahoo_finance
+    type: market_data
+    requirement: optional
+    note: Keyless via yfinance; intraday history capped (1m ~30d, 5m/15m ~60d)
+  - id: ohlc_csv
+    type: local_file
+    requirement: optional
+    note: Local intraday CSV (timestamp, open, high, low, close) for longer equity/futures history
+  inputs:
+  - intraday_ohlc_bars
+  - strategy_parameters
+  outputs:
+  - silver_bullet_backtest_report
+  - robustness_verdict
+  - trade_log
+  workflows: []
 - id: institutional-flow-tracker
   display_name: Institutional Flow Tracker
   category: advanced-satellite

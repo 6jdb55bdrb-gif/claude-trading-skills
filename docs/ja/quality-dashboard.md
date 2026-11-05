@@ -19,7 +19,7 @@ generated: true
 
 | 合計 | 本番 | ベータ | 知識のみ | 実行可能 | テストあり | テストなし |
 |---:|---:|---:|---:|---:|---:|---:|
-| 74 | 58 | 16 | 3 | 71 | 71 | 0 |
+| 75 | 58 | 17 | 3 | 72 | 72 | 0 |
 
 ## テストカバレッジ
 
@@ -38,7 +38,7 @@ generated: true
 | FMP | 29 |
 | FINVIZ | 4 |
 | ALPACA | 2 |
-| その他の外部プロバイダ | 8 |
+| その他の外部プロバイダ | 9 |
 | オフライン（外部データなし） | 35 |
 
 ## ベータパイプライン
@@ -50,6 +50,7 @@ generated: true
 | `drawdown-circuit-breaker` | not yet measured |
 | `futures-position-sizer` | not yet measured |
 | `fxmacrodata-calendar` | not yet measured |
+| `ict-silver-bullet` | not yet measured |
 | `manifoldbt-backtester` | not yet measured |
 | `mt5-robot-tester` | not yet measured |
 | `pre-trade-discipline-gate` | not yet measured |
@@ -94,6 +95,7 @@ generated: true
 | **Futures Position Sizer** (`futures-position-sizer`) | ベータ | はい | はい | not yet measured |
 | **FXMacroData Calendar** (`fxmacrodata-calendar`) | ベータ | はい | はい | not yet measured |
 | **IBD Distribution Day Monitor** (`ibd-distribution-day-monitor`) | 本番 | はい | はい | not yet measured |
+| **ICT Silver Bullet** (`ict-silver-bullet`) | ベータ | はい | はい | not yet measured |
 | **Institutional Flow Tracker** (`institutional-flow-tracker`) | 本番 | はい | はい | not yet measured |
 | **Kanchi Dividend Review Monitor** (`kanchi-dividend-review-monitor`) | 本番 | はい | はい | not yet measured |
 | **Kanchi Dividend SOP** (`kanchi-dividend-sop`) | 本番 | はい | はい | not yet measured |

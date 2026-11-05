@@ -1,0 +1,6 @@
+# Runtime dependencies for standalone .skill installs (issue #330).
+# Verified by scripts/check_skill_deps.py.
+numpy>=1.26
+pandas>=2.0
+requests>=2.31.0
+yfinance>=0.2.0  # optional: only yahoo: sources need it; binance:/csv: sources work without it (exit 2 otherwise)

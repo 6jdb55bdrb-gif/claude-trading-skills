@@ -847,6 +847,7 @@ def _title_case(slug: str) -> str:
         "sop": "SOP",
         "esg": "ESG",
         "cot": "COT",
+        "ict": "ICT",
     }
     words = slug.split("-")
     return " ".join(acronyms.get(w, w.capitalize()) for w in words)

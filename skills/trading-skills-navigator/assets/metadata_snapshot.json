@@ -559,6 +559,35 @@
       "timeframe": "daily"
     },
     {
+      "category": "strategy-research",
+      "difficulty": "advanced",
+      "display_name": "ICT Silver Bullet",
+      "id": "ict-silver-bullet",
+      "integrations": [
+        {
+          "id": "binance_public_klines",
+          "requirement": "optional",
+          "type": "market_data"
+        },
+        {
+          "id": "yahoo_finance",
+          "requirement": "optional",
+          "type": "market_data"
+        },
+        {
+          "id": "ohlc_csv",
+          "requirement": "optional",
+          "type": "local_file"
+        }
+      ],
+      "operational_role": {
+        "type": "research_only"
+      },
+      "status": "beta",
+      "summary": "Mechanical ICT Silver Bullet (NY time-window liquidity sweep + fair value gap retrace) with a conservative intraday backtester, walk-forward halves, bootstrap CIs and a sensitivity grid across BTC, SPY, QQQ, ES and NQ.",
+      "timeframe": "research"
+    },
+    {
       "category": "advanced-satellite",
       "difficulty": "intermediate",
       "display_name": "Institutional Flow Tracker",
