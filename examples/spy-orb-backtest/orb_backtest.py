@@ -36,6 +36,17 @@ except ImportError:  # pragma: no cover
 
 TZ = "America/New_York"
 
+# FOMC rate-decision days (statement at 14:00 ET), 2022-2026.
+FOMC_DATES = frozenset(
+    """
+    2022-01-26 2022-03-16 2022-05-04 2022-06-15 2022-07-27 2022-09-21 2022-11-02 2022-12-14
+    2023-02-01 2023-03-22 2023-05-03 2023-06-14 2023-07-26 2023-09-20 2023-11-01 2023-12-13
+    2024-01-31 2024-03-20 2024-05-01 2024-06-12 2024-07-31 2024-09-18 2024-11-07 2024-12-18
+    2025-01-29 2025-03-19 2025-05-07 2025-06-18 2025-07-30 2025-09-17 2025-10-29 2025-12-10
+    2026-01-28 2026-03-18 2026-04-29 2026-06-17 2026-07-29 2026-09-16 2026-10-28 2026-12-09
+    """.split()
+)
+
 
 @dataclass
 class ORBConfig:
@@ -55,6 +66,12 @@ class ORBConfig:
     entry_mode: str = "close"  # "close" = breakout candle close; "next_open"
     allow_short: bool = True
     last_entry_time: str = "15:30"  # no new entries after this bar start (ET)
+    exit_time: str | None = None  # e.g. "11:00": close at the open of that bar (ET)
+    max_hold_minutes: int | None = None  # close this many minutes after entry
+    # Trade only if OR width% / avg daily range% of the prior adr_days sessions <= this.
+    max_or_width_rel: float | None = None
+    adr_days: int = 10
+    skip_dates: frozenset = frozenset()  # ISO dates (YYYY-MM-DD) to sit out
     commission: float = 0.0  # per side, dollars
     slippage_pct: float = 0.0  # per side, % of price
 
@@ -128,19 +145,50 @@ def add_atr(df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
     return out
 
 
+def load_skip_dates(path: str) -> set[str]:
+    """Read one ISO date per line; '#' starts a comment."""
+    out = set()
+    for line in Path(path).read_text().splitlines():
+        token = line.split("#", 1)[0].strip()
+        if token:
+            out.add(pd.Timestamp(token).date().isoformat())
+    return out
+
+
 def _fill(price: float, side: int, cfg: ORBConfig) -> float:
     """Apply slippage: side=+1 buying, -1 selling."""
     return price * (1 + side * cfg.slippage_pct / 100)
 
 
-def simulate_day(day: pd.DataFrame, cfg: ORBConfig) -> dict | None:
-    """Simulate at most one ORB trade for a single session. None = no trade."""
+def prior_avg_daily_range(df: pd.DataFrame, n: int = 10) -> dict:
+    """{date: mean (high-low)/close % of the n sessions BEFORE that date}."""
+    g = df.groupby(df.index.date)
+    rng = (g["high"].max() - g["low"].min()) / g["close"].last() * 100
+    avg = rng.rolling(n).mean().shift(1)
+    return avg.to_dict()
+
+
+def simulate_day(day: pd.DataFrame, cfg: ORBConfig, adr_pct: float | None = None) -> dict | None:
+    """Simulate at most one ORB trade for a single session. None = no trade.
+
+    adr_pct: average daily range % of prior sessions (needed for max_or_width_rel).
+    """
     if cfg.stop_mode == "atr" and "atr" not in day.columns:
         day = add_atr(day, cfg.atr_period)
     hi, lo, after = opening_range(day, cfg.range_minutes)
     if hi is None or after.empty:
         return None
+    if cfg.max_or_width_rel is not None:
+        if adr_pct is None or pd.isna(adr_pct) or adr_pct <= 0:
+            return None
+        width_pct = (hi - lo) / float(day["open"].iloc[0]) * 100
+        if width_pct / adr_pct > cfg.max_or_width_rel:
+            return None
     cutoff = pd.Timestamp(cfg.last_entry_time).time()
+    if cfg.exit_time:
+        # the signal bar must close before the forced exit
+        latest = (pd.Timestamp(cfg.exit_time) - pd.Timedelta(minutes=10)).time()
+        cutoff = min(cutoff, latest)
 
     bars = after.reset_index()
     ts_col = bars.columns[0]
@@ -187,8 +235,22 @@ def _manage(bars, ts_col, entry_idx, first_check, entry, direction, hi, lo, cfg)
         target = entry * (1 + direction * cfg.take_profit_pct / 100)
 
     exit_price, exit_reason, exit_time = None, "eod", None
+    exit_at = pd.Timestamp(cfg.exit_time).time() if cfg.exit_time else None
+    # entry_time below is the signal bar's start; a "close" entry fills 5 min later.
+    filled_at = bars.loc[entry_idx, ts_col] + pd.Timedelta(
+        minutes=5 if cfg.entry_mode == "close" else 0
+    )
+    hold_until = (
+        filled_at + pd.Timedelta(minutes=cfg.max_hold_minutes) if cfg.max_hold_minutes else None
+    )
     for j in range(first_check, len(bars)):
         b = bars.loc[j]
+        timed_out = (exit_at is not None and b[ts_col].time() >= exit_at) or (
+            hold_until is not None and b[ts_col] >= hold_until
+        )
+        if timed_out:
+            exit_price, exit_reason, exit_time = float(b["open"]), "time", b[ts_col]
+            break
         # Gap through the stop on the bar open -> fill at the open.
         if direction == 1:
             stop_hit = b["low"] <= stop
@@ -252,9 +314,12 @@ def _manage(bars, ts_col, entry_idx, first_check, entry, direction, hi, lo, cfg)
 def backtest(df: pd.DataFrame, cfg: ORBConfig) -> pd.DataFrame:
     if cfg.stop_mode == "atr":
         df = add_atr(df, cfg.atr_period)
+    adr = prior_avg_daily_range(df, cfg.adr_days) if cfg.max_or_width_rel is not None else {}
     trades = []
-    for _, day in df.groupby(df.index.date):
-        t = simulate_day(day, cfg)
+    for d, day in df.groupby(df.index.date):
+        if d.isoformat() in cfg.skip_dates:
+            continue
+        t = simulate_day(day, cfg, adr.get(d))
         if t:
             trades.append(t)
     return pd.DataFrame(trades)
@@ -410,6 +475,15 @@ def parse_args(argv=None):
         "--take-profit-pct", type=float, default=10.0, help="Profit target %% (default 10)"
     )
     p.add_argument("--no-target", action="store_true", help="Disable the profit target")
+    p.add_argument("--exit-time", help="Close the trade at this ET time, e.g. 11:00")
+    p.add_argument("--max-hold-minutes", type=int, help="Close N minutes after entry")
+    p.add_argument(
+        "--max-or-width-rel",
+        type=float,
+        help="Only trade when OR width is <= this fraction of the prior 10-day avg daily range",
+    )
+    p.add_argument("--skip-fomc", action="store_true", help="Sit out FOMC decision days")
+    p.add_argument("--skip-dates-file", help="File of YYYY-MM-DD dates to sit out")
     p.add_argument("--entry-mode", choices=["close", "next_open"], default="close")
     p.add_argument("--long-only", action="store_true")
     p.add_argument("--commission", type=float, default=0.0)
@@ -420,7 +494,11 @@ def parse_args(argv=None):
 
 def main(argv=None) -> int:
     a = parse_args(argv)
+    skip = set(FOMC_DATES) if a.skip_fomc else set()
+    if a.skip_dates_file:
+        skip |= load_skip_dates(a.skip_dates_file)
     cfg = ORBConfig(
+        skip_dates=frozenset(skip),
         range_minutes=a.range_minutes,
         position_size=a.position_size,
         account_size=a.account_size,
@@ -430,6 +508,9 @@ def main(argv=None) -> int:
         atr_mult=a.atr_mult,
         take_profit_pct=None if a.no_target else a.take_profit_pct,
         entry_mode=a.entry_mode,
+        exit_time=a.exit_time,
+        max_hold_minutes=a.max_hold_minutes,
+        max_or_width_rel=a.max_or_width_rel,
         allow_short=not a.long_only,
         commission=a.commission,
         slippage_pct=a.slippage_pct,

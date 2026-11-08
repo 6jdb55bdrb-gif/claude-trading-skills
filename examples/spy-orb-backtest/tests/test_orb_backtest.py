@@ -202,3 +202,96 @@ def test_leverage_measured_against_account_size():
     assert m["leverage"] == pytest.approx(3.0)
     assert m["final_equity"] == pytest.approx(1000 + trades["pnl"].sum(), abs=0.01)
     assert m["total_return_on_account_pct"] == pytest.approx(trades["pnl"].sum() / 10, abs=0.01)
+
+
+# ------------------------------------------------------------- feature 1: exit time
+
+
+def test_exit_time_closes_at_bar_open():
+    # Breakout at 10:00 bar close (101.5); price keeps rising; 11:00 bar opens at 103.
+    rest = [101.5] + [102.0] * 11 + [104.0] + [105.0] * 59
+    opens = OR_CLOSES + [100.5] + [102.0] * 11 + [103.0] + [105.0] * 59
+    day = make_day("2026-01-05", OR_CLOSES + rest, opens=opens)
+    trade = simulate_day(day, ORBConfig(exit_time="11:00", take_profit_pct=None))
+    assert trade["exit_reason"] == "time"
+    assert trade["exit_time"] == "11:00"
+    assert trade["exit_price"] == pytest.approx(103.0)
+
+
+def test_stop_before_exit_time_still_wins():
+    rest = [98.5, 104.0] + [99.0] * 70
+    highs = OR_HIGHS + [99.0, 104.0] + [99.0] * 70
+    lows = OR_LOWS + [98.4, 98.5] + [99.0] * 70
+    day = make_day("2026-01-05", OR_CLOSES + rest, highs, lows)
+    trade = simulate_day(day, ORBConfig(exit_time="11:00"))
+    assert trade["exit_reason"] == "stop"
+
+
+def test_no_entry_at_or_after_exit_time():
+    # First breakout only happens at 11:00 -> no trade when exit_time is 11:00.
+    rest = [100.0] * 12 + [102.0] * 60
+    day = make_day("2026-01-05", OR_CLOSES + rest, OR_HIGHS + rest, OR_LOWS + rest)
+    assert simulate_day(day, ORBConfig(exit_time="11:00")) is None
+    assert simulate_day(day, ORBConfig()) is not None
+
+
+def test_max_hold_minutes_exits_n_minutes_after_entry():
+    # Entry at close of 10:05 bar (=10:10); 60 min hold -> exit at open of 11:10 bar.
+    rest = [100.0, 101.5] + [102.0] * 70
+    opens = OR_CLOSES + [100.0, 100.0] + [102.0] * 12 + [103.0] + [102.0] * 57
+    day = make_day("2026-01-05", OR_CLOSES + rest, opens=opens)
+    trade = simulate_day(day, ORBConfig(max_hold_minutes=60, take_profit_pct=None))
+    assert trade["entry_time"] == "10:05"
+    assert trade["exit_reason"] == "time"
+    assert trade["exit_time"] == "11:10"
+
+
+# ------------------------------------------------------------- feature 2: skip dates
+
+
+def test_skip_dates_removes_those_sessions():
+    d1 = make_day("2026-01-05", OR_CLOSES + [101.5] + [102] * 71)
+    d2 = make_day("2026-01-06", OR_CLOSES + [98.5] + [98] * 71)
+    df = pd.concat([d1, d2])
+    trades = backtest(df, ORBConfig(skip_dates=frozenset({"2026-01-06"})))
+    assert list(trades["date"]) == ["2026-01-05"]
+
+
+def test_fomc_calendar_and_loader(tmp_path):
+    from orb_backtest import FOMC_DATES, load_skip_dates
+
+    assert "2025-04-08" not in FOMC_DATES and "2025-03-19" in FOMC_DATES
+    f = tmp_path / "skip.txt"
+    f.write_text("# comment\n2026-01-06\n\n2026-02-03  # CPI\n")
+    assert load_skip_dates(str(f)) == {"2026-01-06", "2026-02-03"}
+
+
+# --------------------------------------------------------- feature 3: OR width filter
+
+
+def test_or_width_filter_uses_prior_average_daily_range():
+    day = make_day(
+        "2026-01-05",
+        OR_CLOSES + [101.5] + [102] * 71,
+        OR_HIGHS + [101.5] + [102] * 71,
+        OR_LOWS + [101.5] + [102] * 71,
+    )
+    # OR = 99..101 on a 100 open -> width 2.0%.
+    cfg = ORBConfig(max_or_width_rel=0.5)
+    assert simulate_day(day, cfg, adr_pct=5.0) is not None  # 2/5 = 0.4 <= 0.5
+    assert simulate_day(day, cfg, adr_pct=3.0) is None  # 2/3 = 0.67 > 0.5
+    assert simulate_day(day, cfg, adr_pct=None) is None  # no history -> sit out
+    assert simulate_day(day, ORBConfig(), adr_pct=None) is not None  # filter off
+
+
+def test_daily_range_average_excludes_current_day():
+    from orb_backtest import prior_avg_daily_range
+
+    days = []
+    for k, rng in enumerate([1.0, 3.0, 5.0]):
+        d = make_day(f"2026-01-0{5 + k}", [100.0] * 78, [100 + rng / 2] * 78, [100 - rng / 2] * 78)
+        days.append(d)
+    adr = prior_avg_daily_range(pd.concat(days), n=2)
+    keys = sorted(adr)
+    assert pd.isna(adr[keys[0]]) and pd.isna(adr[keys[1]])
+    assert adr[keys[2]] == pytest.approx(2.0)  # mean of 1% and 3%, not today's 5%

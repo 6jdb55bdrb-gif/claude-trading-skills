@@ -15,6 +15,9 @@ A self-contained backtester for a classic opening-range-breakout day trade on SP
 | Trailing stop (optional) | `--stop-mode atr`: starts at entry ∓ `atr_mult` × ATR(14, 5-min bars) and ratchets up as price makes new highs (long) / down on new lows (short); never looser than the 5% stop |
 | Take profit | **10%** of the trade by default (`--take-profit-pct N`, or `--no-target`) |
 | Exit | Stop, target, or close of the 15:55 ET candle |
+| Hold limit (optional) | `--max-hold-minutes 60` closes N minutes after entry; `--exit-time 11:00` closes at a clock time |
+| Skip days (optional) | `--skip-fomc` sits out Fed decision days (built-in 2022–2026 calendar); `--skip-dates-file` for your own list (CPI, NFP, ...) |
+| Range filter (optional) | `--max-or-width-rel 0.4` trades only when the opening range is ≤ 40% of the prior 10-day average daily range |
 
 If a single bar touches both stop and target, the stop is assumed to fill first (conservative).
 
@@ -45,6 +48,15 @@ Outputs go to `reports/spy_orb_backtest_<date>.md`, `.json`, and `_trades.csv`.
 export ALPACA_API_KEY=...  ALPACA_SECRET_KEY=...   # free paper account at alpaca.markets
 python3 examples/spy-orb-backtest/fetch_alpaca_bars.py --symbol SPY --years 4 --out data/spy_5m.csv
 python3 examples/spy-orb-backtest/orb_backtest.py --csv data/spy_5m.csv --stop-mode atr
+```
+
+## Walk-forward check
+
+`walk_forward.py` searches 192 combinations of stop type, hold limit, FOMC skip, range filter and target.
+For each test year it picks the best combination using only earlier years, then scores it on the unseen year.
+
+```bash
+python3 examples/spy-orb-backtest/walk_forward.py --csv data/spy_5m.csv --test-years 2024 2025 2026
 ```
 
 ## Data limitation
