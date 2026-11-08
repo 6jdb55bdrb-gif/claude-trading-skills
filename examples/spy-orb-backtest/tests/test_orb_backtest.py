@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from orb_backtest import (  # noqa: E402
     ORBConfig,
+    add_atr,
     backtest,
     compute_metrics,
     opening_range,
@@ -132,3 +133,61 @@ def test_gap_through_stop_fills_at_open():
     trade = simulate_day(day, ORBConfig())
     assert trade["exit_reason"] == "stop"
     assert trade["exit_price"] == pytest.approx(92)  # worse than the 96.425 stop
+
+
+# --------------------------------------------------------------- ATR trailing
+
+
+def make_atr_day(date, closes, rng=1.0):
+    """Bars with constant high-low = rng and open = prior close -> ATR == rng."""
+    opens = [closes[0]] + list(closes[:-1])
+    # Centre each bar on its body so true range == rng when the body is <= rng.
+    highs = [(o + c) / 2 + rng / 2 for o, c in zip(opens, closes)]
+    lows = [(o + c) / 2 - rng / 2 for o, c in zip(opens, closes)]
+    return make_day(date, closes, highs, lows, opens)
+
+
+def test_default_take_profit_is_10pct():
+    assert ORBConfig().take_profit_pct == 10.0
+
+
+def test_add_atr_constant_range():
+    day = make_atr_day("2026-01-05", [100.0] * 30, rng=1.0)
+    out = add_atr(day, period=14)
+    assert out["atr"].iloc[-1] == pytest.approx(1.0)
+
+
+def test_atr_initial_stop_and_trailing_long():
+    # OR flat at 100 (range 99.5-100.5); breakout close 101; rally to 105; drop to 100.
+    closes = [100.0] * 6 + [101.0, 102.0, 103.0, 104.0, 105.0, 104.6, 104.2, 100.0] + [100.0] * 58
+    day = add_atr(make_atr_day("2026-01-05", closes, rng=1.0), period=3)
+    trade = simulate_day(day, ORBConfig(stop_mode="atr", atr_mult=2.0, take_profit_pct=None))
+    assert trade["direction"] == "long"
+    assert trade["entry_price"] == pytest.approx(101.0)
+    assert trade["initial_stop"] == pytest.approx(101.0 - 2.0)  # entry - 2*ATR
+    # Highest high reached = 105.5 (bar centred 104.5..105 + 0.5) -> trail = 105.5 - 2 = 103.5
+    assert trade["exit_reason"] == "trail_stop"
+    assert trade["stop_price"] > trade["initial_stop"]
+    assert trade["pnl"] > 0
+
+
+def test_atr_trailing_short_moves_down():
+    closes = [100.0] * 6 + [99.0, 98.0, 97.0, 96.0, 95.0, 95.4, 99.0] + [99.0] * 59
+    day = add_atr(make_atr_day("2026-01-05", closes, rng=1.0), period=3)
+    trade = simulate_day(day, ORBConfig(stop_mode="atr", atr_mult=2.0, take_profit_pct=None))
+    assert trade["direction"] == "short"
+    assert trade["initial_stop"] == pytest.approx(101.0)
+    assert trade["stop_price"] < trade["initial_stop"]
+    assert trade["exit_reason"] == "trail_stop"
+    assert trade["pnl"] > 0
+
+
+def test_atr_stop_never_looser_than_max_loss_pct():
+    # Huge ATR (range 20) -> 2*ATR stop would be > 5% away; 5% cap applies.
+    closes = [100.0] * 6 + [111.0] + [111.0] * 65
+    day = add_atr(make_atr_day("2026-01-05", closes, rng=20.0), period=3)
+    trade = simulate_day(
+        day, ORBConfig(stop_mode="atr", atr_mult=2.0, stop_pct=5.0, range_minutes=30)
+    )
+    if trade is not None:
+        assert trade["initial_stop"] >= trade["entry_price"] * 0.95 - 1e-9

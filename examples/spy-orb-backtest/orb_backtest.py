@@ -42,8 +42,15 @@ class ORBConfig:
     range_minutes: int = 30
     position_size: float = 1000.0
     stop_pct: float = 5.0
-    stop_mode: str = "pct"  # "pct" = stop_pct from entry; "range" = opposite side of range
-    take_profit_pct: float | None = None
+    # "pct"   = fixed stop_pct from entry
+    # "range" = opposite side of the opening range
+    # "atr"   = ATR trailing stop: starts at entry -/+ atr_mult*ATR and ratchets in the
+    #           trade's favour as price makes new highs (long) / lows (short).
+    #           Never looser than stop_pct from entry.
+    stop_mode: str = "pct"
+    atr_period: int = 14
+    atr_mult: float = 2.0
+    take_profit_pct: float | None = 10.0
     entry_mode: str = "close"  # "close" = breakout candle close; "next_open"
     allow_short: bool = True
     last_entry_time: str = "15:30"  # no new entries after this bar start (ET)
@@ -108,6 +115,18 @@ def opening_range(day: pd.DataFrame, minutes: int = 30):
     return float(rng["high"].max()), float(rng["low"].min()), after
 
 
+def add_atr(df: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    """Add a Wilder ATR column (computed on 5-min bars, continuous across sessions)."""
+    prev_close = df["close"].shift(1)
+    tr = pd.concat(
+        [df["high"] - df["low"], (df["high"] - prev_close).abs(), (df["low"] - prev_close).abs()],
+        axis=1,
+    ).max(axis=1)
+    out = df.copy()
+    out["atr"] = tr.ewm(alpha=1 / period, adjust=False, min_periods=period).mean()
+    return out
+
+
 def _fill(price: float, side: int, cfg: ORBConfig) -> float:
     """Apply slippage: side=+1 buying, -1 selling."""
     return price * (1 + side * cfg.slippage_pct / 100)
@@ -115,6 +134,8 @@ def _fill(price: float, side: int, cfg: ORBConfig) -> float:
 
 def simulate_day(day: pd.DataFrame, cfg: ORBConfig) -> dict | None:
     """Simulate at most one ORB trade for a single session. None = no trade."""
+    if cfg.stop_mode == "atr" and "atr" not in day.columns:
+        day = add_atr(day, cfg.atr_period)
     hi, lo, after = opening_range(day, cfg.range_minutes)
     if hi is None or after.empty:
         return None
@@ -144,10 +165,22 @@ def simulate_day(day: pd.DataFrame, cfg: ORBConfig) -> dict | None:
 
 
 def _manage(bars, ts_col, entry_idx, first_check, entry, direction, hi, lo, cfg) -> dict:
+    pct_stop = entry * (1 - direction * cfg.stop_pct / 100)
+    trailing = cfg.stop_mode == "atr"
     if cfg.stop_mode == "range":
         stop = lo if direction == 1 else hi
+    elif trailing:
+        atr = bars.loc[entry_idx, "atr"]
+        if pd.isna(atr):
+            stop = pct_stop
+        else:
+            atr_stop = entry - direction * cfg.atr_mult * float(atr)
+            # tighter of the two: never risk more than stop_pct
+            stop = max(atr_stop, pct_stop) if direction == 1 else min(atr_stop, pct_stop)
     else:
-        stop = entry * (1 - direction * cfg.stop_pct / 100)
+        stop = pct_stop
+    initial_stop = stop
+    extreme = entry
     target = None
     if cfg.take_profit_pct:
         target = entry * (1 + direction * cfg.take_profit_pct / 100)
@@ -168,11 +201,24 @@ def _manage(bars, ts_col, entry_idx, first_check, entry, direction, hi, lo, cfg)
             tgt_px = min(target, b["open"]) if target else None
         # Same-bar stop & target: assume the stop came first (conservative).
         if stop_hit:
-            exit_price, exit_reason, exit_time = stop_px, "stop", b[ts_col]
+            moved = (stop - initial_stop) * direction > 1e-12
+            exit_price, exit_reason, exit_time = (
+                stop_px,
+                "trail_stop" if moved else "stop",
+                b[ts_col],
+            )
             break
         if tgt_hit:
             exit_price, exit_reason, exit_time = tgt_px, "target", b[ts_col]
             break
+        # Ratchet the trailing stop after the bar closes (applies from the next bar).
+        if trailing and not pd.isna(b["atr"]):
+            if direction == 1:
+                extreme = max(extreme, float(b["high"]))
+                stop = max(stop, extreme - cfg.atr_mult * float(b["atr"]))
+            else:
+                extreme = min(extreme, float(b["low"]))
+                stop = min(stop, extreme + cfg.atr_mult * float(b["atr"]))
     if exit_price is None:
         last = bars.iloc[-1]
         exit_price, exit_time = float(last["close"]), last[ts_col]
@@ -189,6 +235,7 @@ def _manage(bars, ts_col, entry_idx, first_check, entry, direction, hi, lo, cfg)
         "range_low": lo,
         "entry_time": entry_time.strftime("%H:%M"),
         "entry_price": entry,
+        "initial_stop": initial_stop,
         "stop_price": stop,
         "target_price": target,
         "exit_time": pd.Timestamp(exit_time).strftime("%H:%M"),
@@ -202,6 +249,8 @@ def _manage(bars, ts_col, entry_idx, first_check, entry, direction, hi, lo, cfg)
 
 
 def backtest(df: pd.DataFrame, cfg: ORBConfig) -> pd.DataFrame:
+    if cfg.stop_mode == "atr":
+        df = add_atr(df, cfg.atr_period)
     trades = []
     for _, day in df.groupby(df.index.date):
         t = simulate_day(day, cfg)
@@ -256,6 +305,14 @@ def compute_metrics(trades: pd.DataFrame, cfg: ORBConfig, num_days: int | None =
 # ------------------------------------------------------------------------- report
 
 
+def _stop_label(cfg: ORBConfig) -> str:
+    if cfg.stop_mode == "atr":
+        return f"ATR({cfg.atr_period}) x{cfg.atr_mult:g} trailing, capped at {cfg.stop_pct:g}%"
+    if cfg.stop_mode == "range":
+        return "opposite side of range"
+    return f"{cfg.stop_pct:g}% of trade"
+
+
 def write_reports(trades, metrics, cfg, meta, out_dir: Path) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y-%m-%d")
@@ -276,7 +333,7 @@ def write_reports(trades, metrics, cfg, meta, out_dir: Path) -> dict:
         f"**Generated:** {payload['generated_at']}  ",
         f"**Data:** {meta['source']} | {meta['start']} to {meta['end']} ({m.get('trading_days')} sessions)  ",
         f"**Rules:** {cfg.range_minutes}-min range, 5-min close breakout, entry={cfg.entry_mode}, "
-        f"stop={f'{cfg.stop_pct:.1f}% of trade' if cfg.stop_mode == 'pct' else 'opposite side of range'}, "
+        f"stop={_stop_label(cfg)}, "
         f"target={f'{cfg.take_profit_pct:.1f}%' if cfg.take_profit_pct else 'none (exit at close)'}, "
         f"${cfg.position_size:,.0f} per trade",
         "",
@@ -336,8 +393,13 @@ def parse_args(argv=None):
     p.add_argument("--range-minutes", type=int, default=30)
     p.add_argument("--position-size", type=float, default=1000.0)
     p.add_argument("--stop-pct", type=float, default=5.0)
-    p.add_argument("--stop-mode", choices=["pct", "range"], default="pct")
-    p.add_argument("--take-profit-pct", type=float)
+    p.add_argument("--stop-mode", choices=["pct", "range", "atr"], default="pct")
+    p.add_argument("--atr-period", type=int, default=14, help="ATR length in 5-min bars")
+    p.add_argument("--atr-mult", type=float, default=2.0, help="Trailing distance in ATRs")
+    p.add_argument(
+        "--take-profit-pct", type=float, default=10.0, help="Profit target %% (default 10)"
+    )
+    p.add_argument("--no-target", action="store_true", help="Disable the profit target")
     p.add_argument("--entry-mode", choices=["close", "next_open"], default="close")
     p.add_argument("--long-only", action="store_true")
     p.add_argument("--commission", type=float, default=0.0)
@@ -353,7 +415,9 @@ def main(argv=None) -> int:
         position_size=a.position_size,
         stop_pct=a.stop_pct,
         stop_mode=a.stop_mode,
-        take_profit_pct=a.take_profit_pct,
+        atr_period=a.atr_period,
+        atr_mult=a.atr_mult,
+        take_profit_pct=None if a.no_target else a.take_profit_pct,
         entry_mode=a.entry_mode,
         allow_short=not a.long_only,
         commission=a.commission,

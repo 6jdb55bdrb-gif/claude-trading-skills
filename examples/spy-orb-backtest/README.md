@@ -12,7 +12,8 @@ A self-contained backtester for a classic opening-range-breakout day trade on SP
 | Entry | Close of the breakout candle (`--entry-mode next_open` to use the next candle's open) |
 | Position size | Fixed **$1,000 per trade** (fractional shares), no compounding |
 | Stop loss | **5% of the trade** (entry × 0.95 long / × 1.05 short), checked intrabar; gaps fill at the bar open |
-| Take profit | None by default (`--take-profit-pct` optional) |
+| Trailing stop (optional) | `--stop-mode atr`: starts at entry ∓ `atr_mult` × ATR(14, 5-min bars) and ratchets up as price makes new highs (long) / down on new lows (short); never looser than the 5% stop |
+| Take profit | **10%** of the trade by default (`--take-profit-pct N`, or `--no-target`) |
 | Exit | Stop, target, or close of the 15:55 ET candle |
 
 If a single bar touches both stop and target, the stop is assumed to fill first (conservative).
@@ -26,8 +27,9 @@ pip install -r examples/spy-orb-backtest/requirements.txt
 python3 examples/spy-orb-backtest/orb_backtest.py --output-dir reports/
 
 # Variants
+python3 examples/spy-orb-backtest/orb_backtest.py --stop-mode atr --atr-mult 2   # ATR trailing stop
 python3 examples/spy-orb-backtest/orb_backtest.py --stop-mode range      # stop at opposite side of range
-python3 examples/spy-orb-backtest/orb_backtest.py --take-profit-pct 1.0  # add a 1% target
+python3 examples/spy-orb-backtest/orb_backtest.py --take-profit-pct 1.0  # tighter 1% target
 python3 examples/spy-orb-backtest/orb_backtest.py --long-only --slippage-pct 0.01 --commission 0.5
 
 # Longer history from your own CSV (timestamp, open, high, low, close[, volume]; naive times = ET)
