@@ -59,6 +59,34 @@ For each test year it picks the best combination using only earlier years, then 
 python3 examples/spy-orb-backtest/walk_forward.py --csv data/spy_5m.csv --test-years 2024 2025 2026
 ```
 
+## Strategy A live runner (hold SPY + ORB overlay)
+
+`live_orb_overlay.py` trades Strategy A on Alpaca: a buy-and-hold SPY core plus the
+recommended ORB overlay (ATR 3x trailing stop, skip FOMC days, range width ≤ 0.4).
+**Paper trading by default.** Backtest (Nov 2022 – Nov 2026, incl. 0.002% spread):
+**CAGR 26.8%** vs 18.0% for SPY buy & hold, max drawdown −17.8% vs −19.0%.
+
+- Bullish breakout → buys `--overlay-dollars` more SPY; bearish breakout → sells core
+  shares worth that amount (goes flat, never net short). The core is never sold at exit.
+- Trading rules are the backtester's, verified trade-for-trade over 615 historical trades.
+- State is saved per day in `state/orb_overlay/`, so a restart resumes; logs go to `logs/`.
+- Live requirements: margin (Alpaca: ≥ $2,000 equity) for the long overlay, and the
+  pattern-day-trader rule limits accounts under $25,000 to 3 day trades per 5 days.
+
+```bash
+cd examples/spy-orb-backtest
+export ALPACA_API_KEY=...  ALPACA_SECRET_KEY=...   # paper keys
+python3 live_orb_overlay.py --dry-run             # decisions only, no orders
+python3 live_orb_overlay.py                       # paper orders
+```
+
+Run it every weekday at 09:25 ET (it waits for the open and exits after the close), e.g. cron:
+
+```
+CRON_TZ=America/New_York
+25 9 * * 1-5  cd /path/to/repo/examples/spy-orb-backtest && ALPACA_API_KEY=... ALPACA_SECRET_KEY=... python3 live_orb_overlay.py >> logs/cron.log 2>&1
+```
+
 ## Data limitation
 
 Yahoo Finance only serves ~60 days of 5-minute data, so the default run covers about 60 trades. That is too
