@@ -41,6 +41,7 @@ TZ = "America/New_York"
 class ORBConfig:
     range_minutes: int = 30
     position_size: float = 1000.0
+    account_size: float | None = None  # capital backing each trade; None = position_size (1x)
     stop_pct: float = 5.0
     # "pct"   = fixed stop_pct from entry
     # "range" = opposite side of the opening range
@@ -266,8 +267,9 @@ def compute_metrics(trades: pd.DataFrame, cfg: ORBConfig, num_days: int | None =
     if trades.empty:
         return {"num_trades": 0, "trading_days": num_days}
     pnl = trades["pnl"]
-    equity = cfg.position_size + pnl.cumsum()
-    peak = equity.cummax().clip(lower=cfg.position_size)
+    acct = cfg.account_size or cfg.position_size
+    equity = acct + pnl.cumsum()
+    peak = equity.cummax().clip(lower=acct)
     dd = equity - peak
     wins, losses = pnl[pnl > 0], pnl[pnl <= 0]
     gross_loss = -losses.sum()
@@ -285,7 +287,11 @@ def compute_metrics(trades: pd.DataFrame, cfg: ORBConfig, num_days: int | None =
         "num_trades": int(len(trades)),
         "win_rate_pct": round(float((pnl > 0).mean() * 100), 2),
         "total_pnl": round(float(pnl.sum()), 2),
-        "total_return_on_1000_pct": round(float(pnl.sum() / cfg.position_size * 100), 2),
+        "account_size": acct,
+        "leverage": round(cfg.position_size / acct, 4),
+        "total_return_on_account_pct": round(float(pnl.sum() / acct * 100), 2),
+        "max_drawdown_pct_of_account": round(float((dd / peak).min() * 100), 2),
+        "min_equity": round(float(equity.min()), 2),
         "avg_pnl_per_trade": round(float(pnl.mean()), 2),
         "avg_win": round(float(wins.mean()), 2) if len(wins) else 0.0,
         "avg_loss": round(float(losses.mean()), 2) if len(losses) else 0.0,
@@ -335,7 +341,8 @@ def write_reports(trades, metrics, cfg, meta, out_dir: Path) -> dict:
         f"**Rules:** {cfg.range_minutes}-min range, 5-min close breakout, entry={cfg.entry_mode}, "
         f"stop={_stop_label(cfg)}, "
         f"target={f'{cfg.take_profit_pct:.1f}%' if cfg.take_profit_pct else 'none (exit at close)'}, "
-        f"${cfg.position_size:,.0f} per trade",
+        f"${cfg.position_size:,.0f} per trade on a ${(cfg.account_size or cfg.position_size):,.0f} account "
+        f"({cfg.position_size / (cfg.account_size or cfg.position_size):g}x)",
         "",
         "## Summary",
         "",
@@ -349,13 +356,13 @@ def write_reports(trades, metrics, cfg, meta, out_dir: Path) -> dict:
         lines += [
             f"| Trades | {m['num_trades']} |",
             f"| Win rate | {m['win_rate_pct']}% |",
-            f"| Total P&L | ${m['total_pnl']:,.2f} ({m['total_return_on_1000_pct']}% of $1,000) |",
+            f"| Total P&L | ${m['total_pnl']:,.2f} ({m['total_return_on_account_pct']}% of ${m['account_size']:,.0f}) |",
             f"| Final equity | ${m['final_equity']:,.2f} |",
             f"| Avg P&L / trade | ${m['avg_pnl_per_trade']:,.2f} |",
             f"| Avg win / avg loss | ${m['avg_win']:,.2f} / ${m['avg_loss']:,.2f} |",
             f"| Largest win / loss | ${m['largest_win']:,.2f} / ${m['largest_loss']:,.2f} |",
             f"| Profit factor | {pf} |",
-            f"| Max drawdown | ${m['max_drawdown']:,.2f} |",
+            f"| Max drawdown | ${m['max_drawdown']:,.2f} ({m['max_drawdown_pct_of_account']}%) |",
             f"| Exit reasons | {', '.join(f'{k}: {v}' for k, v in m['exit_reasons'].items())} |",
         ]
         for d, s in m["by_direction"].items():
@@ -392,6 +399,9 @@ def parse_args(argv=None):
     p.add_argument("--csv", help="Local 5-min OHLCV CSV instead of yfinance")
     p.add_argument("--range-minutes", type=int, default=30)
     p.add_argument("--position-size", type=float, default=1000.0)
+    p.add_argument(
+        "--account-size", type=float, help="Capital per trade (default = position size, i.e. 1x)"
+    )
     p.add_argument("--stop-pct", type=float, default=5.0)
     p.add_argument("--stop-mode", choices=["pct", "range", "atr"], default="pct")
     p.add_argument("--atr-period", type=int, default=14, help="ATR length in 5-min bars")
@@ -413,6 +423,7 @@ def main(argv=None) -> int:
     cfg = ORBConfig(
         range_minutes=a.range_minutes,
         position_size=a.position_size,
+        account_size=a.account_size,
         stop_pct=a.stop_pct,
         stop_mode=a.stop_mode,
         atr_period=a.atr_period,

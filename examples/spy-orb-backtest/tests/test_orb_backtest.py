@@ -191,3 +191,14 @@ def test_atr_stop_never_looser_than_max_loss_pct():
     )
     if trade is not None:
         assert trade["initial_stop"] >= trade["entry_price"] * 0.95 - 1e-9
+
+
+def test_leverage_measured_against_account_size():
+    d1 = make_day("2026-01-05", OR_CLOSES + [101.5] + [102] * 71)
+    cfg = ORBConfig(position_size=3000.0, account_size=1000.0, take_profit_pct=None)
+    trades = backtest(d1, cfg)
+    m = compute_metrics(trades, cfg)
+    assert trades["pnl"].iloc[0] == pytest.approx(3000 / 101.5 * 0.5)
+    assert m["leverage"] == pytest.approx(3.0)
+    assert m["final_equity"] == pytest.approx(1000 + trades["pnl"].sum(), abs=0.01)
+    assert m["total_return_on_account_pct"] == pytest.approx(trades["pnl"].sum() / 10, abs=0.01)

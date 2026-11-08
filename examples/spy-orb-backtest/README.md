@@ -31,6 +31,7 @@ python3 examples/spy-orb-backtest/orb_backtest.py --stop-mode atr --atr-mult 2  
 python3 examples/spy-orb-backtest/orb_backtest.py --stop-mode range      # stop at opposite side of range
 python3 examples/spy-orb-backtest/orb_backtest.py --take-profit-pct 1.0  # tighter 1% target
 python3 examples/spy-orb-backtest/orb_backtest.py --long-only --slippage-pct 0.01 --commission 0.5
+python3 examples/spy-orb-backtest/orb_backtest.py --position-size 3000 --account-size 1000   # 3x leverage
 
 # Longer history from your own CSV (timestamp, open, high, low, close[, volume]; naive times = ET)
 python3 examples/spy-orb-backtest/orb_backtest.py --csv spy_5m.csv
