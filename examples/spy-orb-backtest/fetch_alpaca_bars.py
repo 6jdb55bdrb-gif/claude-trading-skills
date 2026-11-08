@@ -56,11 +56,13 @@ def get_json(url, headers, retries=5):
     raise SystemExit("Alpaca: too many retries")
 
 
-def fetch_bars(symbol, start, end, headers, feed="sip", fetch=get_json):
+def fetch_bars(symbol, start, end, headers, feed="sip", fetch=get_json, timeframe="5Min"):
     """Yield bar dicts across all pages."""
     token = None
     while True:
-        data = fetch(build_url(symbol, start, end, feed=feed, page_token=token), headers)
+        data = fetch(
+            build_url(symbol, start, end, timeframe=timeframe, feed=feed, page_token=token), headers
+        )
         yield from data.get("bars") or []
         token = data.get("next_page_token")
         if not token:
@@ -88,6 +90,7 @@ def main(argv=None):
     p.add_argument("--start", help="ISO date; overrides --years")
     p.add_argument("--end", help="ISO date (default: now - 20 min)")
     p.add_argument("--feed", default="sip", choices=["sip", "iex"])
+    p.add_argument("--timeframe", default="5Min", help="Alpaca timeframe, e.g. 1Min, 5Min, 15Min")
     p.add_argument("--out", default="data/spy_5m.csv")
     a = p.parse_args(argv)
 
@@ -104,7 +107,7 @@ def main(argv=None):
     now = datetime.now(timezone.utc)
     end = a.end or (now - timedelta(minutes=20)).strftime("%Y-%m-%dT%H:%M:%SZ")
     start = a.start or (now - timedelta(days=round(365.25 * a.years))).strftime("%Y-%m-%d")
-    n = write_csv(fetch_bars(a.symbol, start, end, headers, a.feed), a.out)
+    n = write_csv(fetch_bars(a.symbol, start, end, headers, a.feed, timeframe=a.timeframe), a.out)
     print(f"Wrote {n} bars for {a.symbol} {start} -> {end} to {a.out}")
     return 0 if n else 1
 

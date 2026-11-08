@@ -38,3 +38,14 @@ def test_pagination_and_csv_roundtrip(tmp_path):
     df = load_csv(str(out))
     # UTC timestamps convert to 09:30 / 09:35 ET.
     assert [t.strftime("%H:%M") for t in df.index] == ["09:30", "09:35"]
+
+
+def test_fetch_bars_passes_timeframe():
+    calls = []
+
+    def fake(url, headers):
+        calls.append(url)
+        return {"bars": [], "next_page_token": None}
+
+    list(fetch_bars("SPY", "a", "b", {}, timeframe="1Min", fetch=fake))
+    assert "timeframe=1Min" in calls[0]
