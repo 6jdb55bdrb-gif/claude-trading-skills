@@ -59,6 +59,20 @@ For each test year it picks the best combination using only earlier years, then 
 python3 examples/spy-orb-backtest/walk_forward.py --csv data/spy_5m.csv --test-years 2024 2025 2026
 ```
 
+## Multi-day exits (`orb_multiday.py`)
+
+Same breakout entry, but trades can stay open overnight until an exit rule fires:
+trailing stop across days (5-min or daily ATR), fixed R-multiple target (with optional
+break-even stop), exit/reverse on the opposite breakout, daily-MA exit, and a max-days cap.
+`ExitRule(kind="eod")` reproduces `orb_backtest.py` exactly (verified on all 4 years).
+
+```python
+from orb_backtest import ORBConfig, FOMC_DATES, load_csv
+from orb_multiday import ExitRule, backtest_multiday
+cfg = ORBConfig(stop_mode="atr", atr_mult=3, skip_dates=FOMC_DATES, max_or_width_rel=0.4, take_profit_pct=None)
+trades = backtest_multiday(load_csv("data/spy_5m.csv"), cfg, ExitRule(kind="trail"))
+```
+
 ## Strategy A live runner (hold SPY + ORB overlay)
 
 `live_orb_overlay.py` trades Strategy A on Alpaca: a buy-and-hold SPY core plus the
