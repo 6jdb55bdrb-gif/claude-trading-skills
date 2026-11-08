@@ -38,6 +38,14 @@ python3 examples/spy-orb-backtest/orb_backtest.py --csv spy_5m.csv
 
 Outputs go to `reports/spy_orb_backtest_<date>.md`, `.json`, and `_trades.csv`.
 
+## Multi-year data (Alpaca, free)
+
+```bash
+export ALPACA_API_KEY=...  ALPACA_SECRET_KEY=...   # free paper account at alpaca.markets
+python3 examples/spy-orb-backtest/fetch_alpaca_bars.py --symbol SPY --years 4 --out data/spy_5m.csv
+python3 examples/spy-orb-backtest/orb_backtest.py --csv data/spy_5m.csv --stop-mode atr
+```
+
 ## Data limitation
 
 Yahoo Finance only serves ~60 days of 5-minute data, so the default run covers about 60 trades. That is too
