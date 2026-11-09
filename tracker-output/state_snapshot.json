@@ -2,11 +2,11 @@
  "counts": {
   "calls": 53,
   "llm_usage": 0,
-  "price_history": 1021,
+  "price_history": 1066,
   "role_verdicts": 117,
-  "runs": 45
+  "runs": 47
  },
- "exported_at": "2026-11-07T15:45:36+00:00",
+ "exported_at": "2026-11-09T12:48:06+00:00",
  "snapshot_version": 1,
  "tables": {
   "calls": [
@@ -1173,7 +1173,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 2.98,
@@ -1225,7 +1225,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 16.96,
@@ -1329,7 +1329,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 9.21,
@@ -1381,7 +1381,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-27T08:07:16+00:00",
     "peak_price": 1.2300000190734863,
@@ -1474,7 +1474,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 46,
-    "current_price": 7.04,
+    "current_price": 7.1039,
     "direction": "long",
     "entry_price": 5.76,
     "expiry_date": "2026-11-13",
@@ -1485,13 +1485,13 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 7.54,
-    "pnl_pct": 22.2222,
+    "pnl_pct": 23.3316,
     "position_usd": null,
-    "price_as_of": "2026-11-06",
+    "price_as_of": "2026-11-09",
     "researcher_score": null,
     "ret_1d": -2.26,
     "ret_3d": 1.56,
@@ -1578,7 +1578,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 91,
-    "current_price": 17.1496,
+    "current_price": 17.2001,
     "direction": "long",
     "entry_price": 18.65,
     "expiry_date": null,
@@ -1589,13 +1589,13 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 18.7,
-    "pnl_pct": -8.045,
+    "pnl_pct": -7.7743,
     "position_usd": null,
-    "price_as_of": "2026-11-06",
+    "price_as_of": "2026-11-09",
     "researcher_score": null,
     "ret_1d": 0.16,
     "ret_3d": 0.05,
@@ -1901,7 +1901,7 @@
     "judge_decision": "SKIP",
     "judge_reason": "rebuilt after data loss; original verdict not recoverable",
     "kind": "shadow",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "rebuilt from session output after live.db was lost",
     "outcome_updated_at": "2026-10-21T07:56:12+00:00",
     "peak_price": 10.960000038146973,
@@ -2202,7 +2202,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 63,
-    "current_price": 18.05,
+    "current_price": 19.87,
     "direction": "long",
     "entry_price": 16.39,
     "expiry_date": "2026-12-04",
@@ -2213,13 +2213,13 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with uptrend structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-11-07T15:45:19+00:00",
-    "peak_price": 18.41,
-    "pnl_pct": 10.1281,
+    "peak_price": 19.87,
+    "pnl_pct": 21.2325,
     "position_usd": 65.56,
-    "price_as_of": "2026-11-06",
+    "price_as_of": "2026-11-09",
     "researcher_score": 3.1,
     "ret_1d": -3.48,
     "ret_3d": 3.66,
@@ -2473,7 +2473,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with uptrend structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-11-07T15:45:19+00:00",
     "peak_price": 10.5,
@@ -2566,7 +2566,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 63,
-    "current_price": 2.4,
+    "current_price": 2.164,
     "direction": "long",
     "entry_price": 1.96,
     "expiry_date": "2026-12-11",
@@ -2577,13 +2577,13 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with range structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-11-07T15:45:19+00:00",
     "peak_price": 2.4,
-    "pnl_pct": 22.449,
+    "pnl_pct": 10.4082,
     "position_usd": 66.64,
-    "price_as_of": "2026-11-06",
+    "price_as_of": "2026-11-09",
     "researcher_score": 3.2,
     "ret_1d": 19.9,
     "ret_3d": null,
@@ -2629,7 +2629,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with uptrend structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-11-07T15:45:19+00:00",
     "peak_price": 14.170000076293945,
@@ -2670,7 +2670,7 @@
     "close_reason": null,
     "closed_at": null,
     "confidence": 84,
-    "current_price": 20.55,
+    "current_price": 21.05,
     "direction": "long",
     "entry_price": 19.18,
     "expiry_date": "2026-12-11",
@@ -2681,13 +2681,13 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with uptrend structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-11-07T15:45:19+00:00",
-    "peak_price": 20.55,
-    "pnl_pct": 7.1429,
+    "peak_price": 21.05,
+    "pnl_pct": 9.7497,
     "position_usd": 95.9,
-    "price_as_of": "2026-11-06",
+    "price_as_of": "2026-11-09",
     "researcher_score": 3.5,
     "ret_1d": 7.14,
     "ret_3d": null,
@@ -2733,7 +2733,7 @@
     "judge_decision": "TAKE",
     "judge_reason": "sector_theme catalyst with uptrend structure; objection answered",
     "kind": "active",
-    "last_price_at": "2026-11-07T15:45:35+00:00",
+    "last_price_at": "2026-11-09T12:47:37+00:00",
     "notes": "EDGAR needs a contact: set explosion_signals.edgar.user_agent or EDGAR_USER_AGENT (e.g. 'lowcap-tracker you@example.com')",
     "outcome_updated_at": "2026-11-07T15:45:19+00:00",
     "peak_price": 5.710000038146973,
@@ -9915,6 +9915,321 @@
     "observed_at": "2026-11-07T15:45:35+00:00",
     "pnl_pct": -0.3503,
     "price": 5.69
+   },
+   {
+    "call_id": 31,
+    "id": 1022,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -8.2574,
+    "price": 17.110000610351562
+   },
+   {
+    "call_id": 31,
+    "id": 1023,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -7.7743,
+    "price": 17.2001
+   },
+   {
+    "call_id": 23,
+    "id": 1024,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 37.2093,
+    "price": 2.950000047683716
+   },
+   {
+    "call_id": 23,
+    "id": 1025,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 36.7442,
+    "price": 2.94
+   },
+   {
+    "call_id": 24,
+    "id": 1026,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 13.0208,
+    "price": 15.1899995803833
+   },
+   {
+    "call_id": 24,
+    "id": 1027,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 13.0208,
+    "price": 15.19
+   },
+   {
+    "call_id": 26,
+    "id": 1028,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -7.0696,
+    "price": 8.149999618530273
+   },
+   {
+    "call_id": 26,
+    "id": 1029,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -7.0696,
+    "price": 8.15
+   },
+   {
+    "call_id": 29,
+    "id": 1030,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 22.3958,
+    "price": 7.050000190734863
+   },
+   {
+    "call_id": 29,
+    "id": 1031,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 23.3316,
+    "price": 7.1039
+   },
+   {
+    "call_id": 37,
+    "id": 1032,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -4.5898,
+    "price": 9.770000457763672
+   },
+   {
+    "call_id": 37,
+    "id": 1033,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -3.5156,
+    "price": 9.88
+   },
+   {
+    "call_id": 27,
+    "id": 1034,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 2.6786,
+    "price": 1.149999976158142
+   },
+   {
+    "call_id": 27,
+    "id": 1035,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 2.6786,
+    "price": 1.15
+   },
+   {
+    "call_id": 43,
+    "id": 1036,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 10.1281,
+    "price": 18.049999237060547
+   },
+   {
+    "call_id": 43,
+    "id": 1037,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 21.2325,
+    "price": 19.87
+   },
+   {
+    "call_id": 48,
+    "id": 1038,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -6.5751,
+    "price": 9.52
+   },
+   {
+    "call_id": 50,
+    "id": 1039,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 19.898,
+    "price": 2.3499999046325684
+   },
+   {
+    "call_id": 50,
+    "id": 1040,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 10.4082,
+    "price": 2.164
+   },
+   {
+    "call_id": 51,
+    "id": 1041,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -3.458,
+    "price": 13.680000305175781
+   },
+   {
+    "call_id": 51,
+    "id": 1042,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -3.458,
+    "price": 13.68
+   },
+   {
+    "call_id": 52,
+    "id": 1043,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 7.1429,
+    "price": 20.549999237060547
+   },
+   {
+    "call_id": 52,
+    "id": 1044,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": 9.7497,
+    "price": 21.05
+   },
+   {
+    "call_id": 53,
+    "id": 1045,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -0.3503,
+    "price": 5.690000057220459
+   },
+   {
+    "call_id": 53,
+    "id": 1046,
+    "observed_at": "2026-11-09T12:46:56+00:00",
+    "pnl_pct": -0.3503,
+    "price": 5.69
+   },
+   {
+    "call_id": 31,
+    "id": 1047,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": -7.7743,
+    "price": 17.2001
+   },
+   {
+    "call_id": 23,
+    "id": 1048,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": 37.2093,
+    "price": 2.950000047683716
+   },
+   {
+    "call_id": 23,
+    "id": 1049,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": 36.7442,
+    "price": 2.94
+   },
+   {
+    "call_id": 24,
+    "id": 1050,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": 13.0208,
+    "price": 15.1899995803833
+   },
+   {
+    "call_id": 24,
+    "id": 1051,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": 13.0208,
+    "price": 15.19
+   },
+   {
+    "call_id": 26,
+    "id": 1052,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": -7.0696,
+    "price": 8.149999618530273
+   },
+   {
+    "call_id": 26,
+    "id": 1053,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": -7.0696,
+    "price": 8.15
+   },
+   {
+    "call_id": 29,
+    "id": 1054,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": 23.3316,
+    "price": 7.1039
+   },
+   {
+    "call_id": 37,
+    "id": 1055,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": -4.5898,
+    "price": 9.770000457763672
+   },
+   {
+    "call_id": 37,
+    "id": 1056,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": -3.5156,
+    "price": 9.88
+   },
+   {
+    "call_id": 27,
+    "id": 1057,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": 2.6786,
+    "price": 1.149999976158142
+   },
+   {
+    "call_id": 27,
+    "id": 1058,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": 2.6786,
+    "price": 1.15
+   },
+   {
+    "call_id": 43,
+    "id": 1059,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": 21.2325,
+    "price": 19.87
+   },
+   {
+    "call_id": 48,
+    "id": 1060,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": -6.5751,
+    "price": 9.52
+   },
+   {
+    "call_id": 50,
+    "id": 1061,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": 10.4082,
+    "price": 2.164
+   },
+   {
+    "call_id": 51,
+    "id": 1062,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": -3.458,
+    "price": 13.680000305175781
+   },
+   {
+    "call_id": 51,
+    "id": 1063,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": -3.458,
+    "price": 13.68
+   },
+   {
+    "call_id": 52,
+    "id": 1064,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": 9.7497,
+    "price": 21.05
+   },
+   {
+    "call_id": 53,
+    "id": 1065,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": -0.3503,
+    "price": 5.690000057220459
+   },
+   {
+    "call_id": 53,
+    "id": 1066,
+    "observed_at": "2026-11-09T12:47:37+00:00",
+    "pnl_pct": -0.3503,
+    "price": 5.69
    }
   ],
   "role_verdicts": [
@@ -11737,6 +12052,40 @@
     "screening_ran": 0,
     "session_reason": "weekend \u2014 US market closed",
     "started_at": "2026-11-07T15:45:30+00:00"
+   },
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-11-09T12:47:20+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 13,
+    "reviewed": 2,
+    "run_id": "run_20261109T124651Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-11-09T12:46:51+00:00"
+   },
+   {
+    "backend": "heuristic",
+    "closed": 0,
+    "finished_at": "2026-11-09T12:48:06+00:00",
+    "hits": 2,
+    "llm_cost_usd": 0.0,
+    "new_calls": 0,
+    "new_shadows": 0,
+    "new_takes": 0,
+    "notes": null,
+    "priced": 13,
+    "reviewed": 2,
+    "run_id": "run_20261109T124732Z",
+    "screening_ran": 1,
+    "session_reason": "trading day, extended hours",
+    "started_at": "2026-11-09T12:47:32+00:00"
    }
   ]
  }
